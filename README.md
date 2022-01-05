@@ -40,45 +40,45 @@
 
 1. 打开 [The Movie Database (TMDB) 首页](https://www.themoviedb.org/)，这是一个类似IMDb、豆瓣的媒体数据信息网站，涵盖电影、剧集、演员等。
 
-   ![image](tmdb.lua-manual.assets\image-20211230184631960.png)
+![image](tmdb.lua-manual.assets/image-20211230184631960.png)
    <br/>
    
 2. 点击页面顶端右侧的 `EN` 修改语言为 `zh-CN`，这样你就可以看到中文页面了。
    
-   ![image](tmdb.lua-manual.assets\image-20211230184718443.png)
+![image](tmdb.lua-manual.assets/image-20211230184718443.png)
    <br/>
-   ![image](tmdb.lua-manual.assets\image-20211230184916245.png)
+![image](tmdb.lua-manual.assets/image-20211230184916245.png)
    <br/>
    
 3. 你需要一个账户来登录。
    + 没有账户则点击 `注册`，需要一个用户名、一个密码，以及用来验证的电子邮件。
    注册后，登录你刚刚使用的邮箱，查看TMDb发送的验证邮件，确认无误之后验证即可。然后打开登录页面登录。
-   + ![image](tmdb.lua-manual.assets\image-20211230185142050.png)
+   + ![image](tmdb.lua-manual.assets/image-20211230185142050.png)
    <br/>
   + 如果你已有账户点击右上的`登录`，需要用户名和密码；
 
-    ![image](tmdb.lua-manual.assets\image-20211230185105456.png)
+    ![image](tmdb.lua-manual.assets/image-20211230185105456.png)
        <br/>
 
 4. 登录后，点击在同样位置的你的头像，在弹出菜单点击账户设置。
 
-![image](tmdb.lua-manual.assets\image-20211230193355941.png)
+![image](tmdb.lua-manual.assets/image-20211230193355941.png)
 <br/>
 
 5. 点击默认语言 (default language)，输入/选择 `zh-CN`，界面就是简体中文的了。
 
-   ![image](tmdb.lua-manual.assets\image-20211230193914376.png)
+   ![image](tmdb.lua-manual.assets/image-20211230193914376.png)
    <br/>
 
 6. 点击左侧边栏的 [API](https://www.themoviedb.org/settings/api)，在新的页面点击申请一个api。本图图源自：@ 伪宅中的死宅
 
-   ![image](tmdb.lua-manual.assets\image-20211230194628479.png)
+   ![image](tmdb.lua-manual.assets/image-20211230194628479.png)
    <br/>
 
 7. 然后把 `API 密钥 (v3 auth)`下的 一串字母数字复制下来，你就得到了你的TMDb的 **API密钥**。
    <br/>
 
-![image](tmdb.lua-manual.assets\image-20211230193942080.png)
+![image](tmdb.lua-manual.assets/image-20211230193942080.png)
 <br/>
 
 8. 选中下方`范例 API 请求`下的链接，并在新标签页打开，会出现了一些奇怪的东西，说明网络能够连接上，否则说明你的网络无法连接到。
