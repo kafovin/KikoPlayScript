@@ -54,6 +54,8 @@ Metadata_info_origin_title = true -- 是否使用源语言标题，在运行函�
 
 -- (\{)(\[)("id"\]=)([0-9]{1,}?)(,\["name")(\]="[\S ^"]{1,}")(\})(,)
 -- \2\4\6
+
+-- 媒体所属的流派类型，tmdb的id编号->类型名 的对应
 Media_genre = {
     [28] = "动作",
     [12] = "冒险",
@@ -84,6 +86,7 @@ Media_genre = {
     [10768] = "War & Politics"
 }
 --[[
+-- 媒体信息<table>
 Anime_data = {
     ["media_title"] = unescape(mediai["media_title"]) or unescape(mediai["media_name"]),		-- 标题
     ["original_title"] = unescape(mediai["original_title"]) or unescape(mediai["original_name"]),-- 原始语言标题
@@ -118,7 +121,7 @@ Anime_data = {
 
 ---------------------
 -- 资料脚本部分
--- copy (as template) from & thanks to "..\\library\\bangumi.lua", "..\\danmu\\bilibili.lua"
+-- copy (as template) from & thanks to "../library/bangumi.lua", "../danmu/bilibili.lua" in "KikoPlay/library"|KikoPlayScript
 --
 
 function search(keyword)
@@ -128,12 +131,14 @@ function search(keyword)
     -- 需要注意的是，除了下面定义的AnimeLite结构，还可以增加一项eps，类型为Array[EpInfo]，包含动画的剧集列表。
     -- httpget( query, header ) -> json:reply
     kiko.log("[INFO]  Searching <" .. keyword .. ">")
+    -- 获取 是否 元数据使用原语言标题
     local miotTmp = settings['metadata_info_origin_title']
     if (miotTmp == '0') then
         Metadata_info_origin_title = false
     elseif (miotTmp == '1') then
         Metadata_info_origin_title = true
     end
+    -- http get 请求 参数
     local query = {
         ["api_key"] = settings["api_key"],
         ["language"] = settings["metadata_lang"],
@@ -147,6 +152,7 @@ function search(keyword)
     if settings["api_key"] == "<<API_Key_Here>>" then
         error("Wrong api_key! 请在脚本设置中填写正确的API密钥。")
     end
+    -- 获取 http get 请求 - 查询特定媒体类型 特定关键字 媒体信息的 搜索结果列表
     local err, reply = kiko.httpget(string.format("http://api.themoviedb.org/3/search/" .. settings["search_type"]),
         query, header)
 
@@ -154,19 +160,20 @@ function search(keyword)
         kiko.log("[ERROR] httpget ERROR")
         error(err)
     end
-    -- json:reply -> Table:obj
+    -- json:reply -> Table:obj 获取的结果
     local content = reply["content"]
     local err, obj = kiko.json2table(content)
     if err ~= nil then
         error(err)
     end
-    -- Table:obj["results"] -> Array:mediai
+    -- Table:obj["results"] 搜索结果<table> -> Array:mediai
     local mediais = {}
     for _, mediai in pairs(obj['results']) do
         if (mediai["media_type"] ~= 'tv' and mediai["media_type"] ~= 'movie' and settings["search_type"] == "multi") then
+            -- 跳过对 演员 的搜索 - 跳过 person
             goto continue_search_a
         end
-        -- title/name
+        -- 显示的媒体标题 title/name
         local mediaName
         if (Metadata_info_origin_title) then
             mediaName = unescape(mediai["original_title"] or mediai["original_name"])
@@ -174,7 +181,8 @@ function search(keyword)
             mediaName = unescape(mediai["title"] or mediai["name"])
         end
         -- local extra = {}
-        local data = {}
+        local data = {} -- 媒体信息
+        -- 媒体类型
         if settings["search_type"] == "multi" then
             data["media_type"] = mediai["media_type"] -- 媒体类型 movie tv person
         elseif settings["search_type"] == "movie" then
@@ -192,6 +200,7 @@ function search(keyword)
         data["vote_average"] = mediai["vote_average"] -- 平均tmdb评分
         -- genre_ids -> genre_names
         data["genre_names"] = {} -- 流派类型 table/Array
+        -- 流派类型id ->流派类型名称
         for key, value in pairs(mediai["genre_ids"]) do -- key-index value-id
             local genreIdIn = false -- genre_ids.value-id in Media_genre
             for k, v in pairs(Media_genre) do
@@ -203,32 +212,39 @@ function search(keyword)
                 data["genre_names"][key] = Media_genre[value]
             end
         end
+        -- 图片链接
         -- 原图  "https://image.tmdb.org/t/p/original"..data["image_path"]
         -- 小图  "https://image.tmdb.org/t/p/w500"..data["image_path"]
+        -- 海报图片
         if (mediai["poster_path"] ~= nil and mediai["poster_path"] ~= "") then
             data["poster_path"] = "https://image.tmdb.org/t/p/original" .. mediai["poster_path"]
         else
             data["poster_path"] = ""
-        end -- 海报图片
+        end
+        -- 背景图片
         if (mediai["backdrop_path"] ~= nil and mediai["backdrop_path"] ~= "") then
             data["backdrop_path"] = "https://image.tmdb.org/t/p/original" .. mediai["backdrop_path"]
         else
             data["backdrop_path"] = ""
-        end -- 背景图片
+        end
 
         -- season_number, episode_count,
         if data["media_type"] == "movie" then
+            -- movie - 此条搜索结果是电影
+            -- 把电影视为单集电视剧
             data["season_number"] = 1
             data["episode_count"] = 1
             data["season_count"] = 1
             data["season_title"] = data["original_title"]
             local media_data_json
+            -- 把媒体信息<table>转为json的字符串
             err, media_data_json = kiko.table2json(table.deepCopy(data))
             if err ~= nil then
                 kiko.log(string.format("[ERROR] table2json: %s", err))
             end
             -- kiko.log(string.format("[INFO]  mediaName: [ %s ], data:\n%s", mediaNameSeason, tableToStringLines(data)));
 
+            -- 从 媒体信息的发行日期/年份 获取年份字符串，加到电影名后，以防重名导致kiko数据库错误。形如 "电影名 (2010)"
             -- get "Movie Name (YEAR)"
             if data["release_date"] ~= nil and data["release_date"] ~= "" then
                 mediaName = mediaName .. string.format(' (%s)', string.sub(data["release_date"], 1, 4))
@@ -249,7 +265,8 @@ function search(keyword)
                 ["scriptId"] = "Kikyou.l.TMDb"
             })
         elseif data["media_type"] == "tv" then
-            --
+            -- tv - 此条搜索结果是剧集
+            -- http get 请求 参数
             local queryTv = {
                 ["api_key"] = settings["api_key"],
                 ["language"] = settings["metadata_lang"]
@@ -257,6 +274,7 @@ function search(keyword)
             if settings["api_key"] == "<<API_Key_Here>>" then
                 error("Wrong api_key! 请在脚本设置中填写正确的API密钥。")
             end
+            -- 获取 http get 请求 - 查询 特定tmdbid的剧集的 媒体信息
             local err, replyTv = kiko.httpget(string.format(
                 "http://api.themoviedb.org/3/" .. data["media_type"] .. "/" .. data["media_id"]), queryTv, header)
 
@@ -271,8 +289,8 @@ function search(keyword)
                 error(err)
             end
 
+            data["season_count"] = #(objTv["seasons"]) -- 季总数
             -- 去除剧情介绍多余的空行
-            data["season_count"] = #(objTv["seasons"])
             if objTv["tagline"] ~= "" then
                 data["overview"] =
                     string.gsub(string.gsub(objTv["tagline"], "\n\n", "\n"), "\r\n\r\n", "\r\n") .. "\n" ..
@@ -281,19 +299,21 @@ function search(keyword)
 
             -- Table:obj -> Array:mediai
             -- local tvSeasonsIxs = {}
-            data["tv_first_air_date"] = data["release_date"]
-            data["tv_poster_path"] = data["poster_path"]
-            local data_overview = data["overview"]
+            data["tv_first_air_date"] = data["release_date"] -- 发行日期
+            data["tv_poster_path"] = data["poster_path"] -- 海报链接
+            local data_overview = data["overview"] -- 剧情介绍
             for _, tvSeasonsIx in pairs(objTv['seasons']) do
-                local mediaNameSeason = mediaName
-                data["release_date"] = tvSeasonsIx["air_date"]
-                data["season_title"] = tvSeasonsIx["name"]
+                local mediaNameSeason = mediaName -- 形如"剧集名"
+                data["release_date"] = tvSeasonsIx["air_date"] -- 首播日期
+                data["season_title"] = tvSeasonsIx["name"] -- 季标题
                 if tvSeasonsIx["overview"] ~= "" then
+                    -- 剧情简介附上 季剧情简介 （去除空行）
                     data["overview"] = string.gsub(string.gsub(tvSeasonsIx["overview"], "\n\n", "\n"), "\r\n\r\n",
                         "\r\n") .. "\n" .. data_overview
                 else
                     data["overview"] = data_overview
                 end
+                -- 海报图片链接
                 if (tvSeasonsIx["poster_path"] ~= nil and tvSeasonsIx["poster_path"] ~= "") then
                     data["poster_path"] = "https://image.tmdb.org/t/p/original" .. tvSeasonsIx["poster_path"]
                 elseif (data["tv_poster_path"] ~= nil and data["tv_poster_path"] ~= "") then
@@ -301,6 +321,7 @@ function search(keyword)
                 else
                     data["poster_path"] = ""
                 end
+                -- 国家地区
                 data["origin_country"] = {}
                 if tvSeasonsIx["production_countries"] ~= nil then
                     for _, value in pairs(tvSeasonsIx["production_countries"]) do
@@ -309,9 +330,10 @@ function search(keyword)
                     end
                 end
 
-                data["season_number"] = math.floor(tvSeasonsIx["season_number"])
-                data["episode_count"] = math.floor(tvSeasonsIx["episode_count"])
+                data["season_number"] = math.floor(tvSeasonsIx["season_number"]) -- 季序数
+                data["episode_count"] = math.floor(tvSeasonsIx["episode_count"]) -- 集总数（本季节）
 
+                --- TODO: 是否 没有特殊名称的标题，未测试
                 local seasonNameNormal -- 判断是否为普通的 季名称 S00/Specials/特别篇/S05/Season 5/第 5 季
                 seasonNameNormal = (data["season_title"] == string.format("Season %d", data["season_number"])) or
                                        (data["season_title"] == "Specials")
@@ -338,10 +360,12 @@ function search(keyword)
                 else
                     mediaNameSeason = mediaNameSeason .. " " .. data["season_title"]
                 end
+                -- 从 媒体信息的发行日期/年份 获取年份字符串，加到电影名后，以防重名导致kiko数据库错误。形如 "剧集名 第2季 (2010)"
                 if data["release_date"] ~= nil and data["release_date"] ~= "" then
                     mediaNameSeason = mediaNameSeason .. string.format(' (%s)', string.sub(data["release_date"], 1, 4))
                 end
 
+                -- 把媒体信息<table>转为json的字符串
                 local media_data_json
                 err, media_data_json = kiko.table2json(table.deepCopy(data))
                 if err ~= nil then
@@ -406,16 +430,19 @@ function getep(anime)
     -- --
 
     kiko.log("[INFO]  Getting episodes of <" .. anime["name"] .. ">")
+    -- 获取 是否 元数据使用原语言标题
     local miotTmp = settings['metadata_info_origin_title']
     if (miotTmp == '0') then
         Metadata_info_origin_title = false
     elseif (miotTmp == '1') then
         Metadata_info_origin_title = true
     end
+    -- 把媒体信息"data"的json的字符串转为<table>
     local err, anime_data = kiko.json2table(anime["data"])
     if err ~= nil then
         kiko.log(string.format("[ERROR] json2table: %s", err))
     end
+    -- number:季序数
     anime_data["season_number"] = math.floor(tonumber(anime_data["season_number"]))
 
     local eps = {}
@@ -440,6 +467,7 @@ function getep(anime)
         -- tv
     elseif (anime_data["media_type"] == "tv") then
 
+        -- http get 请求 参数
         local query = {
             ["api_key"] = settings["api_key"],
             ["language"] = settings["metadata_lang"]
@@ -450,6 +478,7 @@ function getep(anime)
         if settings["api_key"] == "<<API_Key_Here>>" then
             error("Wrong api_key! 请在脚本设置中填写正确的API密钥。")
         end
+        -- 获取 http get 请求 - 查询 特定tmdbid的剧集的 特定季序数的 媒体信息
         local err, reply = kiko.httpget(string.format("http://api.themoviedb.org/3/tv/" .. anime_data["media_id"] ..
                                                           "/season/" .. (anime_data["season_number"])), query, header)
 
@@ -468,17 +497,21 @@ function getep(anime)
         if (objS["episodes"] == nil or #(objS["episodes"]) == 0) then
             return eps
         end
-        local seasonEpsI = objS["episodes"][1]
+        local seasonEpsI = objS["episodes"][1] -- 以第一集为例
         if seasonEpsI ~= nil then
+            -- number:集序数
             seasonEpsI["episode_number"] = math.floor(tonumber(seasonEpsI["episode_number"]))
         end
+        -- 对应单纯数字标题，而非有对应剧情名称的集标题
         if (seasonEpsI["name"] == "第 " .. seasonEpsI["episode_number"] .. " 集" or seasonEpsI["name"] == "第" ..
             seasonEpsI["episode_number"] .. "話" or seasonEpsI["name"] == "Episode " .. seasonEpsI["episode_number"]) then
             normalEpTitle = true
         end
         if (normalEpTitle and string.sub(query["language"], 1, 2) ~= anime_data["original_language"]) then
+            -- 获取集标题
             -- and (query["language"] == "zh-CN" or query["language"] == "zh-HK" or query["language"] == "zh-TW" or query["language"] == "zh")
             query["language"] = anime_data["original_language"]
+            -- 获取 http get 请求 - 查询 特定tmdbid的剧集的 特定季序数的 原语言的 媒体信息
             local err, replyO = kiko.httpget(string.format(
                 "http://api.themoviedb.org/3/tv/" .. anime_data["media_id"] .. "/season/" .. anime_data["season_number"]),
                 query, header)
@@ -493,6 +526,7 @@ function getep(anime)
                 error(err)
             end
             local seasonEpsIO = objSO['episodes'][1]
+            --- TODO: 是否 没有特殊名称的标题，未测试
             normalEpTitle = false
             seasonEpsIO["episode_number"] = math.floor(tonumber(seasonEpsIO["episode_number"]))
             if (seasonEpsIO["name"] == "第 " .. seasonEpsIO["episode_number"] .. " 集" or seasonEpsIO["name"] == "第" ..
@@ -506,17 +540,20 @@ function getep(anime)
         end
         for _, seasonEpsIx in pairs(objS['episodes']) do
 
-            epName = seasonEpsIx["name"]
-            epIndex = math.floor(tonumber(seasonEpsIx["episode_number"]))
+            epName = seasonEpsIx["name"] -- 集标题
+            epIndex = math.floor(tonumber(seasonEpsIx["episode_number"])) -- 集序数
             -- seasonEpsIx["air_date"]
             -- seasonEpsIx["overview"]
             -- seasonEpsIx["vote_average"]
             -- seasonEpsIx["crew"] --array
             -- seasonEpsIx["guest_stars"] --array
 
+            -- 集类型
             if anime_data["season_number"] == 0 then
+                -- 特别篇/Specials/Season 0
                 epType = 2
             else
+                -- 普通
                 epType = 1
             end
 
@@ -586,6 +623,7 @@ function detail(anime)
     -- }
     kiko.log("[INFO]  Getting detail of <" .. anime["name"] .. ">")
     -- tableToStringPrint(anime) -- kiko.log()
+    -- 把媒体信息"data"的json的字符串转为<table>
     local err, anime_data = kiko.json2table(anime["data"])
     if err ~= nil then
         kiko.log(string.format("[ERROR] json2table: %s", err))
@@ -593,10 +631,12 @@ function detail(anime)
     -- kiko.log(string.format("[INFO]  getting media indetail ... %s - %s", anime_data["media_type"],type(anime_data["media_type"])))
     -- kiko.log("[INFO]  anime[\"data\"]=\"" .. anime["data"] .. "\" (" .. type(anime["data"]) .. ")")
     if anime_data == nil then
+        -- 无媒体信息
         kiko.log("[WARN]  (AnimeLite)anime[\"data\"] not found.")
         return anime
     end
     if anime_data["media_type"] == nil then
+        -- 无媒体类型信息
         kiko.log("[WARN]  (AnimeLite)anime[\"data\"][\"media_type\"] not found.")
     end
     -- tableToStringPrint(anime_data) -- kiko.log("")
@@ -614,7 +654,7 @@ function detail(anime)
     end
     -- 从AmimeLite:anime["data"]读取详细信息
     local animePlus = {
-        ["name"] = anime["name"], -- (()and{}or{})[1]
+        ["name"] = anime["name"],
         ["data"] = anime["data"],
         ["url"] = ((anime_data["media_type"]) and
             {"https://www.themoviedb.org/" .. anime_data["media_type"] .. "/" .. anime_data["media_id"]} or {""})[1], -- 条目页面URL
@@ -635,7 +675,7 @@ function detail(anime)
         kiko.log("[INFO]  Finished getting detail of < " .. anime_data["media_title"] .. " (" ..
                      anime_data["original_title"] .. ") " .. string.format("S%02d", anime_data["season_number"]) .. ">")
     end
-    kiko.log("[INFO]  Anime = "..tableToStringLines(animePlus))
+    kiko.log("[INFO]  Anime = " .. tableToStringLines(animePlus))
     return animePlus
 end
 
@@ -645,6 +685,7 @@ function gettags(anime)
     -- KikoPlay支持多级Tag，用"/"分隔，你可以返回类似“动画制作/A1-Pictures”这样的标签
     kiko.log("[INFO]  Starting getting tags of" .. anime["name"])
     -- tableToStringPrint(anime) -- kiko.log()
+    -- 把媒体信息"data"的json的字符串转为<table>
     local err, anime_data = kiko.json2table(anime["data"])
     if err ~= nil then
         kiko.log(string.format("[ERROR] json2table: %s", err))
@@ -652,27 +693,32 @@ function gettags(anime)
     -- kiko.log(string.format("[INFO]  getting media indetail ... %s - %s", anime_data["media_type"],type(anime_data["media_type"])))
     -- kiko.log("[INFO]  anime[\"data\"]=\"" .. anime["data"] .. "\" (" .. type(anime["data"]) .. ")")
     if anime_data == nil then
+        -- 无媒体信息
         kiko.log("[WARN]  (AnimeLite)anime[\"data\"] not found.")
         return anime
     end
     if anime_data["media_type"] == nil then
+        -- 无媒体类型信息
         kiko.log("[WARN]  (AnimeLite)anime[\"data\"][\"media_type\"] not found.")
     end
     -- tableToStringPrint(anime_data) -- kiko.log("")
     local mtag = {} -- 标签数组
     local genre_name_tmp -- 暂存字符串
+    -- 添加 流派类型 至标签
     for _, value in pairs(anime_data["genre_names"]) do
         if (value ~= nil) then
             genre_name_tmp = value .. ""
             table.insert(mtag, genre_name_tmp)
         end
     end
+    -- 添加 媒体类型 至标签
     if anime_data["media_type"] == "movie" then
         table.insert(mtag, "电影")
 
     elseif anime_data["media_type"] == "tv" then
         table.insert(mtag, "剧集")
     end
+    -- 添加 出品公司 至标签
     if anime_data["origin_company"] ~= nil then
         for _, value in pairs(anime_data["origin_company"]) do
             if (value ~= nil) then
@@ -682,6 +728,7 @@ function gettags(anime)
         end
 
     end
+    -- 添加 国家 至标签
     if anime_data["origin_country"] ~= nil then
         for _, value in pairs(anime_data["origin_country"]) do
             if (value ~= nil) then
@@ -691,6 +738,7 @@ function gettags(anime)
         end
 
     end
+    -- 添加 原语言 至标签
     if anime_data["original_language"] ~= nil then
         table.insert(mtag, anime_data["original_language"])
 
@@ -707,12 +755,15 @@ end
 function match(path)
     -- local err, fileHash = kiko.hashdata(path, true, 16*1024*1024)
     kiko.log('[INFO]  Matching path - <' .. path .. '> - ' .. #path)
+    -- 获取 是否 元数据使用原语言标题
     local miotTmp = settings['metadata_info_origin_title']
     if (miotTmp == '0') then
         Metadata_info_origin_title = false
     elseif (miotTmp == '1') then
         Metadata_info_origin_title = true
     end
+
+    -- 获取需要的各级目录
     -- string.gmatch(path,"\\[%S ^\\]+",-1)
     -- path: tv\season\video.ext  lff\lf\l  Emby 存储剧集的目录 -  tv/tvshow.nfo  tv/season/season.nfo
     -- path: movie\video.ext	  l\        Emby 存储电影的目录 -  movie/video.nfo
@@ -726,24 +777,7 @@ function match(path)
     local path_folder_lf = string.sub(path, 1, path_folder_sign) -- 父父文件夹路径 含结尾'/' -  tv/
 
     --
-    local mediainfo, epinfo = {}, {}
-    if settings["match_type"] ~= "local_Emby_nfo" then
-        -- TODO: 添加在线搜索 匹配本地文件 的功能
-        return {
-            ["success"] = false,
-            ["anime"] = {},
-            ["ep"] = {}
-        }
-    end
-    local xml_file_path = path_folder_l .. path_file_name .. '.nfo' -- 媒体信息文档全路径 path/to/video.nfo 文本为 .xml 格式
-    local xml_v_nfo = readxmlfile(xml_file_path) -- 获取媒体信息文档
-    if xml_v_nfo == nil then
-        error("Fail to read xml content from <" .. xml_file_path .. ' >.')
-        -- kiko.log("[Error]\tFail to read xml content from <".. xml_file_path .. ' >.')
-        return {
-            ["success"] = false
-        };
-    end
+    local mediainfo, epinfo = {}, {} -- 返回的媒体信息、分集信息 AnimeLite:mediainfo EpInfo:epinfo
     --[[
 	mediainfo = {
 		["name"]=string,          --动画名称
@@ -770,56 +804,102 @@ function match(path)
     ["imgurl"]=string  --人物图片URL
 	}
 	]] --
+
+    --- 判断关联匹配的信息来源类型
+    if settings["match_type"] ~= "local_Emby_nfo" then
+        -- TODO: 添加在线搜索 匹配本地文件 的功能
+        return {
+            ["success"] = false,
+            ["anime"] = {},
+            ["ep"] = {}
+        }
+    end
+
+    -- 读取媒体信息.nfo文件 (.xml文本)
+    local xml_file_path = path_folder_l .. path_file_name .. '.nfo' -- 媒体信息文档全路径 path/to/video.nfo 文本为 .xml 格式
+    local xml_v_nfo = readxmlfile(xml_file_path) -- 获取媒体信息文档
+    if xml_v_nfo == nil then
+        -- 文件读取失败
+        error("Fail to read xml content from <" .. xml_file_path .. ' >.')
+        -- kiko.log("[Error]\tFail to read xml content from <".. xml_file_path .. ' >.')
+        -- 返回
+        return {
+            ["success"] = false
+        };
+    end
+
     -- xml_v_nfo
+    -- 读取的媒体信息文本暂存在这里
     -- local mname, mdata, murl, mdesc, mairdate, mepcount, mcoverurl, mstaff, mcrt = nil, {}, nil, nil, nil, nil, nil,
     local mname, mdata, mepcount = nil, {}, nil
+    local myear = nil
+    -- 读取的分集信息文本暂存在这里
     local ename, eindex, etype, eseason = nil, nil, nil, nil
+    -- 读取的分季信息文本暂存在这里
     -- tstitle = season title
     local tstitle = nil
-    local myear = nil
+    -- 读取的 .xml 信息文本暂存在这里
     local tmpElem -- 临时存 xml_v_nfo:elemtext()
-    mdata["file_path"] = path
+    mdata["file_path"] = path -- 文件路径
     while not xml_v_nfo:atend() do
+        -- 循环，直到读取到末尾
         if xml_v_nfo:startelem() then
+            -- 如果是开始标签，就获取 媒体类型信息，分类电影/剧集
             -- movie
             if xml_v_nfo:name() == "movie" then
-                mdata["media_type"] = "movie"
-                mdata["poster_path"] = "file:///"..path_folder_l .. "poster.jpg"
-                mdata["backdrop_path"] = "file:///"..path_folder_l .. "fanart.jpg"
+                -- 是电影
+                mdata["media_type"] = "movie" -- 媒体类型
+                mdata["poster_path"] = "file:///" .. path_folder_l .. "poster.jpg" -- Emby存储的电影 海报路径
+                mdata["backdrop_path"] = "file:///" .. path_folder_l .. "fanart.jpg" -- Emby存储的电影 背景路径
                 kiko.log('[INFO]  Reading movie nfo')
+
+                -- 读取下一个标签
                 xml_v_nfo:readnext()
                 while not xml_v_nfo:atend() do
+                    -- 循环，直到读取到末尾
                     if xml_v_nfo:startelem() then
+                        -- 如果是开始标签，就获取信息
                         -- read metadata
                         if xml_v_nfo:name() ~= "actor" then
+                            -- 如果不是"演员"标签，读取标签内容
                             tmpElem = xml_v_nfo:elemtext() .. ""
                         else
+                            -- 如果是"演员"标签，之后循环单独读取演员标签组内容到<table>
                             tmpElem = ""
                         end
                         if xml_v_nfo:name() == "title" then
+                            -- "标题"标签
                             mdata["media_title"] = tmpElem
                             -- if not (Metadata_info_origin_title) then
                             --     mname = mdata["media_title"]
                             -- end
                         elseif xml_v_nfo:name() == "originaltitle" then
+                            -- "原始标题"标签
                             mdata["original_title"] = tmpElem
                             -- if Metadata_info_origin_title then
                             --     mname = mdata["original_title"]
                             -- end
                         elseif xml_v_nfo:name() == "plot" then
+                            -- "剧情简介"标签
                             -- mdesc = tmpElem
-                            mdata["overview"] = tmpElem
+                            mdata["overview"] = string.gsub(string.gsub(tmpElem, "\n\n", "\n"), "\r\n\r\n", "\r\n") -- 去除空行
                         elseif xml_v_nfo:name() == "director" then
+                            -- "导演"标签
                             if mdata["person_staff"] == nil then
                                 mdata["person_staff"] = ''
                             end
+                            -- 处理职员表字符串信息
                             mdata["person_staff"] = mdata["person_staff"] .. 'Director:' .. tmpElem .. ';'
                         elseif xml_v_nfo:name() == "rating" then
+                            -- "评分"标签
                             mdata["vote_average"] = tmpElem
                         elseif xml_v_nfo:name() == "year" then
+                            -- "播映年份"标签
                             if tmpElem ~= nil and tmpElem ~= "" then
+                                -- 无标签内容
                                 myear = tmpElem
                             elseif mdata["release_date"] ~= nil and mdata["release_date"] ~= "" then
+                                -- 读取首映/发行日期的年份
                                 myear = string.sub(mdata["release_date"], 1, 4)
                             end
                             -- elseif xml_v_nfo:name()=="content" then
@@ -827,60 +907,79 @@ function match(path)
                             -- elseif xml_v_nfo:name() == "sorttitle" then
                             --     mdata["sort_title"] = tmpElem
                         elseif xml_v_nfo:name() == "mpaa" then
+                            -- "媒体分级/mpaa"标签
                             mdata["rate_mpaa"] = tmpElem
                         elseif xml_v_nfo:name() == "tmdbid" then
+                            -- "tmdb的ID"标签
                             mdata["media_id"] = string.format("%d", tmpElem)
                             -- if mdata["media_id"] ~= nil then
                             --     mdata[""] = "https://www.themoviedb.org/movie/" .. mdata["media_id"]
                             -- end
                         elseif xml_v_nfo:name() == "imdbid" then
+                            -- "imdb的id"标签
                             mdata["media_imdbid"] = tmpElem
                         elseif xml_v_nfo:name() == "premiered" then -- 首映
+                            -- "首映日期"标签
                             local elemtext_tmp = tmpElem
                             if elemtext_tmp ~= nil and elemtext_tmp ~= "" and mdata["release_date"] == nil then
                                 mdata["release_date"] = string.sub(elemtext_tmp, 1, 10)
                             end
                         elseif xml_v_nfo:name() == "releasedate" then -- 发行
+                            -- "发行日期"标签
                             local elemtext_tmp = tmpElem
                             if elemtext_tmp ~= nil and elemtext_tmp ~= "" and mdata["release_date"] == nil then
                                 mdata["release_date"] = string.sub(elemtext_tmp, 1, 10)
                             end
                         elseif xml_v_nfo:name() == "country" then
+                            -- "国家"标签
                             if mdata["origin_country"] == nil then
                                 mdata["origin_country"] = {}
                             end
                             table.insert(mdata["origin_country"], tmpElem)
                         elseif xml_v_nfo:name() == "genre" then
+                            -- "流派类型-名称"标签
                             if mdata["genre_names"] == nil then
                                 mdata["genre_names"] = {}
                             end
                             table.insert(mdata["genre_names"], tmpElem)
                         elseif xml_v_nfo:name() == "studio" then
+                            -- "出品 公司/工作室"标签
                             if mdata["origin_company"] == nil then
                                 mdata["origin_company"] = {}
                             end
                             table.insert(mdata["origin_company"], tmpElem)
                         elseif xml_v_nfo:name() == "actor" then
+                            -- "演员"标签组
                             if mdata["person_character"] == nil then
+                                -- 初始化table
                                 mdata["person_character"] = {}
                             end
+                            -- 初始化演员信息文本暂存
                             local cname, cactor, clink, cimgurl = nil, nil, nil, nil
+                            -- 读取下一个标签
                             xml_v_nfo:readnext()
                             -- read actors in .nfo
                             while xml_v_nfo:name() ~= "actor" or not (not xml_v_nfo:startelem()) do
+                                -- 循环，直到读取到"演员"的结束标签
                                 if xml_v_nfo:startelem() then
+                                    -- 是开始标签
+                                    -- 读取标签内容文本
                                     tmpElem = xml_v_nfo:elemtext() .. ""
                                     if xml_v_nfo:name() == "role" then
+                                        -- "角色名"标签
                                         cname = tmpElem
                                     elseif xml_v_nfo:name() == "name" then
+                                        -- "演员名"标签
                                         cactor = tmpElem
                                     elseif xml_v_nfo:name() == "tmdbid" then
+                                        -- "tmdb的演员id"标签 -> tmdb演员页链接
                                         clink = "https://www.themoviedb.org/person/" .. tmpElem
                                         -- elseif xml_v_nfo:name()=="content" then
                                         --     cimgurl = tmpElem
                                     end
                                     -- kiko.log('TEST  - Actor tag <'..xml_v_nfo:name()..'>.'..tmpElem)
                                 end
+                                -- 读取下一个标签
                                 xml_v_nfo:readnext()
                             end
                             --[[
@@ -903,6 +1002,7 @@ function match(path)
 								xml_v_nfo:readnext()
 							end
 							]] --
+                            -- 向演员信息<table>插入一个演员的信息
                             table.insert(mdata["person_character"], {
                                 ["name"] = cname, -- 人物名称
                                 ["actor"] = cactor, -- 演员名称
@@ -913,85 +1013,109 @@ function match(path)
                         end
                         -- kiko.log('[INFO]  Reading tag <' .. xml_v_nfo:name() .. '>' .. tmpElem)
                     end
+                    -- 读取下一个标签
                     xml_v_nfo:readnext()
                 end
                 -- xml_v_nfo:clear()
 
+                -- 把电影视为单集电视剧，初始化单集信息，
                 mepcount, ename, eindex, etype = 1, "", 1, 1
 
+                -- 获取电影标题，是否原语言标题
                 if Metadata_info_origin_title then
                     mname = mdata["original_title"]
-                    kiko.log("T " .. mname)
+                    -- kiko.log("T " .. mname)
                 else
                     mname = mdata["media_title"]
-                    kiko.log("F " .. mname)
+                    -- kiko.log("F " .. mname)
                 end
-                kiko.log("OOO " .. mname .. "\t" .. tostring(Metadata_info_origin_title))
+                -- kiko.log("OOO " .. mname .. "\t" .. tostring(Metadata_info_origin_title))
+                -- 单集标题
                 ename = mdata["media_title"]
+
+                -- 把媒体信息<table>转为json的字符串
                 local err, movie_data_json = kiko.table2json(table.deepCopy(mdata))
                 if err ~= nil then
+                    -- 转换错误
                     kiko.log(string.format("[ERROR] table2json: %s", err))
                 end
+                -- 媒体信息表
                 mediainfo = {
-                    ["name"] = mname, -- 动画名称
-                    ["data"] = movie_data_json, -- 脚本可以自行存放一些数据
-                    -- ["url"] = murl, -- 条目页面URL
-                    -- ["desc"] = mdesc, -- 描述
-                    -- ["airdate"] = mairdate, -- 放送日期，格式为yyyy-mm-dd
+                    ["name"] = mname, -- 电影标题
+                    ["data"] = movie_data_json, -- 脚本可以自行存放一些数据，table转为json的字符串
+                    -- ["url"] = murl, -- 条目页面再tmdb的URL
+                    -- ["desc"] = mdesc, -- 剧集剧情描述
+                    -- ["airdate"] = mairdate, -- 发行日期，格式为yyyy-mm-dd
                     ["epcount"] = mepcount -- 分集数
                     -- ["coverurl"]=mcoverurl,      --封面图URL
-                    -- ["staff"] = mstaff, -- staff
-                    -- ["crt"] = mcrt -- 人物
+                    -- ["staff"] = mstaff, -- 职员表，格式的字符串
+                    -- ["crt"] = mcrt -- 人物/演员表 <table>
                 }
+                -- 从 媒体信息的发行日期/年份 获取年份字符串，加到电影名后，以防重名导致kiko数据库错误。形如 "电影名 (2010)"
                 -- get "Movie Name (YEAR)"
                 if mdata["release_date"] ~= nil and mdata["release_date"] ~= "" then
                     mediainfo["name"] = mname .. string.format(' (%s)', string.sub(mdata["release_date"], 1, 4))
                 elseif myear ~= nil and myear ~= "" then
                     mediainfo["name"] = mname .. string.format(' (%s)', myear)
                 end
+                -- 单集信息表
                 epinfo = {
                     ["name"] = ename, -- 分集名称
                     ["index"] = eindex, -- 分集编号（索引）
                     ["type"] = etype -- 分集类型
                 }
+                -- 跳出标签读取循环
                 break
 
                 -- tv_show
             elseif xml_v_nfo:name() == "episodedetails" then
-                mdata["media_type"] = "tv"
+                -- 是剧集
+                mdata["media_type"] = "tv" -- 媒体类型
                 kiko.log('[INFO]  \t Reading tv episode nfo')
-                xml_v_nfo:startelem()
+
+                -- xml_v_nfo:startelem()
+                -- 读取下一个标签
                 xml_v_nfo:readnext()
                 -- read metadata
                 while not xml_v_nfo:atend() do
+                    -- 循环，直到读取到末尾
                     if xml_v_nfo:startelem() then
-
+                        -- 如果是开始标签，就获取信息
                         if xml_v_nfo:name() ~= "actor" then
+                            -- 如果不是"演员"标签，读取标签内容
                             tmpElem = xml_v_nfo:elemtext() .. ""
                         else
+                            -- 如果是"演员"标签，之后循环单独读取演员标签组内容到<table>
                             tmpElem = ""
                         end
                         -- kiko.log("GE "..xml_v_nfo:name().."\t"..tmpElem)
                         if xml_v_nfo:name() == "title" then
+                            -- "单集标题"标签
                             ename = tmpElem
                         elseif xml_v_nfo:name() == "episode" then
+                            -- "本集序数"标签
                             eindex = tonumber(tmpElem)
                         elseif xml_v_nfo:name() == "season" then
+                            -- "本季序数"标签
                             if (tmpElem ~= nil and tmpElem ~= '') then
-                                mdata["season_number"] = tonumber(tmpElem)
+                                mdata["season_number"] = tonumber(tmpElem) -- 本季序数转为数字
                                 -- S00 == Specials
                                 -- 分集类型: EP, SP, OP, ED, Trailer, MAD, Other 分别用1-7表示，默认为1（即EP，本篇）
                                 if mdata["season_number"] == 0 then
+                                    -- 0季/特别篇/SP
                                     etype = 2
                                 else
+                                    -- 普通集/本篇/EP
                                     etype = 1
                                 end
                             end
 
                         elseif xml_v_nfo:name() == "director" then
+                            -- "导演"标签
                             if mdata["person_staff"] == nil then
                                 mdata["person_staff"] = ''
                             end
+                            -- 处理职员表字符串信息
                             mdata["person_staff"] = mdata["person_staff"] .. 'Director:' .. tmpElem .. ';'
                         elseif xml_v_nfo:name() == "actor" then
                             -- xml_v_nfo:readnext()
@@ -1000,29 +1124,40 @@ function match(path)
                             --     -- kiko.log('TEST  - Actor tag <'..xml_v_nfo:name()..'>'..tmpElem)
                             --     xml_v_nfo:readnext()
 
+                            -- "演员"标签组
                             if mdata["person_character"] == nil then
                                 mdata["person_character"] = {}
                             end
                             -- kiko.log("TEST  - Actor tag"..tmpElem)
+                            -- 初始化演员信息文本暂存
                             local cname, cactor, clink, cimgurl = nil, nil, nil, nil
+                            -- 读取下一个标签
                             xml_v_nfo:readnext()
                             -- read actors in .nfo
                             while xml_v_nfo:name() ~= "actor" or not (not xml_v_nfo:startelem()) do
+                                -- 循环，直到读取到"演员"的结束标签
                                 if xml_v_nfo:startelem() then
+                                    -- 是开始标签
+                                    -- 读取标签内容文本
                                     tmpElem = xml_v_nfo:elemtext() .. ""
                                     if xml_v_nfo:name() == "role" then
+                                        -- "角色名"标签
                                         cname = tmpElem
                                     elseif xml_v_nfo:name() == "name" then
+                                        -- "演员名"标签
                                         cactor = tmpElem
                                     elseif xml_v_nfo:name() == "tmdbId" then
+                                        -- "tmdb的演员id"标签 -> tmdb演员页链接
                                         clink = "https://www.themoviedb.org/person/" .. tmpElem
                                         -- elseif xml_v_nfo:name()=="content" then
                                         --     cimgurl = tmpElem
                                     end
                                     -- kiko.log('TEST  - Actor tag <'..xml_v_nfo:name()..'>.'..tmpElem)
                                 end
+                                -- 读取下一个标签
                                 xml_v_nfo:readnext()
                             end
+                            -- 向演员信息<table>插入一个演员的信息
                             table.insert(mdata["person_character"], {
                                 ["name"] = cname, -- 人物名称
                                 ["actor"] = cactor, -- 演员名称
@@ -1033,14 +1168,17 @@ function match(path)
                         end
                         -- kiko.log('[INFO]  Reading tag <' .. xml_v_nfo:name() .. '>' .. tmpElem)
                     end
+                    -- 读取下一个标签
                     xml_v_nfo:readnext()
                 end
                 -- xml_v_nfo:clear()
 
                 kiko.log('[INFO]  \t Reading tv season nfo')
-                local xml_ts_path = path_folder_l .. 'season.nfo'
-                local xml_ts_nfo = readxmlfile(xml_ts_path)
+                -- 读取单季信息.nfo文件 (.xml文本)
+                local xml_ts_path = path_folder_l .. 'season.nfo' -- 单季信息.nfo文件路径
+                local xml_ts_nfo = readxmlfile(xml_ts_path) -- 读取.xml格式文本
                 if xml_ts_nfo == nil then
+                    -- 文件读取失败
                     error("Fail to read xml content from <" .. xml_file_path .. ' >.')
                     -- kiko.log("[Error]\tFail to read xml content from <".. xml_file_path .. ' >.')
                     return {
@@ -1053,17 +1191,24 @@ function match(path)
                 -- read metadata
                 xml_ts_nfo:readnext()
                 while not xml_ts_nfo:atend() do
+                    -- 循环，直到读取到末尾
                     if xml_ts_nfo:startelem() then
+                        -- 如果是开始标签，就获取信息
                         if xml_ts_nfo:name() ~= "actor" then
+                            -- 如果不是"演员"标签，读取标签内容
                             tmpElem = xml_ts_nfo:elemtext() .. ""
                         else
+                            -- 如果是"演员"标签，之后循环单独读取演员标签组内容到<table>
                             tmpElem = ""
                         end
                         if xml_ts_nfo:name() == "title" then
+                            -- "标题"标签
                             tstitle = tmpElem
                         elseif xml_ts_nfo:name() == "plot" then
-                            mdata["overview"] = string.gsub(string.gsub(tmpElem, "\n\n", "\n"), "\r\n\r\n", "\r\n")
+                            -- "剧情简介"标签
+                            mdata["overview"] = string.gsub(string.gsub(tmpElem, "\n\n", "\n"), "\r\n\r\n", "\r\n") -- 去除空行
                         elseif xml_ts_nfo:name() == "premiered" then
+                            -- "首播日期"标签
                             local elemtext_tmp = tmpElem
                             if elemtext_tmp ~= nil then
                                 mdata["release_date"] = string.sub(elemtext_tmp, 1, 10)
@@ -1073,20 +1218,25 @@ function match(path)
                                 myear = string.sub(mdata["release_date"], 1, 4)
                             end
                         elseif xml_ts_nfo:name() == "releasedate" then
+                            -- "发行日期"标签
                             local elemtext_tmp = tmpElem
                             if (mdata["release_date"] == nil or mdata["release_date"] == "") and elemtext_tmp ~= nil then
                                 mdata["release_date"] = string.sub(elemtext_tmp, 1, 10)
                             end
+                            -- 获取年份
                             if (myear == nil or myear == "") and mdata["release_date"] ~= nil and mdata["release_date"] ~=
                                 "" then
                                 myear = string.sub(mdata["release_date"], 1, 4)
                             end
                         elseif xml_ts_nfo:name() == "seasonnumber" then
+                            -- "本季序数"标签
                             if (mdata["season_number"] == nil and tmpElem ~= nil and tmpElem ~= '') then
                                 mdata["season_number"] = tonumber(tmpElem)
                                 if mdata["season_number"] == 0 then
+                                    -- 0季/特别篇/SP
                                     etype = 2
                                 else
+                                    -- 普通集/本篇/EP
                                     etype = 1
                                 end
                             end
@@ -1094,26 +1244,35 @@ function match(path)
                             -- mepcount = tmpElem
 
                         elseif xml_ts_nfo:name() == "actor" then
+                            -- "演员"标签组
                             if mdata["person_character"] == nil then
                                 mdata["person_character"] = {}
                             end
+                            -- 初始化演员信息文本暂存
                             local cname, cactor, clink, cimgurl = nil, nil, nil, nil
                             xml_ts_nfo:readnext()
                             -- read actors in .nfo
                             while xml_ts_nfo:name() ~= "actor" or not (not xml_ts_nfo:startelem()) do
+                                -- 循环，直到读取到"演员"的结束标签
                                 if xml_ts_nfo:startelem() then
+                                    -- 是开始标签
+                                    -- 读取标签内容文本
                                     tmpElem = xml_ts_nfo:elemtext() .. ""
                                     if xml_ts_nfo:name() == "role" then
+                                        -- "角色名"标签
                                         cname = tmpElem
                                     elseif xml_ts_nfo:name() == "name" then
+                                        -- "演员名"标签
                                         cactor = tmpElem
                                     elseif xml_ts_nfo:name() == "tmdbId" then
+                                        -- "tmdb的演员id"标签 -> tmdb演员页链接
                                         clink = "https://www.themoviedb.org/person/" .. tmpElem
                                         -- elseif xml_ts_nfo:name()=="content" then
                                         --     cimgurl = tmpElem
                                     end
                                     -- kiko.log('TEST  - Actor tag <'..xml_ts_nfo:name()..'>.'..tmpElem)
                                 end
+                                -- 读取下一个标签
                                 xml_ts_nfo:readnext()
                             end
                             -- TODO: 不确定这里是否需要去重
@@ -1127,14 +1286,16 @@ function match(path)
                         end
                         -- kiko.log('[INFO]  Reading tag <' .. xml_ts_nfo:name() .. '>' .. tmpElem)
                     end
+                    -- 读取下一个标签
                     xml_ts_nfo:readnext()
                 end
                 xml_ts_nfo:clear()
 
                 kiko.log('[INFO]  \t Reading tv nfo')
-                local xml_tv_path = path_folder_lf .. 'tvshow.nfo'
-                local xml_tv_nfo = readxmlfile(xml_tv_path)
+                local xml_tv_path = path_folder_lf .. 'tvshow.nfo' -- 单季信息.nfo文件路径
+                local xml_tv_nfo = readxmlfile(xml_tv_path) -- 读取.xml格式文本
                 if xml_tv_nfo == nil then
+                    -- 文件读取失败
                     error("Fail to read xml content from <" .. xml_file_path .. ' >.')
                     -- kiko.log("[Error]\tFail to read xml content from <".. xml_file_path .. ' >.')
                     return {
@@ -1147,27 +1308,34 @@ function match(path)
                 -- read metadata
                 xml_tv_nfo:readnext()
                 while not xml_tv_nfo:atend() do
+                    -- 循环，直到读取到末尾
                     if xml_tv_nfo:startelem() then
+                        -- 如果是开始标签，就获取信息
                         if xml_tv_nfo:name() ~= "actor" then
+                            -- 如果不是"演员"标签，读取标签内容
                             tmpElem = xml_tv_nfo:elemtext() .. ""
                         else
+                            -- 如果是"演员"标签，之后循环单独读取演员标签组内容到<table>
                             tmpElem = ""
                         end
                         if xml_tv_nfo:name() == "title" then
+                            -- "标题"标签
                             mdata["media_title"] = tmpElem
                             -- if not (Metadata_info_origin_title) then
                             --     mname = mdata["media_title"]
                             -- end
                         elseif xml_tv_nfo:name() == "originaltitle" then
+                            -- "原语言标题"标签
                             mdata["original_title"] = tmpElem
                             -- if Metadata_info_origin_title then
                             --     mname = mdata["original_title"]
                             -- end
                         elseif xml_tv_nfo:name() == "plot" then
+                            -- "剧情简介"标签
                             -- mdesc = tmpElem
                             if mdata["overview"] ~= nil then
                                 mdata["overview"] = string.gsub(string.gsub(mdata["overview"], "\n\n", "\n"),
-                                    "\r\n\r\n", "\r\n") .. "\r\n"
+                                    "\r\n\r\n", "\r\n") .. "\r\n" -- 去除空行
                             else
                                 mdata["overview"] = ""
                             end
@@ -1176,51 +1344,64 @@ function match(path)
                             -- elseif xml_tv_nfo:name()=="content" then
                             -- mcoverurl = tmpElem
                         elseif xml_tv_nfo:name() == "rating" then
+                            -- "评分"标签
                             mdata["vote_average"] = tmpElem
                             -- elseif xml_tv_nfo:name() == "sorttitle" then
                             --     mdata["sort_title"] = tmpElem
                         elseif xml_tv_nfo:name() == "mpaa" then
+                            -- "媒体分级/mpaa"标签
                             mdata["rate_mpaa"] = tmpElem
                         elseif xml_tv_nfo:name() == "tmdbid" then
+                            -- "tmdb的ID"标签
                             mdata["media_id"] = string.format("%d", tonumber(tmpElem))
                             -- if mdata["media_id"] ~= nil then
                             --     mdata[""] = "https://www.themoviedb.org/movie/" .. mdata["media_id"]
                             -- end
                         elseif xml_tv_nfo:name() == "imdbid" then
+                            -- "imdb的id"标签
                             mdata["media_imdbid"] = tmpElem
                         elseif xml_tv_nfo:name() == "country" then
+                            -- "国家"标签
                             if mdata["origin_country"] == nil then
                                 mdata["origin_country"] = {}
                             end
                             table.insert(mdata["origin_country"], tmpElem)
                         elseif xml_tv_nfo:name() == "genre" then
+                            -- "流派类型-名称"标签
                             if mdata["genre_names"] == nil then
                                 mdata["genre_names"] = {}
                             end
                             table.insert(mdata["genre_names"], tmpElem)
                         elseif xml_tv_nfo:name() == "studio" then
+                            -- "出品 公司/工作室"标签
                             if mdata["origin_company"] == nil then
                                 mdata["origin_company"] = {}
                             end
                             table.insert(mdata["origin_company"], tmpElem)
                         elseif xml_tv_nfo:name() == "director" then
+                            -- "导演"标签
                             if mdata["person_staff"] == nil then
                                 mdata["person_staff"] = ''
                             end
                             mdata["person_staff"] = mdata["person_staff"] .. "Director:" .. tmpElem .. ';' -- Director-zh
                         elseif xml_tv_nfo:name() == "actor" then
+                            -- "演员"标签组
                             if mdata["person_character"] == nil then
+                                -- 初始化table
                                 mdata["person_character"] = {}
                             end
                             local cname, cactor, clink, cimgurl = nil, nil, nil, nil
                             -- read actors of tv
                             xml_tv_nfo:readnext()
                             while xml_tv_nfo:name() ~= "actor" or not (not xml_tv_nfo:startelem()) do
+                                -- 循环，直到读取到"演员"的结束标签
                                 if xml_tv_nfo:startelem() then
                                     tmpElem = xml_tv_nfo:elemtext() .. ""
                                     if xml_tv_nfo:name() == "role" then
+                                        -- "角色名"标签
                                         cname = tmpElem
                                     elseif xml_tv_nfo:name() == "name" then
+                                        -- "演员名"标签
                                         cactor = tmpElem
                                         -- elseif xml_tv_nfo:name()=="content" then
                                         -- clink = tmpElem
@@ -1244,17 +1425,22 @@ function match(path)
                 end
                 xml_tv_nfo:clear()
 
+                -- 添加本地海报/背景图片
+                --- TODO: 此处功能不知为什么无效
                 local file_exist_test, file_exist_test_err, path_file_image_tmp
                 if mdata["season_number"] ~= nil then
                     if mdata["season_number"] ~= "0" then
+                        -- 普通季
                         path_file_image_tmp = path_folder_lf .. "season" ..
                                                   string.format('S%02d', mdata["season_number"]) .. "-poster.jpg" -- season08-poster.jpg
                     else
+                        -- 特别篇
                         path_file_image_tmp = path_folder_lf .. "season" ..
                                                   string.format('-specials', mdata["season_number"]) .. "-poster.jpg" -- season-specials-poster.jpg
                     end
                     file_exist_test, file_exist_test_err = io.open(path_file_image_tmp)
                     if file_exist_test ~= nil then
+                        -- 文件存在
                         mdata["poster_path"] = path_file_image_tmp
                     else
                         mdata["poster_path"] = path_folder_lf .. "poster.jpg"
@@ -1262,6 +1448,7 @@ function match(path)
                     mdata["backdrop_path"] = path_folder_lf .. "fanart.jpg"
                 end
 
+                -- 把媒体信息<table>转为json的字符串
                 local err, ts_data_json = kiko.table2json(table.deepCopy(mdata))
                 if err ~= nil then
                     kiko.log(string.format("[ERROR] table2json: %s", err))
@@ -1270,8 +1457,10 @@ function match(path)
                 if mdata["season_number"] ~= nil then
                     -- TODO: 处理 tstitle 里的特殊 季标题
                     if not (Metadata_info_origin_title) then
+                        -- 目标语言标题
                         mname = mdata["media_title"] .. ' 第' .. mdata["season_number"] .. "季"
                     else
+                        -- 原语言标题
                         mname = mdata["original_title"] .. string.format(' S%02d', mdata["season_number"])
                     end
                     -- mediainfo["data"] = mdata .. '/season/' .. mdata["season_number"]
@@ -1283,6 +1472,7 @@ function match(path)
                         mname = mdata["original_title"]
                     end
                 end
+                -- 媒体信息表
                 mediainfo = {
                     ["name"] = mname, -- 动画名称
                     ["data"] = ts_data_json -- 脚本可以自行存放一些数据
@@ -1294,6 +1484,7 @@ function match(path)
                     -- ["staff"] = mstaff, -- staff
                     -- ["crt"] = mcrt -- 人物
                 }
+                -- 从 媒体信息的发行日期/年份 获取年份字符串，加到剧集名称+季序数后，以防重名导致kiko数据库错误。形如 "剧集名 第2季 (2010)"
                 if mdata["release_date"] ~= nil and mdata["release_date"] ~= "" then
                     mediainfo["name"] = mediainfo["name"] ..
                                             string.format(' (%s)', string.sub(mdata["release_date"], 1, 4))
@@ -1324,6 +1515,7 @@ function match(path)
     -- kiko.log('|', ename, '*', tostring(eindex), '*', tostring(etype))
     -- kiko.log('|', tostring(eseason), '*', tstitle, '|')
 
+    -- 返回 MatchResult格式
     return {
         ["success"] = true,
         ["anime"] = mediainfo,
@@ -1346,15 +1538,15 @@ function menuclick(menuid, anime)
     -- menuid： string，点击的菜单ID
     -- anime： Anime， 条目信息
     -- 返回：无
-    local NM_HIDE = 1
-    local NM_PROCESS = 2
-    local NM_SHOWCANCEL = 4
-    local NM_ERROR = 8
-    local NM_DARKNESS_BACK = 16
+    local NM_HIDE = 1 -- 一段时间后自动隐藏
+    local NM_PROCESS = 2 -- 显示busy动画
+    local NM_SHOWCANCEL = 4 -- 显示cancel按钮
+    local NM_ERROR = 8 -- 错误信息
+    local NM_DARKNESS_BACK = 16 -- 显示暗背景，阻止用户执行其他操作
     kiko.log("Menu Click: ", menuid)
 
     if menuid == "open_tmdb_webpage" then
-        -- 打开对应TMDb页面
+        -- 打开对应TMDb网页链接
         kiko.message("Menu Action: Open TMDb Webpage", NM_HIDE)
         kiko.execute(true, "cmd", {"/c", "start", anime["url"]})
     end
@@ -1363,6 +1555,8 @@ end
 -- 对修改设置项`settings`响应。KikoPlay当 设置中修改了脚本设置项 时，会尝试调用`setoption`函数通知脚本。
 -- key为设置项的key，val为修改后的value
 function setoption(key, val)
+
+    -- 显示设置更改信息
     kiko.log(string.format("[INFO]  Settings changed: %s = %s", key, val))
 end
 
@@ -1375,8 +1569,10 @@ end
 --- TODO: 在此可能用于媒体的标题名中的特殊符号，但是不知道需不需要、用不用得上。
 function unescape(str)
     if type(str) ~= "string" then
+        -- 非字符串
         return str
     end
+    -- 替换符号
     str = string.gsub(str, '&lt;', '<')
     str = string.gsub(str, '&gt;', '>')
     str = string.gsub(str, '&quot;', '"')
@@ -1435,21 +1631,24 @@ function readxmlfile(path_xml)
     -- error("readxmlfile - Fail to get valid path of file < ".. path_xml .. ' >.')
     -- return nil;
     -- end
-    local file_nfo = io.open(path_xml, 'r')
+    local file_nfo = io.open(path_xml, 'r') -- 以只读方式 打开.xml文文本文件
     if file_nfo == nil then
+        -- 文件打开错误
         error("readxmlfile - Fail to open file < " .. path_xml .. ' >.')
         return nil;
     end
-    local xml_file_nfo = file_nfo:read("*a")
+    local xml_file_nfo = file_nfo:read("*a") -- 读文件，从当前位置读取整个文件
     if xml_file_nfo == nil then
+        -- 读文件失败
         error("readxmlfile - Fail to read file < " .. path_xml .. ' | ' .. file_nfo .. ' >.')
         return nil;
     end
-    file_nfo:close()
-    local kxml_file_nfo = kiko.xmlreader(xml_file_nfo)
-    xml_file_nfo = nil
+    file_nfo:close() -- 关闭文件
+    local kxml_file_nfo = kiko.xmlreader(xml_file_nfo) -- 用kiko读.xml格式文本
+    xml_file_nfo = nil -- 获取错误信息
     local err = kxml_file_nfo:error()
     if err ~= nil then
+        -- 读.xml文本失败
         error("readxmlfile - Fail to read xml content < " .. path_xml .. ' | ' .. file_nfo .. ' >. ' .. err)
         return nil;
     end
@@ -1457,13 +1656,16 @@ function readxmlfile(path_xml)
 end
 
 -- string.find reverse
--- 反向查找字符串
+-- 反向查找字符串首次出现
 -- string:str  string:substr  number|int:ix -> number|int:字串首位索引
 function stringfindre(str, substr, ix)
     if ix < 0 then
+        -- ix<0 即从后向前，换算为自前向后的序数
         ix = #str + ix + 1
     end
+    -- 反转母串、子串查找，以实现
     local dstl, dstr = string.find(string.reverse(str), string.reverse(substr), #str - ix + 1, true)
+    -- 返回子串出现在母串的左、右的序数
     return #str - dstl + 1, #str - dstr + 1
 end
 
@@ -1610,7 +1812,7 @@ function tableToStringLines(table0, tabs)
             str = str .. "[ " .. k .. " ] : \t" .. "[ \n" .. tableToStringLines(v, tabs) .. " ]\n"
         end
     end
-    return str.."\n} "
+    return str .. "\n} "
 end
 
 -- 深拷贝<table>，包含元表(?)，不考虑键key为<table>的情形
