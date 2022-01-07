@@ -848,6 +848,7 @@ function match(path)
             -- movie
             if xml_v_nfo:name() == "movie" then
                 -- 是电影
+                kiko.log('[INFO]  \t Reading movie nfo')
                 mdata["media_type"] = "movie" -- 媒体类型
                 mdata["poster_path"] = "file:///" .. path_folder_l .. "poster.jpg" -- Emby存储的电影 海报路径
                 mdata["backdrop_path"] = "file:///" .. path_folder_l .. "fanart.jpg" -- Emby存储的电影 背景路径
@@ -1503,10 +1504,10 @@ function match(path)
     kiko.log("[INFO]  TMDb matching succeeded.")
 
     mediainfo["scriptId"] = "Kikyou.l.TMDb"
-    kiko.log("[INFO]  <mediainfo>")
-    kiko.log(tableToStringLines(mediainfo))
-    kiko.log("[INFO]  <epinfo>")
-    kiko.log(tableToStringLines(epinfo))
+    -- kiko.log("[INFO]  <mediainfo>")
+    -- kiko.log(tableToStringLines(mediainfo))
+    -- kiko.log("[INFO]  <epinfo>")
+    -- kiko.log(tableToStringLines(epinfo))
     -- kiko.log("TEST  - others")
     -- kiko.log("| mname, mdata, murl, mairdate, myear | ename, eindex, etype, | mdata["season_number"], tstitle |")
     -- kiko.log("| mname, mdata, myear | ename, eindex, etype, | eseason, tstitle |")
