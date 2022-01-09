@@ -232,6 +232,8 @@
 + 分支 `library-tmdb-pr`： *fork 自* [KikoPlay脚本仓库](https://github.com/KikoPlayProject/KikoPlayScript) ，并用于 pull request。
 + 分支 `library-tmdb-beta`： 用于展示 KikoPlay脚本TMDb 的最新进展、使用方法等。
 
+[更新日志](CHANGELOG.md)
+
 ## TODO：
 
 + [ ]  关联刮削数据（以本地文件路径、依赖TMDb的API）；
