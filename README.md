@@ -225,6 +225,11 @@
    ![image-Scraping.by.TMDb-6.1](tmdb.lua-manual.assets/image-Scraping.by.TMDb-6.1.1.png)
    ![image-Scraping.by.TMDb-6.2](tmdb.lua-manual.assets/image-Scraping.by.TMDb-6.2.1.png) ![image-Scraping.by.TMDb-6.3](tmdb.lua-manual.assets/image-Scraping.by.TMDb-6.3.1.png)
 
+7. 另外，你可以快捷地打开媒体的TMDb的网页。
+   在资料标签页，从资料库找到你要打开链接的媒体资料夹，右键->打开TMDb页面，就会从你的浏览器弹出媒体对应的TMDb页面。
+
+   ![image-Scraping.by.TMDb-7.1](tmdb.lua-manual.assets/image-Scraping.by.TMDb-7.1.1.png)
+
 ### 其他
 
 两个分支 \(branches\)
@@ -232,12 +237,21 @@
 + 分支 `library-tmdb-pr`： *fork 自* [KikoPlay脚本仓库](https://github.com/KikoPlayProject/KikoPlayScript) ，并用于 pull request。
 + 分支 `library-tmdb-beta`： 用于展示 KikoPlay脚本TMDb 的最新进展、使用方法等。
 
-[更新日志](CHANGELOG.md)
+<br/>
+
+查看 脚本TMDb 的 [更新日志](CHANGELOG.md)
+
+<br/>
 
 ## TODO：
 
-+ [ ]  关联刮削数据（以本地文件路径、依赖TMDb的API）；
++ [ ]  关联刮削数据（以本地文件路径/文件名、依赖TMDb的API）；
+
 + [ ]  刮削电影/剧集的参演演员信息；
+   
+   ~~\* 偶然发现 TMDb里剧集的默认演员表是全季共用的，且更贴合最后一季，而非全剧主要角色；职员表主要为导演/单集导演，少见其他职员。~~
+
++ [ ]  资料库右键菜单添加 显示媒体元数据 的功能；
 
 + [ ]  ...
 

@@ -51,6 +51,7 @@ Metadata_info_origin_title = true -- 是否使用源语言标题，在运行函�
 
 -- 说明
 -- 三目运算符 ((condition) and {trueCDo} or {falseCDo})[1] === (condition)?(trueCDo):(falseCDo)
+-- (()and{}or{})[1]
 
 -- (\{)(\[)("id"\]=)([0-9]{1,}?)(,\["name")(\]="[\S ^"]{1,}")(\})(,)
 -- \2\4\6
