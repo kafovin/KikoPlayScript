@@ -5,8 +5,9 @@
 info = {
     ["name"] = "TMDb",
     ["id"] = "Kikyou.l.TMDb",
-    ["desc"] = "The Movie Database 脚本，从 (api.)themoviedb.org 中获取匹配的影视元数据 Edited by: kafovin",
-    ["version"] = "0.1" -- 0.1.2.220220_build
+    ["desc"] = "The Movie Database (TMDb) 脚本 （测试中，不稳定） Edited by: kafovin \n"..
+                "从 themoviedb.org 刮削影剧元数据，也可设置选择刮削Emby的本地元数据。",
+["version"] = "0.1" -- 0.1.2.220223_alpha
 }
 
 -- 设置项
@@ -91,7 +92,7 @@ Media_genre = {
 Image_tmdb = {
     ["prefix"]= "https://image.tmdb.org/t/p/", -- 网址前缀
     ["min_ix"]= 1, -- 尺寸索引
-    ["mid_ix"]= 4,
+    ["mid_ix"]= 5,
     ["max_ix"]= 7,
     ["backdrop"]= {"w300","w300","w780","w780","w1280","w1280","original"}, -- 影/剧剧照
     ["logo"]= {"w45","w92","w154","w185","w300","w500","original"}, -- /company/id - /network/id - 出品公司/电视网标志
@@ -142,9 +143,18 @@ Anime_data = {
 -- keyword： string，搜索关键字
 -- 返回：Array[AnimeLite]
 function search(keyword)
+    local settings_search_type=""
+    if(settings["search_type"] ~= "movie" and settings["search_type"] ~= "tv") then
+        settings_search_type="multi"
+    else settings_search_type=settings["search_type"]
+    end
+
+    return searchMediaInfo(keyword,settings_search_type)
+end
+function searchMediaInfo(keyword, settings_search_type)
     -- 需要注意的是，除了下面定义的AnimeLite结构，还可以增加一项eps，类型为Array[EpInfo]，包含动画的剧集列表。
     -- httpget( query, header ) -> json:reply
-    kiko.log("[INFO]  Searching <" .. keyword .. ">")
+    kiko.log("[INFO]  Searching <" .. keyword .. "> in " .. settings_search_type)
     -- 获取 是否 元数据使用原语言标题
     local miotTmp = settings['metadata_info_origin_title']
     if (miotTmp == '0') then
@@ -163,33 +173,32 @@ function search(keyword)
     local header = {["Accept"] = "application/json"}
     if settings["api_key"] == "<<API_Key_Here>>" then
         kiko.log("Wrong api_key! 请在脚本设置中填写正确的API密钥。")
-        kiko.message("<api_key> 错误! 请在脚本设置中填写正确的API密钥。",1|8)
         kiko.execute(true, "cmd", {"/c", "start", "https://www.themoviedb.org/settings/api"})
         error("Wrong api_key! 请在脚本设置中填写正确的API密钥。")
     end
     -- 获取 http get 请求 - 查询特定媒体类型 特定关键字 媒体信息的 搜索结果列表
-    --TODO kiko.dialog - movie/multi/tv?
-    local settings_search_type=""
-    if(settings["search_type"] ~= "movie" and settings["search_type"] ~= "tv") then
+    if(settings_search_type ~= "movie" and settings_search_type ~= "tv") then
         settings_search_type="multi"
-    else settings_search_type=settings["search_type"]
     end
     local err, reply = kiko.httpget(string.format("http://api.themoviedb.org/3/search/" .. settings_search_type),
         query, header)
     if err ~= nil then
-        kiko.log("[ERROR] httpget: ".. err)
+        kiko.log("[ERROR] TMDb.API.reply-search."..settings_search_type..".httpget: ".. err)
+        if tostring(err) == ("Host requires authentication") then
+            kiko.execute(true, "cmd", {"/c", "start", "https://www.themoviedb.org/settings/api"})
+        end
         error(err)
     end
-    if reply["success"]=="false" or reply["success"]==false then
+    --[[if reply["success"]=="false" or reply["success"]==false then
         err = reply["status_message"]
         kiko.log("[ERROR] TMDb.API.reply-search."..settings_search_type..": ".. err)
         error(err)
-    end
+    end    ]]--
     -- json:reply -> Table:obj 获取的结果
     local content = reply["content"]
     local err, obj = kiko.json2table(content)
     if err ~= nil then
-        kiko.log("[ERROR] json2table: ".. err)
+        kiko.log("[ERROR] TMDb.API.reply-search."..settings_search_type..".json2table: ".. err)
         error(err)
     end
     -- Table:obj["results"] 搜索结果<table> -> Array:mediai
@@ -318,7 +327,8 @@ function search(keyword)
                 --     (data["original_language"] or "") .. "-" .. arrayToString(data["origin_country"]) ..
                 --     "\r\n" .. (data["overview"] or "")
                 -- ["eps"]=epList
-                ["scriptId"] = "Kikyou.l.TMDb"
+                ["scriptId"] = "Kikyou.l.TMDb",
+                ["media_type"] = data["media_type"],
             })
         elseif data["media_type"] == "tv" then
             -- tv - 此条搜索结果是剧集
@@ -329,7 +339,6 @@ function search(keyword)
             }
             if settings["api_key"] == "<<API_Key_Here>>" then
                 kiko.log("Wrong api_key! 请在脚本设置中填写正确的API密钥。")
-                kiko.message("<api_key> 错误! 请在脚本设置中填写正确的API密钥。",1|8)
                 kiko.execute(true, "cmd", {"/c", "start", "https://www.themoviedb.org/settings/api"})
                 error("Wrong api_key! 请在脚本设置中填写正确的API密钥。")
             end
@@ -338,19 +347,17 @@ function search(keyword)
                 "http://api.themoviedb.org/3/" .. data["media_type"] .. "/" .. data["media_id"]), queryTv, header)
 
             if err ~= nil then
-                kiko.log("[ERROR] httpget: " .. err)
-                error(err)
-            end
-            if reply["success"]=="false" or reply["success"]==false then
-                err = reply["status_message"]
-                kiko.log("[ERROR] TMDb.API.reply-"..data["media_type"] .. ".id"..": ".. err)
+                kiko.log("[ERROR] TMDb.API.reply-search."..data["media_type"] .. ".id.httpget: " .. err)
+                if tostring(err) == ("Host requires authentication") then
+                    kiko.execute(true, "cmd", {"/c", "start", "https://www.themoviedb.org/settings/api"})
+                end
                 error(err)
             end
             -- json:reply -> Table:obj
             local contentTv = replyTv["content"]
             local err, objTv = kiko.json2table(contentTv)
             if err ~= nil then
-                kiko.log("[ERROR] json2table: " .. err)
+                kiko.log("[ERROR] TMDb.API.reply-search."..data["media_type"] .. ".id.json2table: " .. err)
                 error(err)
             end
 
@@ -448,7 +455,9 @@ function search(keyword)
                     --     (data["original_language"] or "") .. "-" .. tableToString(data["origin_country"]) ..
                     --     "\r\n" .. (data["overview"] or "")
                     -- ["eps"]=epList
-                    ["scriptId"] = "Kikyou.l.TMDb"
+                    ["scriptId"] = "Kikyou.l.TMDb",
+                    ["media_type"] = data["media_type"],
+                    ["season_number"] = data["season_number"],
                 })
             end
         end
@@ -465,16 +474,6 @@ end
 -- 返回： Array[EpInfo]
 function getep(anime)
     --分集类型包括 EP, SP, OP, ED, Trailer, MAD, Other 七种，分别用1-7表示， 默认情况下为1（即EP，本篇）
-    -- local tmdbId = anime["data"]
-    -- local header = {
-    --     ["Accept"]="application/json"
-    -- }
-    -- local err, reply = kiko.httpget(string.format("https://api.bgm.tv/subject/%s/ep", bgmId), {}, header)
-    -- if err ~= nil then error(err) end
-    -- local content = reply["content"]
-    -- local err, obj = kiko.json2table(content)
-    -- if err ~= nil then error(err) end
-    -- --
 
     kiko.log("[INFO]  Getting episodes of <" .. anime["name"] .. ">")
     -- 获取 是否 元数据使用原语言标题
@@ -520,7 +519,6 @@ function getep(anime)
         local header = {["Accept"] = "application/json"}
         if settings["api_key"] == "<<API_Key_Here>>" then
             kiko.log("Wrong api_key! 请在脚本设置中填写正确的API密钥。")
-            kiko.message("<api_key> 错误! 请在脚本设置中填写正确的API密钥。",1|8)
             kiko.execute(true, "cmd", {"/c", "start", "https://www.themoviedb.org/settings/api"})
             error("Wrong api_key! 请在脚本设置中填写正确的API密钥。")
         end
@@ -529,19 +527,17 @@ function getep(anime)
                                                 "/season/" .. (anime_data["season_number"])), query, header)
 
         if err ~= nil then
-            kiko.log("[ERROR] httpget: " .. err)
-            error(err)
-        end
-        if reply["success"]=="false" or reply["success"]==false then
-            err = reply["status_message"]
-            kiko.log("[ERROR] TMDb.API.reply-tv.id.season: ".. err)
+            kiko.log("[ERROR] TMDb.API.reply-getep.tv.id.season.httpget: " .. err)
+            if tostring(err) == ("Host requires authentication") then
+                kiko.execute(true, "cmd", {"/c", "start", "https://www.themoviedb.org/settings/api"})
+            end
             error(err)
         end
         -- json:reply -> Table:obj
         local content = reply["content"]
         local err, objS = kiko.json2table(content)
         if err ~= nil then
-            kiko.log("[ERROR] json2table: " .. err)
+            kiko.log("[ERROR] TMDb.API.reply-getep.json2table: " .. err)
             error(err)
         end
 
@@ -567,19 +563,17 @@ function getep(anime)
             local err, replyO = kiko.httpget(string.format( "http://api.themoviedb.org/3/tv/" .. anime_data["media_id"] ..
                                                         "/season/" .. anime_data["season_number"]), query, header)
             if err ~= nil then
-                kiko.log("[ERROR] httpget: " .. err)
-                error(err)
-            end
-            if reply["success"]=="false" or reply["success"]==false then
-                err = reply["status_message"]
-                kiko.log("[ERROR] TMDb.API.reply-tv.id.season: ".. err)
+                kiko.log("[ERROR] TMDb.API.reply-getep.tv.id.season.lang.httpget: " .. err)
+                if tostring(err) == ("Host requires authentication") then
+                    kiko.execute(true, "cmd", {"/c", "start", "https://www.themoviedb.org/settings/api"})
+                end
                 error(err)
             end
             -- json:reply -> Table:obj
             local contentO = replyO["content"]
             local err, objSO = kiko.json2table(contentO)
             if err ~= nil then
-                kiko.log("[ERROR] json2table: " .. err)
+                kiko.log("[ERROR] TMDb.API.reply-getep.tv.id.season.lang.json2table: " .. err)
                 error(err)
             end
             local seasonEpsIO = objSO['episodes'][1]
@@ -642,16 +636,6 @@ function getep(anime)
         end
         ]] --
     end
-    -- for _, ep in pairs(obj['eps']) do
-    --     local epType = ep["type"] + 1  -- ep["type"]: 0~6
-    --     local epIndex = ep["sort"]
-    --     local epName = unescape(ep["name_cn"] or ep["name"])
-    --     table.insert(eps, {
-    --         ["name"]=epName,
-    --         ["index"]=epIndex,
-    --         ["type"]=epType
-    --     })
-    -- end
     if anime_data["media_type"] == "movie" then
         kiko.log("[INFO]  Finished getting " .. #eps .. " ep info of < " .. anime_data["media_title"] .. " (" ..
                  anime_data["original_title"] .. ") >")
@@ -720,7 +704,7 @@ function detail(anime)
         kiko.log("[INFO]  Finished getting detail of < " .. anime_data["media_title"] .. " (" ..
                      anime_data["original_title"] .. ") " .. string.format("S%02d", anime_data["season_number"]) .. ">")
     end
-    kiko.log("[INFO]  Anime = " .. tableToStringLines(animePlus))
+    -- kiko.log("[INFO]  Anime = " .. tableToStringLines(animePlus))
     return animePlus
 end
 
@@ -752,17 +736,17 @@ function gettags(anime)
     for _, value in pairs(anime_data["genre_names"]) do
         if (value ~= nil) then
             genre_name_tmp = value .. ""
-            table.insert(mtag, genre_name_tmp)
+            table.insert(mtag, "流派/"..genre_name_tmp)
         end
     end
     -- 添加 媒体类型 至标签
     if anime_data["media_type"] == "movie" then
-        table.insert(mtag, "媒体类别/电影")
+        table.insert(mtag, "媒体类型/电影")
 
     elseif anime_data["media_type"] == "tv" then
-        table.insert(mtag, "媒体类别/剧集")
+        table.insert(mtag, "媒体类型/剧集")
     else
-        table.insert(mtag, "媒体类别/其他")
+        table.insert(mtag, "媒体类型/其他")
     end
     -- 添加 出品公司 至标签
     if anime_data["origin_company"] ~= nil then
@@ -811,41 +795,312 @@ function match(path)
 
     --
     local mediainfo, epinfo = {}, {} -- 返回的媒体信息、分集信息 AnimeLite:mediainfo EpInfo:epinfo
-    --[[
-	mediainfo = {
-		["name"]=string,          --动画名称
-		["data"]=string,          --脚本可以自行存放一些数据
-		["url"]=string,           --条目页面URL
-		["desc"]=string,          --描述
-		["airdate"]=string,       --放送日期，格式为yyyy-mm-dd
-		["epcount"]=number,       --分集数
-		["coverurl"]=string,      --封面图URL
-		["staff"]=string,         --staff
-		["crt"]=Array[Character], --人物
-		["scriptId"]=string       --脚本ID
-	}
-	epinfo = {
-		["name"]=string,   --分集名称
-		["index"]=number,  --分集编号（索引）
-		["type"]=number    --分集类型
-		--分集类型包括 EP, SP, OP, ED, Trailer, MAD, Other 七种，分别用1-7表示， 默认情况下为1（即EP，本篇）
-	}
-	Character = {
-    ["name"]=string,   --人物名称
-    ["actor"]=string,  --演员名称
-    ["link"]=string,   --人物资料页URL
-    ["imgurl"]=string  --人物图片URL
-	}
-	]] --
-
+    
     --- 判断关联匹配的信息来源类型
     if settings["match_type"] == "online_TMDb_filename" then
-        --- TODO: 添加在线搜索 匹配本地文件 的功能
-        
+        if (kiko.regex) == nil then
+            kiko.message("错误! 版本过旧或不支持，请更换KikoPlay至合适的版本。",1|8)
+            kiko.log("[Error] Using outdated or unsupported version!")
+            kiko.execute(true, "cmd", {"/c", "start", "https://github.com/KikoPlayProject/KikoPlay#%E4%B8%8B%E8%BD%BD"})
+            error("[Error] Using outdated or unsupported version!")
+        end
+        local mType = "" -- 媒体类型
+        -- 模糊媒体信息：标题，季序数，集序数,集序数拓展,标题拓展,集类型
+        local mTitle,mSeason,mEp,mEpX,mTitleX,mEpType = "","","","","",""
+        local mPriority=1 -- x选取搜索结果
+        local resultSearch,resultGetep = {},{} -- 影剧搜索结果、集识别
+        local epTypeMap = {["EP"]=1, ["SP"]=2, ["OP"]=3, ["ED"]=4, ["TR"]=5, ["MA"]=6, ["OT"]=7,[""]=1} --仅针对特别篇的InfoRaw
+        local epTypeName = {"正片", "特别篇", "片头", "片尾", "预告", "MAD", "其他片段"} --仅针对特别篇的Info展示
+
+        --获取模糊媒体标题
+        mTitle = string.gsub(path,"","")
+        mType = ""
+
+        -- 从文件名获取获取模糊媒体信息
+        -- path: tv\season\video.ext | movie\video.ext
+        local path_folder_sign, _ = stringfindre(path, "/", -1) -- 路径索引 父文件夹尾'/' path/to[/]video.ext
+        local path_file_name = string.sub(path, path_folder_sign + 1) -- 媒体文件名称.拓展名 - video.ext
+        local resMirbf=getMediaInfoRawByFilename(path_file_name)
+        -- 获取 文件名粗识别 结果
+        mTitle=resMirbf[1] or ""
+        mSeason=resMirbf[2] or ""
+        mEp=resMirbf[3] or ""
+        mEpX=resMirbf[4] or ""
+        mTitleX=resMirbf[5] or ""
+        mEpType=resMirbf[6] or ""
+
+        --判断媒体类型
+        local mIsSp=false -- 是否为特别篇
+        if mEpType~="" and mEpType~="EP" then
+            mIsSp=true
+        end
+        if mEp~="" or mSeason~="" then
+            mType="tv"
+        -- 其他的，按照 设置项"匹配 - 备用媒体类型"。 -- 无集序数，无集类型
+        elseif settings["match_priority"]=="movie" then
+            mType="movie" -- 电影
+        elseif settings["match_priority"]=="tv" then
+            mType="tv" -- 剧集
+        elseif settings["match_priority"]=="multi" then
+            mType="multi" -- 排序靠前的影/剧
+        elseif settings["match_priority"]=="single" then
+            local resDiaTF, _ = kiko.dialog({
+                ["title"] = "是否确定此媒体属于 <电影> ？",
+                ["tip"] = "<" .. mTitle .. ">： 确认->电影； 取消->剧集。",
+            })
+            -- 从对话框确定媒体类型
+            if resDiaTF == "accept" or resDiaTF == true then
+                mType="movie"
+            elseif resDiaTF == "reject" or resDiaTF == false then
+                mType="tv"
+                mIsSp=true
+            else
+                mType="multi"
+            end
+        else
+            mType="multi"
+        end
+
+        if mType == "movie" then
+            mSeason=1 -- 电影默认 S01E01 (EP)
+            -- mediaInfo
+            resultSearch = searchMediaInfo(mTitle,mType)
+            if #resultSearch < mPriority then
+                kiko.log("[ERROR] Failed to find movie <"..mTitle..">.")
+                kiko.message("无法找到电影 <"..mTitle..">。", 1|8)
+                return {["success"] = false, ["anime"] = {["name"]=mTitle}, ["ep"] = {},}
+            end
+            mediainfo=resultSearch[mPriority]
+            
+            -- epInfo
+            if mIsSp == false then
+                local mEpTmp=1
+                resultGetep = getep(mediainfo)
+                if #resultGetep < mEpTmp then
+                    kiko.log("[ERROR] Failed to find movie <"..mTitle..">。")
+                    kiko.message("无法找到电影 <"..mTitle..">。", 1|8)
+                    return {["success"] = false, ["anime"] = {["name"]=mTitle}, ["ep"] = {},}
+                end
+                epinfo=resultGetep[mEpTmp]
+            else
+                epinfo={
+                    ["name"] = mTitleX,
+                    ["index"] = ((mEp == "")and{nil}or{ math.floor(tonumber(mEp)) })[1],
+                    ["type"] = ((mEpType == "")and{epTypeMap["OT"]}or{epTypeMap[mEpType]})[1],
+                }
+                if epinfo["index"] == nil then
+                    kiko.log("[ERROR] Failed to find movie <"..mTitle.."> " .. ": " .. epTypeName[epinfo["type"]] ..
+                                (((mEp=="")and{""}or{string.format(" %02d",mEp)})[1])..
+                                (((mTitleX=="")and{""}or{" <"..mTitleX..">"})[1]).. "。")
+                    kiko.message("无法找到电影 <"..mTitle.."> " .. "的 " .. epTypeName[epinfo["type"]] ..
+                                (((mEp=="")and{""}or{string.format(" %02d",mEp)})[1])..
+                                (((mTitleX=="")and{""}or{" <"..mTitleX..">"})[1]).. "。", 1|8)
+                    return {["success"] = false, ["anime"] = mediainfo, ["ep"] = {},}
+                end
+            end
+        elseif mType == "tv" then
+            -- Season=="" -> S00/S01。
+            local mSeasonTv = ""
+            if mSeason == "" then
+                mSeasonTv = ((mIsSp)and{0}or{1})[1]
+            else mSeasonTv = math.floor(tonumber(mSeason))
+            end
+            -- mediaInfo
+            resultSearch = searchMediaInfo(mTitle,mType)
+            for _, value in ipairs(resultSearch) do
+                if mSeasonTv ~= 0 then
+                    if value["season_number"] == mSeasonTv or tostring(value["season_number"]) == tostring(mSeasonTv) then
+                        mediainfo=value
+                        mType=mediainfo["media_type"]
+                        break
+                    end
+                else
+                    -- Specials
+                    if value["season_number"] == mSeasonTv or tostring(value["season_number"]) == tostring(mSeasonTv) or
+                        value["season_number"] == 1 or tostring(value["season_number"]) == tostring(1) then
+                        mediainfo=value
+                        mType=mediainfo["media_type"]
+                        break
+                    end
+                end
+            end
+            if table.isEmpty(mediainfo) then
+                kiko.log("[ERROR] Failed to find tv <"..mTitle.."> ".. (((mSeason=="")and{""}or{" < Season"..mSeason.." >"})[1]).."。")
+                kiko.message("无法找到剧集 <"..mTitle.."> ".. (((mSeason=="")and{""}or{"的 <第"..mSeason.."季>"})[1]).."。", 1|8)
+                return {["success"] = false, ["anime"] = {["name"]=mTitle}, ["ep"] = {},}
+            end
+
+            -- EpX：提示，并弃用
+            if mEpX ~= "" then
+                mEpX=math.floor(tonumber(mEpX))
+                kiko.log("[INFO]  Recognized redundant episode number <"..(mEpX or "").."> in tv <"..(mTitle or "")..">, which is ignored here.")
+                kiko.message("识别到 <"..((mTitle.."> 的") or "").."拓展集序号: <"..(mEpX or "")..">。\n" ..
+                            "此处弃用，请稍后确认此剧集的集序号是否正确", 1)
+            end
+            -- epInfo
+            local mEpTmp = nil
+            if mEp == "" then
+                mEpTmp=1
+            else mEpTmp=math.floor(tonumber(mEp))
+            end
+            if mIsSp == false then
+                resultGetep = getep(mediainfo)
+                for _, value in ipairs(resultGetep) do
+                    if value["index"] == mEpTmp or tostring(value["index"]) == tostring(mEpTmp) then
+                        epinfo=value
+                        break
+                    end
+                end
+                if table.isEmpty(epinfo) then
+                    kiko.log("[ERROR] Failed to find tv <"..mTitle..(((mSeason=="")and{""}or{" Season"..mSeason})[1])..">" ..
+                                (((mEp=="")and{""}or{" <Episode "..mEp..">"})[1]).."。")
+                    kiko.message("无法找到剧集 <"..mTitle..(((mSeason=="")and{""}or{" 第"..mSeason.."季"})[1])..">" ..
+                                (((mEp=="")and{""}or{"的 <第"..mEp.."集>"})[1]).."。", 1|8)
+                    return {["success"] = false, ["anime"] = mediainfo, ["ep"] = {["index"] = math.floor(tonumber(mEpTmp))},}
+                end
+            else
+                epinfo={
+                    ["name"] = mTitleX,
+                    ["index"] = ((mEp == "")and{nil}or{ math.floor(tonumber(mEp)) })[1],
+                    ["type"] = ((mEpType == "")and{epTypeMap["OT"]}or{epTypeMap[mEpType]})[1],
+                }
+                if epinfo["index"] == nil then
+                    local tmpLogStr = 
+                    kiko.log("[ERROR] Failed to find  <"..mTitle..(((mSeason=="")and{""}or{" Season "..mSeason})[1]).."> "..
+                                " in " .. epTypeName[epinfo["type"]] .. (((mEp=="")and{""}or{string.format(" %02d",mEp)})[1])..
+                                (((mTitleX=="")and{""}or{" <"..mTitleX..">"})[1]).. "。")
+                    kiko.message("无法找到剧集 <"..mTitle..(((mSeason=="")and{""}or{" 第"..mSeason.."季"})[1]).."> "..
+                                "的 " .. epTypeName[epinfo["type"]] .. (((mEp=="")and{""}or{string.format("%02d",mEp)})[1])..
+                                (((mTitleX=="")and{""}or{" <"..mTitleX..">"})[1]).. "。", 1|8)
+                    return {["success"] = false, ["anime"] = mediainfo,
+                            ["ep"] = { ["type"]=((mEpType == "")and{epTypeMap["OT"]}or{epTypeMap[mEpType]})[1]},}
+                end
+            end
+        else
+            -- mediaInfo
+            resultSearch = searchMediaInfo(mTitle,"multi")
+            if #resultSearch < mPriority then
+                kiko.log("[ERROR] Failed to find media <"..mTitle..">。")
+                kiko.message("无法找到媒体 <"..mTitle..">。", 1|8)
+                return {["success"] = false, ["anime"] = {["name"]=mTitle}, ["ep"] = {},}
+            end
+            local mSeasonTv = ""
+            for _, value in ipairs(resultSearch) do
+                if mSeason =="" and value["media_type"] == "movie" then
+                    if mIsSp == false and mEp ~= "" then
+                        goto continue_match_OMul_Mnfo
+                    end
+                    mSeason=1
+                    mediainfo=value
+                    mType=mediainfo["media_type"]
+                    break
+                elseif value["media_type"]=="tv" then
+                    if mSeason == "" then
+                        mSeasonTv = ((mIsSp)and{0}or{1})[1]
+                    else mSeasonTv = math.floor(tonumber(mSeason))
+                    end
+                    if mSeasonTv ~= 0 then
+                        if value["season_number"] == mSeasonTv or tostring(value["season_number"]) == tostring(mSeasonTv) then
+                            mediainfo=value
+                            mType=mediainfo["media_type"]
+                            break
+                        else goto continue_match_OMul_Mnfo
+                        end
+                    else
+                        -- Specials
+                        if value["season_number"] == mSeasonTv or tostring(value["season_number"]) == tostring(mSeasonTv) or
+                            value["season_number"] == 1 or tostring(value["season_number"]) == tostring(1) then
+                            mediainfo=value
+                            mType=mediainfo["media_type"]
+                            break
+                        else goto continue_match_OMul_Mnfo
+                        end
+                    end
+                end
+                ::continue_match_OMul_Mnfo::
+            end
+            if table.isEmpty(mediainfo) then
+                if mSeason ~="" or (mEp ~= "" and mIsSp ==false)  then
+                    kiko.log("[ERROR] Failed to find tv <"..mTitle.."> ".. (((mSeason=="")and{""}or{"的 <Season "..mSeason..">"})[1]).."。")
+                    kiko.message("无法找到剧集 <"..mTitle.."> ".. (((mSeason=="")and{""}or{"的 <第"..mSeason.."季>"})[1]).."。", 1|8)
+                else
+                    kiko.log("[ERROR] Failed to find media <"..mTitle..">。")
+                    kiko.message("无法找到媒体 <"..mTitle..">。", 1|8)
+                end
+                return {["success"] = false, ["anime"] = {["name"]=mTitle}, ["ep"] = {["index"] = math.floor(tonumber(mEpTmp))},}
+            end
+
+            -- mEpX=math.floor(tonumber(mEpX))
+            if mEpX ~= "" then
+                kiko.log("Recognized redundant episode number <"..(mEpX or "").."> of"..(mTitle or "")..", which is ignored here.")
+                kiko.message("识别到 <"..((mTitle.."> 的") or "").."拓展集序号: <"..(mEpX or "")..">。\n" ..
+                            "此处弃用，请稍后确认此剧集的集序号是否正确", 1)
+            end
+            -- epInfo
+            if mIsSp == false then
+                if mType == "tv" then
+                    local mEpTmp = nil
+                    if mEp == "" then
+                        mEpTmp=1
+                    else mEpTmp=math.floor(tonumber(mEp))
+                    end
+                    resultGetep = getep(mediainfo)
+                    for _, value in ipairs(resultGetep) do
+                        if value["index"] == mEpTmp or tostring(value["index"]) == tostring(mEpTmp) then
+                            epinfo=value
+                            break
+                        end
+                    end
+                    if table.isEmpty(epinfo) then
+                        kiko.log("[ERROR] Failed to find tv <"..mTitle..(((mSeason=="")and{""}or{" Season "..mSeason})[1])..">" ..
+                                    (((mEp=="")and{""}or{" <Episode"..mEp..">"})[1]).."。")
+                        kiko.message("无法找到剧集 <"..mTitle..(((mSeason=="")and{""}or{" 第"..mSeason.."季"})[1])..">" ..
+                                    (((mEp=="")and{""}or{"的 <第"..mEp.."集>"})[1]).."。", 1|8)
+                        return {["success"] = false, ["anime"] = mediainfo, ["ep"] = {},}
+                    end
+                elseif mType == "movie" then
+                    mEp=1
+                    resultGetep = getep(mediainfo)
+                    if #resultGetep < mEp then
+                        kiko.log("[ERROR] Failed to find movie <"..mTitle..">。")
+                        kiko.message("无法找到电影 <"..mTitle..">。", 1|8)
+                        return {["success"] = false, ["anime"] = mediainfo, ["ep"] = {},}
+                    end
+                    epinfo=resultGetep[mEp]
+                end
+            else
+                epinfo={
+                    ["name"] = mTitleX,
+                    ["index"] = ((mEp == "")and{nil}or{ math.floor(tonumber(mEp)) })[1],
+                    ["type"] = ((mEpType == "")and{epTypeMap["OT"]}or{epTypeMap[mEpType]})[1],
+                }
+                if epinfo["index"] == nil then
+                    local tmpLogStr = "的 " .. epTypeName[epinfo["type"]] .. (((mEp=="")and{""}or{string.format("%02d",mEp)})[1])..
+                                        (((mTitleX=="")and{""}or{" <"..mTitleX..">"})[1]).. "。"
+                    if epinfo["type"] == "movie" then
+                        kiko.log("[ERROR] Failed to find movie <"..mTitle.."> " .. tmpLogStr)
+                        kiko.message("无法找到电影 <"..mTitle.."> " .. tmpLogStr, 1|8)
+                    elseif epinfo["type"] == "tv" then
+                        kiko.log("[ERROR] Failed to find tv <"..mTitle..(((mSeason=="")and{""}or{" Season "..mSeason})[1]).."> ".. tmpLogStr)
+                        kiko.message("无法找到剧集 <"..mTitle..(((mSeason=="")and{""}or{" 第"..mSeason.."季"})[1]).."> ".. tmpLogStr, 1|8)
+                    else
+                        kiko.log("[ERROR] Failed to find media <"..mTitle.."> " .. tmpLogStr)
+                        kiko.message("无法找到媒体 <"..mTitle.."> " .. tmpLogStr, 1|8)
+                    end
+                    return {["success"] = false, ["anime"] = mediainfo,
+                            ["ep"] = { ["type"]=((mEpType == "")and{epTypeMap["OT"]}or{epTypeMap[mEpType]})[1]},}
+                end
+            end
+        end
+
+        kiko.log("(" .. (mType or "") .. ") " .. (mediainfo["name"] or "") .. "  -  " ..
+                 "(" .. (epTypeName[epinfo["type"]] or "") .. ") " .. (epinfo["index"] or "") .. (epinfo["name"] or ""))
+        kiko.log("Finished matching online succeeded.")
+
         return {
-            ["success"] = false,
-            ["anime"] = {},
-            ["ep"] = {}
+            ["success"] = true,
+            ["anime"] = mediainfo,
+            ["ep"] = epinfo,
         }
     elseif settings["match_type"] == "local_Emby_nfo" then
 
@@ -1476,11 +1731,11 @@ function match(path)
                     if mdata["season_number"] ~= nil then
                         if mdata["season_number"] ~= "0" then
                             -- 普通季
-                        path_file_image_tmp = path_folder_lf .. "season" ..
+                            path_file_image_tmp = path_folder_lf .. "season" ..
                                  string.format('S%02d', mdata["season_number"]) .. "-poster.jpg" -- season08-poster.jpg
                         else
                             -- 特别篇
-                        path_file_image_tmp = path_folder_lf .. "season" ..
+                            path_file_image_tmp = path_folder_lf .. "season" ..
                                                   string.format('-specials', mdata["season_number"]) .. "-poster.jpg" -- season-specials-poster.jpg
                         end
                     file_exist_test, file_exist_test_err = io.open(path_file_image_tmp)
@@ -1489,7 +1744,7 @@ function match(path)
                             io.close(file_exist_test)
                             mdata["poster_path"] = path_file_image_tmp
                         else
-                        mdata["poster_path"] = path_folder_lf .. "poster.jpg"
+                            mdata["poster_path"] = path_folder_lf .. "poster.jpg"
                         end
                         mdata["backdrop_path"] = path_folder_lf .. "fanart.jpg"
                     end
@@ -1562,7 +1817,7 @@ function match(path)
         -- kiko.log('|', ename, '*', tostring(eindex), '*', tostring(etype))
         -- kiko.log('|', tostring(eseason), '*', tstitle, '|')
         ]]--
-        
+
         -- 返回 MatchResult格式
         return {
             ["success"] = true,
@@ -1604,10 +1859,10 @@ function menuclick(menuid, anime)
 
     if menuid == "open_tmdb_webpage" then
         -- 打开对应TMDb网页链接
+        kiko.log("Open TMDb page of <"..anime["name"]..">.")
         kiko.message("打开 <"..anime["name"].."> 的TMDb页面", NM_HIDE)
         kiko.execute(true, "cmd", {"/c", "start", anime["url"]})
-    end
-    if menuid == "show_media_matadata" then
+    elseif menuid == "show_media_matadata" then
         -- 显示媒体元数据
 
         -- local tipString="" -- 显示的媒体元数据文本
@@ -1622,7 +1877,7 @@ function menuclick(menuid, anime)
             kiko.log("[WARN]  (AnimeLite)anime[\"data\"] not found.")
         else
             -- 有anime["data"]字段
-            dataString = tableToStringPrint(anime_data or "", 1) .. dataString
+            dataString = tableToStringLines(anime_data or "", 1) .. dataString
         end
         if anime_data["media_type"] == nil then
             -- 无媒体类型信息
@@ -1662,14 +1917,12 @@ function menuclick(menuid, anime)
         -- 获取 背景图 的二进制数据
         local img_back_data
         local header = {["Accept"] = "image/jpeg"}
-        local err, reply = kiko.httpget(Image_tmdb.prefix..Image_tmdb.poster[Image_tmdb.min_ix] ..  anime_data["backdrop_path"], {} , header)
+        local err, reply = kiko.httpget(Image_tmdb.prefix..Image_tmdb.poster[Image_tmdb.mid_ix] ..  anime_data["backdrop_path"], {} , header)
         if err ~= nil then
-            kiko.log("[ERROR] httpget: " .. err)
-            error(err)
-        end
-        if reply["success"]=="false" or reply["success"]==false then
-            err = reply["status_message"]
-            kiko.log("[ERROR] TMDb.image-backdrop.path: ".. err)
+            kiko.log("[ERROR] TMDb.API.reply-showmnfo.httpget: " .. err)
+            if tostring(err) == ("Host requires authentication") then
+                kiko.execute(true, "cmd", {"/c", "start", "https://www.themoviedb.org/settings/api"})
+            end
             error(err)
         end
         img_back_data=reply["content"]
@@ -1705,7 +1958,170 @@ end
 -- 功能函数
 --
 
--- TODO: -- 从文件名获取粗识别的媒体信息
+-- 从文件名获取粗识别的媒体信息
+-- return: (table):{Title|SeasonNum|EpNum|EpExt|TitleExt|EpType}
+function getMediaInfoRawByFilename(filename)
+    if filename == nil or filename=="" or type(filename)~="string" then
+        return {"","","","","",""}
+    end
+    
+	local res={}		-- 结果 Result:		Title|SeasonNum|EpNum|EpExt|TitleExt|EpType
+	local resTS={}	-- 粗提取 ResultRaw:	TitleRaw|SeasonEpRaw
+	local resSext={}	-- 季集 SeasonEpInfo: SeasonNum|EpNum|EpExt|TitleExt|Eptype
+
+    -- kiko.regex([[...]],"options"):gsub("target","initpos")
+    -- kiko.regex([[...]],"options"):gmatch("target","repl")
+    -- kiko.regex([[...]],"options"):gsub("target","repl")
+    
+    -- kiko.regex不能多开，需要依次，否则会后来的替代掉之前的
+    -- 普通集:标题-季集 regex: (Title)(.)(S01E02)... |  (Title)(.)(第一季第二集)...
+    local patternSE=[[^([^\t\r\n]{0,}?)([ \-\.\[])((([Ss]{0,1}(\d{1,}[Ee]|(?<=[Ss \-\.\]\[])\d{1,2}[Xx])\d{1,}([\-]\d{1,3}|))|([Ee][Pp]{0,1}\d{1,}([\-\.]\d{1,3}|))|(第(\d{1,}|[〇零一二三四五六七八九十]{1,5})(([季部][ \-\.]{0,3}第{0,1}(\d{1,}|([〇零一二三四五六七八九十]{1,5}))([—\-\.]\d{1,3}|)[話话集]{0,1})|([\-\.]\d{1,3}|)[話话集]{0,1}))|(?<![ \.\[][HhXx]\.)\d{2,3}([\-\.]\d{1,}|)(?!\.))(?=[ \-\.\[\]\(\)])(?!p))([^\t\r\n]{0,})$]]
+    
+    -- 阿拉伯数字:季集 regex: (S)(01)(E)(02)(-)(03) | ()()(EP)(02)()()
+    local patternSENum=[[^([Ss]|第{0,1}?|)(\d{1,}(?=[EeXx季部第]|[話集]\d{1,})|)([EeXx]|[Ee][Pp]{0,1}|[季部][ \-\.]{0,3}|[季部]{0,1}[ \-\.]{0,3}[第話集]|)(\d{1,})([話集]{0,1}[\-\.]{0,1}|)(\d{1,}|)$]]
+    -- 含中文数字:季集 regex: (第)(一)()(季第)(二)(-)(三)(集)...
+    local patternSEZh=[[^(第|)((\d{1,}|[〇零一二三四五六七八九十]{1,5})(?=[季部第])|)([季部][ \-\.]{0,3}第{0,1}|第)(\d{1,}|[〇零一二三四五六七八九十]{1,5})([—\-\.]{0,1})((\d{1,}|[〇零一二三四五六七八九十]{1,5})|)([話话集]{0,1})$]]
+
+    -- 特别篇:标题 regex: (Title)(.)(SP)...
+    local patternSp=[[^([^\t\r\n]{0,}?)([ \-\.\[])((([Ss第](\d{1,}|[〇零一二三四五六七八九十]{1,5}[季部]{0,1}))[ \-\.\(\)\[\]\{\}].{0,}|[^ \-\.\(\)\[\]\{\}\t\r\n]+?|)([Ss]pecial[s]{0,1}|[Ee]xtra[s]{0,1}|[Ss][Pp]|([^ \-\.\(\)\[\]\{\}\t]{0,}特[别別典][篇编編片]{0,1})|[Oo][Pp]|片[頭头]曲{0,1}|[Ee][Dd]|片尾曲{0,1}|[Tt]railer[s]{0,1}|[Cc][Mm]|[Pp][Vv]|[预預予][告][篇编編片]{0,1})([ \-\.]{0,3}\d+[\] \.]|)|([Ss第](\d{1,}|[〇零一二三四五六七八九十]{1,5}[季部])[^ \-\.\(\)\[\]\{\}\t\r\n]{1,}))(?=[\] \-\.])(?!p)([^\t\r\n]{0,})$]]
+    -- 特别篇所在季序数: regex: (S01)...
+    local patternSpSeason=[[^.{0,}?([Ss]|第)(\d{1,}|[〇零一二三四五六七八九十]{1,5}(?=[季部第])).{0,}$]]
+    local patternSpSp=[[.{0,}?([Ss]pecial[s]{0,1}|[Ee]xtra[s]{0,1}|[Ss][Pp]|特[别別典][篇编編片]{0,1}).{0,}]]
+    local patternSpTr=[[.{0,}?([Tt]railer[s]{0,1}|[Cc][Mm]|[Pp][Vv]|[预預予][告][篇编編片]{0,1}).{0,}]]
+    local patternSpOp=[[.{0,}([Oo][Pp]|片[頭头]曲{0,1}).{0,}]]
+    local patternSpEd=[[.{0,}?([Ee][Dd]|片尾曲{0,1}).{0,}]]
+
+    -- 仅标题 regex: (Title)(-)()...
+    local patternNum=[[^([^\t\r\n]{0,}?)([ \-\.\[\]\(\)]{1,3})(\d{1,3}(?=[ \-\.\[\]\(\)]{1,3})|([Ss第](\d{1,}|[〇零一二三四五六七八九十]{1,5}[季部])[ \-\.]{0,3}[^ \-\.\(\)\[\]\{\}\t\r\n]{0,})|)(?=([ \-\.\[\]\(\)]{0,3})((\d{4})|(\d{3,4}[pPiIkK])|([34][dD])|([hHxX][\-\.]{0,1}26[45])|(-[ \.])|(\[)|(DVD|HDTV|(WEB|[^ \-\.\(\)\[\]\{\}\t\r\n]{0,})([\-]{0,1}DL|[Rr]ip)|BD[Rr]ip|[Bb]lu\-{0,1}[Rr]ay)|((avi|flv|mpg|mp4|mkv|rm|rmvb|ts|wmv)$)))([^\t\r\n]{0,})$]]
+
+    -- 普通集: filename->ResultRaw
+	resTS=string.split(kiko.regex(patternSE,"i"):gsub(filename,"\\1\t\\3"),"\t")
+	if resTS[1] ~= filename then
+		while #resTS<2 do
+			table.insert(resTS,"") -- 补全长度
+        end
+        -- 仅数字的集: SeasonEpRaw->SeasonEpInfo
+		resSext=string.split(kiko.regex(patternSENum,"i"):gsub(resTS[2],"\\2\t\\4\t\\6"),"\t")
+		-- resSext=string.split(kiko.regex(patternSENum,"i"):gsub(resTS[2],"\\2\t\\4\t\\6"),"\t")
+		if resSext[1] ~= resTS[2] then
+			-- 补全 TitleExt
+			table.extendRaw(resSext,{"",""})
+		else
+			-- 含中文数字的集
+			resSext=string.split(kiko.regex(patternSEZh,"i"):gsub(resTS[2],"\\2\t\\5\t\\7"),"\t")
+			-- resSext=string.split(kiko.regex(patternSEZh,"i"):gsub(resTS[2],"\\2\t\\4\t\\6"),"\t")
+			if resSext[1] ~= resTS[2] then
+				table.extendRaw(resSext,{"",""})
+			else
+				-- Other unrecognizable results
+				resSext={"","","",resTS[2],""}
+            end
+        end
+		-- kiko.log("n\t\t"..resTS[2].."\t\t\t\t"..resTS[1])
+	else
+		-- 特别篇
+        resTS=string.split(kiko.regex(patternSp,"i"):gsub(filename,"\\1\t\\3"),"\t")
+		if resTS[1] ~= filename then
+			while #resTS<2 do
+				table.insert(resTS,"")
+            end
+			-- 获取季序数
+			local sextSeasonNum=kiko.regex(patternSpSeason,"i"):gsub(resTS[2],[[\2]])
+			if sextSeasonNum == resTS[2] then
+				sextSeasonNum=""
+            end
+			-- 不实现识别 特别篇的集序数： 集序数没有统一标准，根据文件名 容易识别后相互覆盖，且无法判断是相关某集序数还是特别篇的序数
+			-- local sextEpNum="" -- 集序数
+			-- local sextEpExt="" -- 集序数拓展
+			
+            -- 获取集类型
+			local sextEpType="" -- 集类型
+            -- 特别篇 预告片 片头/OP 片尾/ED 其他
+            if resTS[2] ~= kiko.regex(patternSpSp,"i"):gsub(resTS[2],[[\1\1]]) then
+				sextEpType="SP"
+            elseif resTS[2] ~= kiko.regex(patternSpTr,"i"):gsub(resTS[2],[[\1\1]]) then
+				    sextEpType="TR"
+            elseif resTS[2] ~= kiko.regex(patternSpOp,"i"):gsub(resTS[2],[[\1\1]]) then
+                        sextEpType="OP"
+            elseif resTS[2] ~= kiko.regex(patternSpEd,"i"):gsub(resTS[2],[[\1\1]]) then
+                            sextEpType="ED"
+            else
+                sextEpType="OT"
+            end
+			resSext={sextSeasonNum,"","",resTS[2],sextEpType}
+			-- kiko.log("s\t\t"..resTS[2].."\t\t\t\t"..resTS[1])
+		else
+			-- 仅标题
+			resTS=string.split(kiko.regex(patternNum,"i"):gsub(filename,"\\1\t\\3"),"\t")
+			while #resTS<2 do
+				table.insert(resTS,"")
+            end
+			-- 获取 季序数
+			local sextSeasonNum=kiko.regex(patternSpSeason,"i"):gsub(resTS[2],[[\2]])
+			local sextEpType="" -- 如果有季序数 集类型为Others
+			if sextSeasonNum == resTS[2] then
+				sextSeasonNum=""
+				sextEpType=""
+            else sextEpType="OT"
+            end
+			-- 获取 集序数
+			local sextEpNum=""
+			sextEpNum=(kiko.regex([[^\d{1,}$]],"i")):gmatch(resTS[2])
+            if(sextEpNum == nil) then sextEpNum=""
+			else sextEpNum=sextEpNum()
+            end
+
+			resSext={sextSeasonNum,sextEpNum,"","",sextEpType}
+			-- kiko.log("o\t\t"..resTS[2].."\t\t\t\t"..resTS[1])
+        end
+    end
+	-- 处理数字
+	for ri in pairs({1,2,3}) do
+        if resSext[ri] == nil then resSext[ri]="" end
+		if("" ~= resSext[ri]) then
+            -- x十/十x -> x〇/一x
+            -- resSext[ri]=(kiko.regex([[^(十)$]],"i")):gsub(resSext[ri],[[一〇]])
+            resSext[ri]=(kiko.regex([[^(十)]],"i")):gsub(resSext[ri],[[一\1]])
+            resSext[ri]=(kiko.regex([[(十)$]],"i")):gsub(resSext[ri],[[\1〇]])
+            -- 中文数字->0-9
+
+            string.gsub(resSext[ri],"十","")
+            local zhnumToNum={["〇"]="0", ["零"]="0", ["一"]="1", ["二"]="2", ["三"]="3", ["四"]="4", ["五"]="5", ["六"]="6", ["七"]="7", ["八"]="8", ["九"]="9", ["十"]=""}
+            for key, value in pairs(zhnumToNum) do
+                resSext[ri] = string.gsub(resSext[ri],key,value)
+            end
+            -- 除去开头的'0'
+            resSext[ri]=(kiko.regex([[^(0{1,})]],"i")):gsub(resSext[ri],"")
+        end
+    end
+	-- 提取标题
+	local resT=resTS[1] -- TitleRaw
+	-- 移除非标题内容的后缀
+	resT=(kiko.regex("\\[([Mm]ovie|[Tt][Vv]|)\\]","i")):gsub(resT,"")
+	-- 移除不在末尾的"[...]"
+	resT=(kiko.regex([[\[[^\[\]\r\n\t]{1,}\](?![ \-\.\[\]\(\)]{0,}$)]],"i")):gsub(resT,"")
+	-- 移除一些符号
+	resT=(kiko.regex([[[《》_\-\.\[\]\(\)]{1,}]],"i")):gsub(resT," ")
+	-- 移除开头/末尾/多余的空格
+	resT=(kiko.regex([[ {1,}]],"i")):gsub(resT," ")
+	resT=(kiko.regex([[(^ {1,}| {1,}$)]],"i")):gsub(resT,"")
+	
+	-- 获取识别结果
+	table.insert(res,resT)
+	table.extendRaw(res,resSext)
+	
+    -- 输出获取结果
+    local tmpLogPrint=""
+	-- tmpLogPrint=tmpLogPrint .."  "..#res.."\t"
+    for ri = 2, #res, 1 do
+		if res[ri] == "" then tmpLogPrint=tmpLogPrint.."▫".."\t"
+		else tmpLogPrint=tmpLogPrint.. res[ri]..'\t' end
+    end
+    tmpLogPrint=tmpLogPrint..res[1]
+	kiko.log("Finished getting media info RAW by filename.\n" ..
+        "Season\tEp\tEpExt\tTitleExt\tEpType\tTitle:\n"..tmpLogPrint)
+    return res
+end
 
 -- 特殊字符转换 "&amp;" -> "&"  "&quot;" -> "\""
 -- copy from & thanks to "..\\library\\bangumi.lua"
@@ -1780,6 +2196,35 @@ function stringfindre(str, substr, ix)
     local dstl, dstr = string.find(string.reverse(str), string.reverse(substr), #str - ix + 1, true)
     -- 返回子串出现在母串的左、右的序数
     return #str - dstl + 1, #str - dstr + 1
+end
+-- string.split("abc","b")
+-- return: (table){} - 无匹配，返回 (table){input}
+-- copy from & thanks to - https://blog.csdn.net/fightsyj/article/details/85057634
+function string.split(input, delimiter)
+    -- 分隔符nil，返回 (table){input}
+    if type(delimiter) == nil then
+        return {input}
+    end
+    -- 转换为string类型
+    input = tostring(input)
+    delimiter = tostring(delimiter)
+    -- 分隔符空字符串，返回 (table){input}
+    if (delimiter == "") then
+        return {input}
+    end
+
+    -- 坐标；分割input后的(table)
+    local pos, arr = 0, {}
+    -- 从坐标每string.find()到一个匹配的分隔符，获取起止坐标
+    for st, sp in function() return string.find(input, delimiter, pos, true) end do
+        -- 插入 旧坐标到 分隔符开始坐标-1 的字符串
+        table.insert(arr, string.sub(input, pos, st - 1))
+        -- 更新坐标为 分隔符结束坐标+1
+        pos = sp + 1
+    end
+    -- 插入剩余的字符串
+    table.insert(arr, string.sub(input, pos))
+    return arr
 end
 
 -- 打印 <table> 至 kiko
@@ -1887,12 +2332,31 @@ function tableToStringLines(table0, tabs)
             str = str .. "[ " .. k .. " ] : \t" .. v .. "\n"
         else
             -- <table>变量，递归
-            str = str .. "[ " .. k .. " ] : \t" .. "[ \n" .. tableToStringLines(v, tabs) .. " ]\n"
+            str = str .. "[ " .. k .. " ] : \t" .. "{ \n" .. tableToStringLines(v, tabs) .. " }\n"
         end
     end
     return str .. "\n} "
 end
 
+-- 判断table是否为 nil 或 {}
+-- copy from & thanks to - https://www.cnblogs.com/njucslzh/archive/2013/02/02/2886876.html
+function table.isEmpty(ta)
+    if ta == nil then
+        return true
+    end
+    return _G.next( ta ) == nil
+end
+-- 将tb的所有值依次接续到ta尾部，忽略tb中的键
+function table.extendRaw(ta,tb)
+    if ta == nil or type(ta) ~= "table" or tb == nil or type(tb) ~= "table" then
+        -- 排除非<table>的变量
+        return
+    end
+    for _, value in pairs(tb) do
+        table.insert(ta,value)
+    end
+    return
+end
 -- 深拷贝<table>，包含元表(?)，不考虑键key为<table>的情形
 -- copy from & thanks to - https://blog.csdn.net/qq_36383623/article/details/104708468
 function table.deepCopy(tb)
