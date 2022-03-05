@@ -7,7 +7,7 @@ info = {
     ["id"] = "Kikyou.l.TMDb",
     ["desc"] = "The Movie Database (TMDb) 脚本 （测试中，不稳定） Edited by: kafovin \n"..
                 "从 themoviedb.org 刮削影剧元数据，也可设置选择刮削fanart的媒体图片、Emby的本地元数据。",
-    ["version"] = "0.1" -- 0.1.2.220226_build
+    ["version"] = "0.1" -- 0.1.2.220227_build
 }
 -- 设置项
 -- `key`为设置项的`key`，`value`是一个`table`。设置项值`value`的类型都是字符串。
@@ -204,11 +204,11 @@ Anime_data = {
     ["production_country"]      -- {str:iso_3166_1, str:name}
     ["production_company"],	    -- 出品公司 - {num:id, str:logo_path, str:name, str:origin_country}
     ["tv_network"],	        -- 播映剧集的电视网 - {...}
-    ["person_staff"],			-- "job1:name1;job2;name2;..."
+    --["person_staff"],			-- "job1:name1;job2;name2;..."
+    --["tv_creator"]              -- {num:id, str:credit_id, str:name, 1/2:gender, str:profile_path}
     ["person_crew"]
-    ["person_character"],		-- { ["name"]=string,   --人物名称 ["actor"]=string,  --演员名称 ["link"]=string,   --人物资料页URL  ["imgurl"]=string --人物图片URL }
+    --["person_character"],		-- { ["name"]=string,   --人物名称 ["actor"]=string,  --演员名称 ["link"]=string,   --人物资料页URL  ["imgurl"]=string --人物图片URL }
     ["person_cast"]
-    ["tv_creator"]              -- {num:id, str:credit_id, str:name, 1/2:gender, str:profile_path}
 
     ["mo_is_adult"]             -- bool
     ["mo_is_video"]             -- bool
@@ -601,10 +601,9 @@ function searchMediaInfo(keyword, settings_search_type)
             end
             data["status"]= (( objTv["status"]==nil or objTv["status"]=="" )and{ nil }or{ objTv["status"] })[1]
             --? OTHER_INFO tv
-            local tmpStaffCreator=""
-            for index, value in ipairs(objTv["created_by"] or {}) do
-                data["tv_creator"]=data["tv_creator"] or {}
-                table.insert(data["tv_creator"],{
+            for _, value in ipairs(objTv["created_by"] or {}) do
+                data["person_crew"]=data["person_crew"] or {}
+                table.insert(data["person_crew"],{
                     -- ["gender"]= (( tonumber(value["gender"])==1 or tonumber(value["gender"])==2 )and{ tonumber(value["gender"]) }or{ nil })[1],
                     ["name"]= (( value["name"]==nil or value["name"]=="" )and{ nil }or{ value["name"] })[1],
                     ["original_name"]= (( value["name"]==nil or value["name"]=="" )and{ nil }or{ value["name"] })[1],
@@ -615,9 +614,7 @@ function searchMediaInfo(keyword, settings_search_type)
                     ["id"] = tonumber(value["id"]or""),
                     -- ["credit_id"]= (( value["credit_id"]==nil or value["credit_id"]=="" )and{ nil }or{ value["credit_id"] })[1],
                 })
-                tmpStaffCreator= tmpStaffCreator ..((string.isEmpty(value.name))and{ "" }or{ "Creator:"..value.name ..";" })[1]
             end
-            data["person_staff"]= (data.person_staff or"").. tmpStaffCreator
             data["tv_in_production"]= (( objTv["in_production"]==nil or objTv["in_production"]=="" )and{ nil }or{ tostring(objTv["in_production"])=="true" })[1]
             data["tv_language"] = table.deepCopy(objTv["languages"])
             -- data["tv_last_air_date"]= (( objTv["last_air_date"]==nil or objTv["last_air_date"]=="" )and{ nil }or{ objTv["last_air_date"] })[1]
@@ -971,7 +968,7 @@ function detail(anime)
         error(err)
     end
     
-    local tmpStaffCast={}
+    local tmpAnimeCharacter={}
     anime_data["person_cast"]={}
     -- anime_data["person_cast"]=anime_data["person_cast"] or {}
     for _, value in ipairs(objCr.cast or {}) do
@@ -994,28 +991,27 @@ function detail(anime)
             -- ["credit_id"]= (( string.isEmpty(value.credit_id))and{ nil }or{ value.credit_id })[1],
             ["order"]= tonumber(value.order or""),
         })
-        local tmpStaffCrewName=""
+        local tmpAnimeCharacterName=""
         if Metadata_info_origin_title then
-            tmpStaffCrewName= ( string.isEmpty(value.original_name) and{ nil }or{ value.original_name})[1]
+            tmpAnimeCharacterName= ( string.isEmpty(value.original_name) and{ nil }or{ value.original_name})[1]
         else
-            tmpStaffCrewName= ( string.isEmpty(value.original_name) and{ nil }or{
+            tmpAnimeCharacterName= ( string.isEmpty(value.original_name) and{ nil }or{
                 (string.isEmpty(value.name) and{ value.original_name }or{ value.name })[1]})[1]
         end
-        table.insert(tmpStaffCast,{
-            ["name"]= tmpStaffCrewName,
-            ["actor"]=(( string.isEmpty(value.name) )and{
-                (( string.isEmpty(value.original_name))and{ nil }or{ value.original_name })[1] }or{ value.name })[1],
+        table.insert(tmpAnimeCharacter,{
+            ["name"]= ( string.isEmpty(value.character) and{ nil }or{ value.character })[1],
+            ["actor"]=tmpAnimeCharacterName,
             ["link"]="https://www.themoviedb.org/person/"..value.id,
             ["imgurl"]= (( string.isEmpty(value.profile_path))and{ nil }or{ 
                     Image_tmdb.prefix..Image_tmdb.profile[Image_tmdb.max_ix] .. value.profile_path })[1],
         })
     end
-    anime_data["person_character"]= table.deepCopy(tmpStaffCast) or{} -- anime_data.person_cast.id = objCr.id
-    local tmpStaffCrew=""
-    for _, value in ipairs(anime_data.tv_creator or {}) do
-        tmpStaffCrew=tmpStaffCrew ..( string.isEmpty(value.name) and{ "" }or{"Creator:".. value.name ..";" })[1]
+    tmpAnimeCharacter= tmpAnimeCharacter or{} -- anime_data.person_cast.id = objCr.id
+    local tmpAnimeStaff=""
+    for _, value in ipairs(anime_data.person_crew or {}) do
+        tmpAnimeStaff=tmpAnimeStaff ..( string.isEmpty(value.name) and{ "" }or{"Creator:".. value.name ..";" })[1]
     end
-    anime_data["person_crew"]=table.deepCopy(anime_data.tv_creator) or {}
+    anime_data["person_crew"]=anime_data.person_crew or {}
     -- anime_data["person_crew"]=anime_data["person_crew"] or {}
     for _, value in ipairs(objCr.crew or {}) do
         if #(anime_data["person_crew"])>Metadata_person_max_crew then break end
@@ -1034,17 +1030,17 @@ function detail(anime)
             -- ["popularity"]= tonumber(value.popularity or""),
             -- ["credit_id"]= (( string.isEmpty(value.credit_id))and{ nil }or{ value.credit_id })[1],
         })
-        if Metadata_info_origin_title then
-            tmpStaffCrew= tmpStaffCrew ..((string.isEmpty(value.original_name))and{ "" }or{ ((value.department.." - "..value.job)
-                            or"")..":".. value.original_name ..";" })[1]
-        else
-            tmpStaffCrew= tmpStaffCrew ..( string.isEmpty(value.original_name) and{ "" }or{ ((value.department.." - "..value.job)
-                            or"")..":"..( string.isEmpty(value.name) and{ value.original_name }or{value.name })[1] ..";" })[1]
+        if (not string.isEmpty(value.original_name)) or (not string.isEmpty(value.name)) then
+            if Metadata_info_origin_title then
+                tmpAnimeStaff= tmpAnimeStaff ..(value.department.." - "..value.job) ..":"..
+                            ( string.isEmpty(value.original_name) and{ value.name }or{value.name })[1] ..";"
+            else
+                tmpAnimeStaff= tmpAnimeStaff ..(value.department.." - "..value.job) ..":"..
+                            ( string.isEmpty(value.name) and{ value.original_name }or{value.name })[1] ..";"
+            end
         end
     end
-    anime_data["person_staff"]= tmpStaffCrew -- anime_data.person_crew.id = objCr.id
-    -- anime_data["person_staff"]= (anime_data["person_staff"] or"") .. tmpStaffCrew
-
+    tmpAnimeStaff= tmpAnimeStaff or "" -- anime_data.person_crew.id = objCr.id
     local queryEi = {
         ["api_key"] = settings["api_key"],
         ["language"] = settings["metadata_lang"]
@@ -1284,12 +1280,10 @@ function detail(anime)
                  anime_data["release_date"]} or {anime_data["tv_first_air_date"]})[1] or "", -- 发行日期，格式为yyyy-mm-dd 
         ["epcount"] = anime_data["episode_count"], -- 分集数
         ["coverurl"] = posterUrlTmp,
-        ["staff"] = anime_data["person_staff"], -- staff - "job1:staff1;job2:staff2;..."
-        ["crt"] = table.deepCopy(anime_data["person_character"]), -- 人物
+        ["staff"] = tmpAnimeStaff, -- staff - "job1:staff1;job2:staff2;..."
+        ["crt"] = tmpAnimeCharacter, -- 人物
         ["scriptId"] = "Kikyou.l.TMDb"
     }
-    anime_data["person_character"]=nil
-    anime_data["person_staff"]=nil
     if anime_data["media_type"] == "movie" then
         kiko.log("[INFO]  Finished getting detail of < " .. anime_data["media_title"] ..
                      " (" .. anime_data["original_title"] .. ") >")
@@ -1803,11 +1797,18 @@ function match(path)
                                 mdata["overview"] = string.gsub(string.gsub(tmpElem, "\n\n", "\n"), "\r\n\r\n", "\r\n") -- 去除空行
                             elseif xml_v_nfo:name() == "director" then
                                 -- "导演"标签
-                                if mdata["person_staff"] == nil then
-                                    mdata["person_staff"] = ''
+                                if mdata["person_crew"] == nil then
+                                    mdata["person_crew"] = ''
                                 end
                                 -- 处理职员表字符串信息
-                                mdata["person_staff"] = mdata["person_staff"] .. 'Director:' .. tmpElem .. ';'
+                                if not string.isEmpty(tmpElem) then
+                                    table.insert(mdata["person_crew"],{
+                                        ["name"]= tmpElem or"",
+                                        ["original_name"]= tmpElem or"",
+                                        ["department"]= "Directing",
+                                        ["job"]= "Director",
+                                    })
+                                end
                             elseif xml_v_nfo:name() == "rating" then
                                 -- "评分"标签
                                 mdata["vote_average"] = tmpElem
@@ -1868,9 +1869,9 @@ function match(path)
                                 table.insert(mdata["production_company"], tmpElem)
                             elseif xml_v_nfo:name() == "actor" then
                                 -- "演员"标签组
-                                if mdata["person_character"] == nil then
+                                if mdata["person_cast"] == nil then
                                     -- 初始化table
-                                    mdata["person_character"] = {}
+                                    mdata["person_cast"] = {}
                                 end
                                 -- 初始化演员信息文本暂存
                                 local cname, cactor, clink, cimgurl = nil, nil, nil, nil
@@ -1921,10 +1922,10 @@ function match(path)
 							end
 							]] --
                                 -- 向演员信息<table>插入一个演员的信息
-                                table.insert(mdata["person_character"], {
+                                table.insert(mdata["person_cast"], {
                                     ["name"] = cname, -- 人物名称
-                                    ["actor"] = cactor, -- 演员名称
-                                    ["link"] = clink -- 人物资料页URL
+                                    ["name"] = cactor, -- 演员名称
+                                    ["url"] = clink -- 人物资料页URL
                                     -- ["imgurl"]=cimgurl,  --人物图片URL
                                 })
                                 -- xml_v_nfo_crt=nil
@@ -2030,11 +2031,18 @@ function match(path)
 
                             elseif xml_v_nfo:name() == "director" then
                                 -- "导演"标签
-                                if mdata["person_staff"] == nil then
-                                    mdata["person_staff"] = ''
+                                if mdata["person_crew"] == nil then
+                                    mdata["person_crew"] = ''
                                 end
                                 -- 处理职员表字符串信息
-                                mdata["person_staff"] = mdata["person_staff"] .. 'Director:' .. tmpElem .. ';'
+                                if not string.isEmpty(tmpElem) then
+                                    table.insert(mdata["person_crew"],{
+                                        ["name"]= tmpElem or"",
+                                        ["original_name"]= tmpElem or"",
+                                        ["department"]= "Directing",
+                                        ["job"]= "Director",
+                                    })
+                                end
                             elseif xml_v_nfo:name() == "actor" then
                                 -- xml_v_nfo:readnext()
                                 -- ignore actors
@@ -2043,8 +2051,8 @@ function match(path)
                                 --     xml_v_nfo:readnext()
 
                                 -- "演员"标签组
-                                if mdata["person_character"] == nil then
-                                    mdata["person_character"] = {}
+                                if mdata["person_cast"] == nil then
+                                    mdata["person_cast"] = {}
                                 end
                                 -- kiko.log("TEST  - Actor tag"..tmpElem)
                                 -- 初始化演员信息文本暂存
@@ -2066,7 +2074,8 @@ function match(path)
                                             cactor = tmpElem
                                         elseif xml_v_nfo:name() == "tmdbId" then
                                             -- "tmdb的演员id"标签 -> tmdb演员页链接
-                                            clink = "https://www.themoviedb.org/person/" .. tmpElem
+                                            -- clink = "https://www.themoviedb.org/person/" .. tmpElem
+                                            clink = tmpElem
                                             -- elseif xml_v_nfo:name()=="content" then
                                             --     cimgurl = tmpElem
                                         end
@@ -2076,13 +2085,15 @@ function match(path)
                                     xml_v_nfo:readnext()
                                 end
                                 -- 向演员信息<table>插入一个演员的信息
-                                table.insert(mdata["person_character"], {
+                                table.insert(mdata["person_cast"], {
                                     ["name"] = cname, -- 人物名称
-                                    ["actor"] = cactor, -- 演员名称
-                                    ["link"] = clink -- 人物资料页URL
-                                    -- ["imgurl"]=cimgurl,  --人物图片URL
+                                    ["original_name"] = cname, -- 人物名称
+                                    ["character"] = cactor, -- 演员名称
+                                    ["department"]= "Actors",
+                                    ["job"]="Actor",
+                                    ["id"] = tonumber(clink or""),
                                 })
-                                -- kiko.log(table.toStringLine(mdata["person_character"]))
+                                -- kiko.log(table.toStringLine(mdata["person_cast"]))
                             end
                             -- kiko.log('[INFO]  Reading tag <' .. xml_v_nfo:name() .. '>' .. tmpElem)
                         end
@@ -2161,8 +2172,8 @@ function match(path)
 
                             elseif xml_ts_nfo:name() == "actor" then
                                 -- "演员"标签组
-                                if mdata["person_character"] == nil then
-                                    mdata["person_character"] = {}
+                                if mdata["person_cast"] == nil then
+                                    mdata["person_cast"] = {}
                                 end
                                 -- 初始化演员信息文本暂存
                                 local cname, cactor, clink, cimgurl = nil, nil, nil, nil
@@ -2192,13 +2203,15 @@ function match(path)
                                     xml_ts_nfo:readnext()
                                 end
                                 -- 未去重
-                                table.insert(mdata["person_character"], {
+                                table.insert(mdata["person_cast"], {
                                     ["name"] = cname, -- 人物名称
-                                    ["actor"] = cactor, -- 演员名称
-                                    ["link"] = clink -- 人物资料页URL
-                                    -- ["imgurl"]=cimgurl,  --人物图片URL
+                                    ["original_name"] = cname, -- 人物名称
+                                    ["character"] = cactor, -- 演员名称
+                                    ["department"]= "Actors",
+                                    ["job"]="Actor",
+                                    ["id"] = tonumber(clink or""),
                                 })
-                                -- kiko.log(table.toStringLine(mdata["person_character"]))
+                                -- kiko.log(table.toStringLine(mdata["person_cast"]))
                             end
                             -- kiko.log('[INFO]  Reading tag <' .. xml_ts_nfo:name() .. '>' .. tmpElem)
                         end
@@ -2295,15 +2308,23 @@ function match(path)
                                 table.insert(mdata["production_company"], tmpElem)
                             elseif xml_tv_nfo:name() == "director" then
                                 -- "导演"标签
-                                if mdata["person_staff"] == nil then
-                                    mdata["person_staff"] = ''
+                                if mdata["person_crew"] == nil then
+                                    mdata["person_crew"] = ''
+                                end
+                                if not string.isEmpty(tmpElem) then
+                                    table.insert(mdata["person_crew"],{
+                                        ["name"]= tmpElem or"",
+                                        ["original_name"]= tmpElem or"",
+                                        ["department"]= "Directing",
+                                        ["job"]= "Director",
+                                    })
                                 end
                             mdata["person_staff"] = mdata["person_staff"] .. "Director:" .. tmpElem .. ';' -- Director-zh
                             elseif xml_tv_nfo:name() == "actor" then
                                 -- "演员"标签组
-                                if mdata["person_character"] == nil then
+                                if mdata["person_cast"] == nil then
                                     -- 初始化table
-                                    mdata["person_character"] = {}
+                                    mdata["person_cast"] = {}
                                 end
                             local cname, cactor, clink, cimgurl = nil, nil, nil, nil
                                 -- read actors of tv
@@ -2318,20 +2339,17 @@ function match(path)
                                     elseif xml_tv_nfo:name() == "name" then
                                         -- "演员名"标签
                                         cactor = tmpElem
-                                        -- elseif xml_tv_nfo:name()=="content" then
-                                        -- clink = tmpElem
-                                        -- elseif xml_tv_nfo:name()=="content" then
-                                        -- cimgurl = tmpElem
                                     end
                                     -- kiko.log('TEST  - Actor tag <'..xml_tv_nfo:name()..'>'..tmpElem)
                                 end
                                 xml_tv_nfo:readnext()
                             end
-                            table.insert(mdata["person_character"], {
+                            table.insert(mdata["person_cast"], {
                                 ["name"] = cname, -- 人物名称
-                                ["actor"] = cactor -- 演员名称
-                                -- ["link"]=clink,   --人物资料页URL
-                                -- ["imgurl"]=cimgurl  --人物图片URL
+                                ["original_name"] = cname, -- 人物名称
+                                ["character"] = cactor, -- 演员名称
+                                ["department"]= "Actors",
+                                ["job"]="Actor",
                             })
                         end
                         -- kiko.log('[INFO]  Reading tag <' .. xml_tv_nfo:name() .. '>' .. tmpElem)
@@ -2648,22 +2666,22 @@ function menuclick(menuid, anime)
         tipString = tipString .. "\n\n演员表：\t\t\n"
         if table.isEmpty(anime_data.person_cast) then
             for _, value in ipairs(anime.crt or {}) do
-                tipString = tipString ..""..value.actor.."\t"..value.name.."\n"
+                tipString = tipString ..""..string.format("%32s",value.actor or"").."\t"..value.name.."\n"
             end
         else
             for _, value in ipairs(anime_data.person_cast or {}) do
-                tipString = tipString ..""..value.original_name.."\t"..value.character.."\n"
+                tipString = tipString ..""..string.format("%32s",value.original_name or"").."\t"..value.character.."\n"
             end
         end
         tipString = tipString .. "\n职员表：\t\t\n"
         if table.isEmpty(anime_data.person_crew) then
-            if not string.isEmpty(anime.staff) then
-                tipString = tipString .."".. string.gsub(string.gsub(anime.staff,":","\t"),";","\n")
+            for djobstr, value in ipairs(anime.staff or {}) do
+                tipString = tipString..""..string.format("%40s",djobstr or "").."\t"..(value or"").."\n"
             end
         else
             for _, value in ipairs(anime_data.person_crew or {}) do
-                tipString = tipString..""..(value.department or "")..( string.isEmpty(value.job) and{""}or{
-                    " - "..value.job})[1] .."\t"..value.original_name.."\n"
+                tipString = tipString..""..string.format("%40s",(value.department or "")..( string.isEmpty(value.job) and{""}or{
+                    " - "..value.job})[1]) .."\t"..value.original_name.."\n"
             end
         end
         local dataString = ""
