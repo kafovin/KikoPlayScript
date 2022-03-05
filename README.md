@@ -1,6 +1,9 @@
-# KikoPlay 脚本 TMDb - 使用手册
+# KikoPlay 脚本 TMDb & TVmaze - 使用手册
 
-脚本 TMDb (`tmdb.lua`) 是用于弹幕视频播放软件  [KikoPlay](https://github.com/KikoPlayProject/KikoPlay) 的资料脚本，主要借助你从 [The Movie Database (TMDB)](https://www.themoviedb.org/) 申请的API来搜索和刮削信息。
+脚本 TMDb (`/library/tmdb.lua`) 是用于弹幕视频播放软件  [KikoPlay](https://github.com/KikoPlayProject/KikoPlay) 的资料脚本，主要借助你从 [The Movie Database (TMDB)](https://www.themoviedb.org/) 申请的API来搜索和刮削信息。
+也可设置选择刮削 [fanart](https://fanart.tv/) 的媒体图片、[Emby](https://emby.media/) 的本地元数据。
+
+脚本 TVmaze (`/bgm_calendar/tvmazelist.lua`) 是针对剧集的日历时间表脚本（仅英国、美国），主要借助从 [TVmaze](https://www.tvmaze.com/) 的公共API刮削剧集的日历时间表。
 
 脚本~~仍在惰性地几乎~~没有编写中，希望大家多多发现Bug帮助完善脚本 : )
 
@@ -15,21 +18,23 @@
 
 > 目录
 
-- [KikoPlay 脚本 TMDb - 使用手册](#kikoplay-脚本-tmdb---使用手册)
-  - [安装](#安装)
-  - [使用](#使用)
-  - [Q & A](#q--a)
-    - [如何从TMDb申请API密钥](#如何从tmdb申请api密钥)
-    - [如何设置脚本 tmdb.lua](#如何设置脚本-tmdblua)
-    - [如何搜索、刮削媒体数据？](#如何搜索刮削媒体数据)
-    - [其他](#其他)
-  - [TODO：](#todo)
-  - [本脚本基于...](#本脚本基于)
-    - [TMDb](#tmdb)
-    - [Emby](#emby)
-    - [KikoPlay](#kikoplay)
-      - [KikoPlay脚本仓库](#kikoplay脚本仓库)
-      - [反馈](#反馈)
++ [KikoPlay 脚本 TMDb & TVmaze - 使用手册](#kikoplay-脚本-tmdb--tvmaze---使用手册)
+  + [安装](#安装)
+  + [使用](#使用)
+  + [Q & A](#q--a)
+    + [如何从TMDb申请API密钥](#如何从tmdb申请api密钥)
+    + [如何设置脚本 tmdb.lua](#如何设置脚本-tmdblua)
+    + [如何搜索、刮削媒体数据？](#如何搜索刮削媒体数据)
+    + [其他](#其他)
+  + [TODO：](#todo)
+  + [本脚本基于...](#本脚本基于)
+    + [TMDb](#tmdb)
+    + [TVmaze](#tvmaze)
+    + [fanart](#fanart)
+    + [Emby](#emby)
+    + [KikoPlay](#kikoplay)
+      + [KikoPlay脚本仓库](#kikoplay脚本仓库)
+      + [反馈](#反馈)
 
 <br\>
 
@@ -145,20 +150,18 @@
 
      > **注意**：`hosts`修改可能**有安全风险**，修改时请**谨慎**，确保安全。
 
-     + 以下是一个添加`hosts`的可能已经过时范例，建议你寻找 网址/域名/DNS等的搜索网站搜索`api.themoviedb.org`、`image.tmdb.org`等域名。
+     + 以下是一个添加`hosts` 已经**过时**的 范例，建议你寻找 网址/域名/DNS等的搜索网站搜索`api.themoviedb.org`、`image.tmdb.org`等域名。
 
      ```bat
      
      # tmdb.org themoviedb Start
-     # 52.216.89.219 tmdb.org
-     52.85.79.4 image.tmdb.org
-     # 104.16.57.155 files.tmdb.org
-     # 52.85.79.2 themoviedb.org
-     # 143.204.147.7 www.themoviedb.org
+     13.249.87.43 www.themoviedb.org
      99.84.173.16 api.themoviedb.org
-     # 104.26.12.126 fanart.tv
-     # 163.172.219.181 assets.fanart.tv
-     # 104.20.81.229 trakt.tv
+     99.84.160.76 image.tmdb.org
+     51.89.197.177 fanart.tv
+     91.134.1.171 webservice.fanart.tv
+     163.172.219.181 assets.fanart.tv
+     # 172.67.3.215 trakt.tv
      # tmdb.org End
      
      ```
@@ -281,9 +284,27 @@ Every piece of data has been added by our amazing community dating back to 2008.
 + 个人设置-申请 API  -   [https://www.themoviedb.org/settings/api](https://www.themoviedb.org/settings/api)
 + API 开发用手册  -   [https://developers.themoviedb.org/3/getting-started/introduction](https://developers.themoviedb.org/3/getting-started/introduction)
 
+### TVmaze
 
+> 本脚本借助 [TVmaze](https://www.tvmaze.com/) 的 公共API 刮削剧集的日历时间表。
+> 
+> 本节内容来自 [TVmaze](https://www.tvmaze.com/)
 
+Say hi to your new TVguide. Never miss a show again!
 
+Find episode information for any show on any device. anytime, anywhere!
+
+![TVmaze-logo](tmdb.lua-manual.assets/tvm-header-logo.png)
+
+### fanart
+
+> 本脚本借助 [fanart](https://fanart.tv/) 的 API 刮削媒体图片。
+> 
+> 本节内容来自 [fanart](https://fanart.tv/)
+
+Logos, Backgrounds, Posters and more for your TV, Movie and Music collections.
+
+![fanart-logo](tmdb.lua-manual.assets/Fanart-logo-new.png)
 
 ### Emby
 
@@ -324,7 +345,6 @@ KikoPlay支持Lua脚本，有三种类型：
 
 > 本节内容来自 `/KikoPlayProject/KikoPlayScript`
 
-有新脚本可直接提交PR
+有新脚本可直接向 [`/KikoPlayProject/KikoPlayScript`](https://github.com/KikoPlayProject/KikoPlayScript) 提交PR。
 
-如果有问题，创建issue或者联系我:
-dx_8820832#yeah.net（#→@），或者到QQ群874761809反馈
+如果有`/KikoPlayProject/KikoPlayScript`的相关问题，创建issue、或者到QQ群874761809反馈。

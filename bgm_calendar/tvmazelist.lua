@@ -5,8 +5,9 @@
 info = {
     ["name"] = "TVmazeList",
     ["id"] = "Kikyou.b.TVmazeList",
-	["desc"] = "TVmaze 剧集日历脚本（测试中，不稳定）：从 (api.)tvmaze.com 中获取刮削的剧集时间表 Edited by: kafovin",
-	["version"] = "0.1", -- 0.1.0.20220302_build
+	["desc"] = "TVmaze 剧集日历脚本（测试中，不稳定） Edited by: kafovin \n"..
+                "从 tvmaze.com 刮削剧集的日历时间表。",
+	["version"] = "0.1", -- 0.0.20220303_build
 }
 
 -- 设置项
@@ -266,7 +267,8 @@ function getbgmlist(season)
                 end
 
                 local wSites={}
-                if (tonumber(ep.season)~=nil or tonumber(ep.number)~=nil) then
+                -- if (tonumber(ep.season)~=nil or tonumber(ep.number)~=nil) then
+                if (tonumber(ep.number)~=nil) then
                     table.insert(wSites,{
                             ["name"]=--((tonumber(ep.season)==nil) and{ "" } or{ string.format("S%02s", math.floor(tonumber(ep.season))) })[1] ..
                                 ((tonumber(ep.number)==nil) and{ "" } or{ string.format("E%02s", math.floor(tonumber(ep.number))) })[1],
@@ -287,6 +289,27 @@ function getbgmlist(season)
                 if not string.isEmpty(((ep.show or{}).externals or{}).imdb) then
                     table.insert(wSites,{ ["name"]="IMDb", ["url"]="https://www.imdb.com/title/"..((ep.show or{}).externals or{}).imdb})
                 end
+                if not string.isEmpty((ep.show or{}).name) then
+                    local tmpSeasont=""
+                    if not string.isEmpty(ep.season) and tonumber(ep.season)~=nil then
+                        tmpSeasont=tmpSeasont..""--..string.format("%02d",math.floor(tonumber( ep.season )))
+                    end
+                    table.insert(wSites,{ ["name"]="字幕库", ["url"]="https://zmk.pw/search?q="..string.gsub((ep.show or{}).name or""," ","+")..tmpSeasont})
+                end
+                if not string.isEmpty((ep.show or{}).name) then
+                    local tmpSeasont=""
+                    if not string.isEmpty(ep.season) and tonumber(ep.season)~=nil then
+                        tmpSeasont=tmpSeasont.."%20S"..string.format("%02d",math.floor(tonumber( ep.season )))
+                    end
+                    table.insert(wSites,{ ["name"]="SubHD", ["url"]="https://subhd.tv/search/"..string.gsub((ep.show or{}).name or""," ","%%20")..tmpSeasont})
+                end
+                if not string.isEmpty(((ep.show or{}).externals or{}).imdb) then
+                    table.insert(wSites,{ ["name"]="YYeTs", ["url"]="https://www.yysub.net/search/index?search_type=&keyword="..((ep.show or{}).externals or{}).imdb})
+                end
+                if not string.isEmpty(((ep.show or{}).externals or{}).imdb) then
+                    table.insert(wSites,{ ["name"]="OpenSubtitles", ["url"]="https://www.opensubtitles.com/zh-CN/zh-CN,zh-TW,en/search-all/q-"..
+                                ((ep.show or{}).externals or{}).imdb.. "/hearing_impaired-include/machine_translated-include/trusted_sources-"})
+                end
                 -- if not string.isEmpty(((ep.show or{}).externals or{}).thetvdb) then
                 --     table.insert(wSites,{ ["name"]="TVDb", ["url"]="https://thetvdb.com/series/"..((ep.show or{}).externals or{}).thetvdb})
                 -- end
@@ -295,8 +318,8 @@ function getbgmlist(season)
                 -- end
                 
                 table.insert(weeksInfo,{
-                    ["title"]=((ep.show or{}).name or"").. ((tonumber(ep.season)==nil and tonumber(ep.number)==nil)and{""}or{" "})[1] ..
-                            ((tonumber(ep.season)==nil) and{ "" } or{ string.format("S%02s", math.floor(tonumber(ep.season))) })[1],-- ..
+                    ["title"]=((ep.show or{}).name or"").. ((tonumber(ep.season)==nil and tonumber(ep.number)==nil)and{""}
+                                or{ string.format(" S%02s", math.floor(tonumber(ep.season))) })[1],-- ..
                             -- ((tonumber(ep.number)==nil) and{ "" } or{ string.format("E%02s", math.floor(tonumber(ep.number))) })[1],
                     ["weekday"]= ((tonumber( os.date("%w",dtStamp) )==nil)and{ nil }or{ math.floor(tonumber( os.date("%w",dtStamp) ))})[1], --放送星期，取值0(星期日)~6(星期六)
                     -- ["weekday"]=Date_time_info.weekEnNum[(((ep.show or{}).schedule or{}).days or{})[1]],

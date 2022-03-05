@@ -7,7 +7,7 @@ info = {
     ["id"] = "Kikyou.l.TMDb",
     ["desc"] = "The Movie Database (TMDb) 脚本 （测试中，不稳定） Edited by: kafovin \n"..
                 "从 themoviedb.org 刮削影剧元数据，也可设置选择刮削fanart的媒体图片、Emby的本地元数据。",
-    ["version"] = "0.1" -- 0.1.2.220227_build
+    ["version"] = "0.1" -- 0.1.2.220303_build
 }
 -- 设置项
 -- `key`为设置项的`key`，`value`是一个`table`。设置项值`value`的类型都是字符串。
@@ -31,13 +31,20 @@ settings = {
         ["default"] = "filename",
         ["desc"] = "输入的字符经过何种处理作为关键词，来搜索媒体（不含集序号）。\n"..
                 "filename：作为除去拓展名的文件名。 plain：不处理，作为单纯的标题（搜索请不要输入季序号等）。", -- 丢弃`person`的演员搜索结果
-        ["choices"] = "filename,plain"
+        ["choices"] = "filename,plain",
+    },
+    ["search_list_season_all"] = {
+        ["title"] = "搜索 - 是否显示更多季",
+        ["default"] = "1",
+        ["desc"] = "搜索操作中 在没识别到季序号时，是否显示全部季数。\n".."当且仅当 `搜索 - 关键词处理` 设置为 `filename`时有效。\n"..
+                "0：没识别到季序号时，仅显示第1季、或特别篇。 1：没识别到季序号时，显示全部季数。", -- 丢弃`person`的演员搜索结果
+        ["choices"] = "0,1",
     },
     ["search_type"] = {
         ["title"] = "搜索 - 媒体类型",
         ["default"] = "multi",
         ["desc"] = "搜索的数据仅限此媒体类型。\n movie：电影。 multi：电影/剧集。 tv：剧集。", -- 丢弃`person`的演员搜索结果
-        ["choices"] = "movie,multi,tv"
+        ["choices"] = "movie,multi,tv",
     },
     ["match_type"] = {
         ["title"] = "匹配 - 数据来源",
@@ -45,7 +52,7 @@ settings = {
         ["desc"] = "自动匹配本地媒体文件的数据来源。值为<local_Emby_nfo>时需要用软件Emby提前刮削过。\n" ..
                     "local_Emby_nfo：来自Emby在刮削TMDb媒体后 在本地媒体文件同目录存储元数据的 .nfo格式文件(内含.xml格式文本)；\n" ..
                     "online_TMDb_filename：(不稳定) 从文件名模糊识别关键词，再用TMDb的API刮削元数据。 (*￣▽￣）", -- 丢弃`person`的演员搜索结果
-        ["choices"] = "local_Emby_nfo,online_TMDb_filename"
+        ["choices"] = "local_Emby_nfo,online_TMDb_filename",
     },
     ["match_priority"] = {
         ["title"] = "匹配 - 备用媒体类型",
@@ -54,7 +61,7 @@ settings = {
                     "此情况发生于文件名在描述 所有的电影、以及一些情况的剧集正篇或特别篇 的时候。\n" ..
                     -- "other：识别为`其他`类型的集（不同于本篇/特别篇），置于剧集特别篇或电影中。\n" ..
                     "movie：电影。multi：采用刮削时排序靠前的影/剧。tv：剧集。single：以对话框确定影/剧某一种 (不稳定)。",
-        ["choices"] = "movie,multi,single,tv"
+        ["choices"] = "movie,multi,single,tv",
                     -- "movie,multi,tv,movie_other,multi_other,tv_other"
     },
     ["metadata_lang"] = {
@@ -69,7 +76,7 @@ settings = {
                     ",eu-ES,fa-IR,fi-FI,fr-CA,fr-FR,ga-IE,gd-GB,gl-ES,he-IL,hi-IN,hr-HR,hu-HU,id-ID,it-IT" ..
                     ",ja-JP,ka-GE,kk-KZ,kn-IN,ko-KR,ky-KG,lt-LT,lv-LV,ml-IN,mr-IN,ms-MY,ms-SG,nb-NO,nl-BE" ..
                     ",nl-NL,no-NO,pa-IN,pl-PL,pt-BR,pt-PT,ro-RO,ru-RU,si-LK,sk-SK,sl-SI,sq-AL,sr-RS,sv-SE" ..
-                    ",ta-IN,te-IN,th-TH,tl-PH,tr-TR,uk-UA,vi-VN,zh-CN,zh-HK,zh-SG,zh-TW,zu-ZA"
+                    ",ta-IN,te-IN,th-TH,tl-PH,tr-TR,uk-UA,vi-VN,zh-CN,zh-HK,zh-SG,zh-TW,zu-ZA",
         -- ["choices"] = "ar-SA,de-DE,en-US,es-ES,fr-FR,it-IT,ja-JP,ko-KR,pt-PT,ru-RU,zh-CN,zh-HK,zh-TW",
         -- ["choices"] = "en-US,fr-FR,ja-JP,ru-RU,zh-CN,zh-HK,zh-TW",
     },
@@ -79,7 +86,7 @@ settings = {
         ["desc"] = "元数据的标题是否使用媒体的原语言。\n" ..
                     "注意：再次关联导致标题改变时，弹幕仍然按照旧标题识别，请在`管理弹幕池`中手动复制弹幕到新标题。\n"..
                     "0-不使用。1-使用。",
-        ["choices"] = "0,1"
+        ["choices"] = "0,1",
     },
     ["metadata_info_origin_image"] = {
         ["title"] = "元数据 - 图片使用原语言",
@@ -88,7 +95,7 @@ settings = {
                     "不适用于 `元数据 - 图片主要来源` 设置为`TMDb_only`时，该选项仍参照以`元数据 - 语言`。\n" ..
                     "仅当 `元数据 - 图片主要来源` 设置为`fanart_prior`或`TMDb_prior`时 对fanart的图片有效。\n" ..
                     "0-不使用。1-使用。",
-        ["choices"] = "0,1"
+        ["choices"] = "0,1",
     },
     ["metadata_display_imgtype"] = {
         ["title"] = "元数据 - 显示的图片种类",
@@ -110,17 +117,31 @@ settings = {
                     "fanart_prior：图片优先fanart，(由于fanart的图片种类较多，因此TMDb的图片通常会被忽略)。\n"..
                     "TMDb_only：图片仅TMDb，(不会从fanart刮削图片，仅此项不需要 fanart的API密钥)。\n"..
                     "TMDb_prior：图片优先TMDb，TMDb提供海报、背景，其他的由fanart提供。",
-        ["choices"] = "fanart_prior,TMDb_only,TMDb_prior"
+        ["choices"] = "fanart_prior,TMDb_only,TMDb_prior",
+    },
+    ["metadata_castcrew_castcount"]={
+        ["title"] = "元数据 - 演员总数至多为",
+        ["default"] = "10",
+        ["desc"] = "元数据的演员表至多保留多少演员。\n"..
+                    "其中，数目>0时，为至多保留的数目；数目=0时，不保留；数目<0时，保留所有；小数，则向负无穷方向取整。",
+    },
+    ["metadata_castcrew_crewcount"]={
+        ["title"] = "元数据 - 职员总数至多为",
+        ["default"] = "7",
+        ["desc"] = "元数据的职员表至多保留多少职员。\n"..
+                    "其中，数目>0时，为至多保留的数目；数目=0时，不保留；数目<0时，保留所有；小数，则向负无穷方向取整。",
     },
 }
 
-Metadata_search_page = 1 -- 元数据总共搜索页数。 默认： 1 页
+-- 不会 在运行函数内更新值
+Metadata_search_page = 1 -- 元数据搜索第几页。 默认：第 1 页
 Metadata_search_adult = false -- Choose whether to inlcude adult content in the results when searching metadata. Default: false
-Metadata_info_origin_title = true -- 是否使用源语言标题，在运行函数内更新值
-Metadata_info_origin_image = true -- 是否使用源语言图片，在运行函数内更新值
-Metadata_person_max_cast = 10
-Metadata_person_max_crew = 7
-Metadata_display_imgtype="background"
+-- 会  在运行函数内更新值
+Metadata_info_origin_title = true -- 是否使用源语言标题
+Metadata_info_origin_image = true -- 是否使用源语言图片 --仅fanart图片
+Metadata_person_max_cast = 10 -- 演员表最多保留
+Metadata_person_max_crew = 7 -- 职员表最多保留
+Metadata_display_imgtype="background" -- 图片类型使用背景
 
 Array={}
 Path={}
@@ -258,7 +279,6 @@ function search(keyword)
     elseif true or settings["search_keyword_process"]=="filename" then
         local mType = "multi"
         local mTitle,mSeason,mEp,mEpX,mTitleX,mEpType = "","","","","",""
-        local mPriority=1
         local resMirbf= Path.getMediaInfoRawByFilename(keyword..".mkv")
         mTitle=resMirbf[1] or ""
         mSeason=resMirbf[2] or ""
@@ -279,20 +299,25 @@ function search(keyword)
         local resultSearch= searchMediaInfo(mTitle,
                 ((settings_search_type=="multi")and{mType}or{settings_search_type})[1])
         local mSeasonTv = ""
+        local tmpsSearchlSeasonall= settings["search_list_season_all"]
         for _, value in ipairs(resultSearch or {}) do
             if mSeason =="" and value["media_type"] == "movie" then
                 table.insert(mediais, value)
                 goto continue_search_KMul_Mnfo
             elseif value["media_type"]=="tv" then
                 if mSeason == "" then
-                    mSeasonTv = ((mIsSp)and{0}or{1})[1]
+                    if tmpsSearchlSeasonall=="0" then
+                        mSeasonTv = ((mIsSp)and{0}or{1})[1]
+                    elseif true or tmpsSearchlSeasonall=="1" then
+                    end
                 else mSeasonTv = math.floor(tonumber(mSeason))
                 end
                 if value["season_number"] == mSeasonTv or tostring(value["season_number"]) == tostring(mSeasonTv) then
-                    table.insert(mediais, value)
+                        table.insert(mediais, value)
                     goto continue_search_KMul_Mnfo
                 elseif value["season_number"] == 0 or tostring(value["season_number"]) == tostring(0) or
-                    value["season_number"] == 1 or tostring(value["season_number"]) == tostring(1) then
+                        value["season_number"] == 1 or tostring(value["season_number"]) == tostring(1) or
+                        (string.isEmpty(mSeasonTv)) then
                     table.insert(mediais, value)
                     goto continue_search_KMul_Mnfo
                 else
@@ -968,11 +993,17 @@ function detail(anime)
         error(err)
     end
     
-    local tmpAnimeCharacter={}
+    local tmpAnimeCharacter, tmpMcCast,tmpMcCrew={}, 0,0
+    tmpMcCast= math.floor(tonumber( settings["metadata_castcrew_castcount"] ) or Metadata_person_max_cast)
+    if tmpMcCast<0 then tmpMcCast=math.maxinteger end
+    Metadata_person_max_cast = math.max( tmpMcCast , math.floor(Metadata_person_max_cast))
+    tmpMcCrew= math.floor(tonumber( settings["metadata_castcrew_crewcount"] ) or Metadata_person_max_crew)
+    if tmpMcCrew<0 then tmpMcCrew=math.maxinteger end
+    Metadata_person_max_crew = math.max( tmpMcCrew , math.floor(Metadata_person_max_crew))
     anime_data["person_cast"]={}
     -- anime_data["person_cast"]=anime_data["person_cast"] or {}
     for _, value in ipairs(objCr.cast or {}) do
-        if #(anime_data["person_cast"])>Metadata_person_max_cast then break end
+        if #(anime_data["person_cast"])>=Metadata_person_max_cast then break end
         table.insert(anime_data["person_cast"],{
             -- ["gender"]= (( tonumber(value.gender)==1 or tonumber(value.gender)==2 )and{ tonumber(value.gender) }or{ nil })[1],
             ["name"]= (( string.isEmpty(value.name) )and{
@@ -998,6 +1029,7 @@ function detail(anime)
             tmpAnimeCharacterName= ( string.isEmpty(value.original_name) and{ nil }or{
                 (string.isEmpty(value.name) and{ value.original_name }or{ value.name })[1]})[1]
         end
+        if #(anime_data["person_cast"])>tmpMcCast then goto continue_detail_ccc_cast end
         table.insert(tmpAnimeCharacter,{
             ["name"]= ( string.isEmpty(value.character) and{ nil }or{ value.character })[1],
             ["actor"]=tmpAnimeCharacterName,
@@ -1005,6 +1037,7 @@ function detail(anime)
             ["imgurl"]= (( string.isEmpty(value.profile_path))and{ nil }or{ 
                     Image_tmdb.prefix..Image_tmdb.profile[Image_tmdb.max_ix] .. value.profile_path })[1],
         })
+        ::continue_detail_ccc_cast::
     end
     tmpAnimeCharacter= tmpAnimeCharacter or{} -- anime_data.person_cast.id = objCr.id
     local tmpAnimeStaff=""
@@ -1014,7 +1047,7 @@ function detail(anime)
     anime_data["person_crew"]=anime_data.person_crew or {}
     -- anime_data["person_crew"]=anime_data["person_crew"] or {}
     for _, value in ipairs(objCr.crew or {}) do
-        if #(anime_data["person_crew"])>Metadata_person_max_crew then break end
+        if #(anime_data["person_crew"])>=Metadata_person_max_crew then break end
         table.insert(anime_data["person_crew"],{
             -- ["gender"]= (( tonumber(value.gender)==1 or tonumber(value.gender)==2 )and{ tonumber(value.gender) }or{ nil })[1],
             ["name"]= (( string.isEmpty(value.name) )and{
@@ -1030,6 +1063,7 @@ function detail(anime)
             -- ["popularity"]= tonumber(value.popularity or""),
             -- ["credit_id"]= (( string.isEmpty(value.credit_id))and{ nil }or{ value.credit_id })[1],
         })
+        if #(anime_data["person_crew"])>tmpMcCrew then goto continue_detail_ccc_crew end
         if (not string.isEmpty(value.original_name)) or (not string.isEmpty(value.name)) then
             if Metadata_info_origin_title then
                 tmpAnimeStaff= tmpAnimeStaff ..(value.department.." - "..value.job) ..":"..
@@ -1039,6 +1073,7 @@ function detail(anime)
                             ( string.isEmpty(value.name) and{ value.original_name }or{value.name })[1] ..";"
             end
         end
+        ::continue_detail_ccc_crew::
     end
     tmpAnimeStaff= tmpAnimeStaff or "" -- anime_data.person_crew.id = objCr.id
     local queryEi = {
@@ -2471,14 +2506,20 @@ end
 -- Table，类型为 Array[LibraryMenu]
 -- 如果资料库条目的scriptId和当前脚本的id相同，条目的右键菜单中会添加menus包含的菜单项，用户点击后会通过menuclick函数通知脚本
 menus = {{
-        ["title"] = "打开TMDb页面",
-        ["id"] = "open_webpage_media_tmdb",
-    },{
         ["title"] = "打开媒体主页",
         ["id"] = "open_webpage_media_home",
     },{
-        ["title"] = "打开IMDb主页",
+        ["title"] = "打开TMDb页面",
+        ["id"] = "open_webpage_media_tmdb",
+    },{
+        ["title"] = "打开IMDb页面",
         ["id"] = "open_webpage_media_imdb",
+    },{
+        ["title"] = "打开fanart页面",
+        ["id"] = "open_webpage_media_fanart",
+    },{
+        ["title"] = "使用字幕搜索",
+        ["id"] = "open_webpage_multiple_subtitle",
     },{
         ["title"] = "显示媒体元数据",
         ["id"] = "show_media_matadata",
@@ -2505,7 +2546,6 @@ function menuclick(menuid, anime)
     end
 
     if menuid == "open_webpage_media_tmdb" then
-        -- 打开对应TMDb网页链接
         kiko.log("Open TMDb page of <"..anime["name"]..">.")
         if not string.isEmpty(anime["url"]) then
             kiko.message("打开 <"..anime["name"].."> 的TMDb页面", NM_HIDE)
@@ -2514,22 +2554,60 @@ function menuclick(menuid, anime)
             kiko.message("未找到 <"..anime["name"].."> 的TMDb页面。\n请右键资料库的媒体尝试重新刮削详细信息。", NM_HIDE|NM_ERROR)
         end
     elseif menuid == "open_webpage_media_home" then
-        -- 打开对应TMDb网页链接
-        kiko.log("Open TMDb page of <"..anime["name"]..">.")
+        kiko.log("Open home page of <"..anime["name"]..">.")
         if not string.isEmpty(anime_data.homepage_path) then
             kiko.message("打开 <"..anime["name"].."> 的媒体主页", NM_HIDE)
             kiko.execute(true, "cmd", {"/c", "start", anime_data.homepage_path})
         else
-            kiko.message("未找到 <"..anime["name"].."> 的媒体主页。\n请右键资料库的媒体尝试重新刮削详细信息。", NM_HIDE|NM_ERROR)
+            kiko.message("未找到 <"..anime["name"].."> 的媒体主页。", NM_HIDE|NM_ERROR)
         end
     elseif menuid == "open_webpage_media_imdb" then
-        -- 打开对应TMDb网页链接
-        kiko.log("Open TMDb page of <"..anime["name"]..">.")
+        kiko.log("Open IMDb page of <"..anime["name"]..">.")
         if not string.isEmpty(anime_data.imdb_id) then
             kiko.message("打开 <"..anime["name"].."> 的IMDb页面", NM_HIDE)
             kiko.execute(true, "cmd", {"/c", "start", "https://www.imdb.com/title/"..anime_data.imdb_id})
         else
             kiko.message("未找到 <"..anime["name"].."> 的IMDb页面。\n请右键资料库的媒体尝试重新刮削详细信息。", NM_HIDE|NM_ERROR)
+        end
+    elseif menuid == "open_webpage_media_fanart" then
+        kiko.log("Open fanart page of <"..anime["name"]..">.")
+        if anime_data.media_type=="movie" then
+            if not string.isEmpty(anime_data.media_id) then
+                kiko.message("打开 <"..anime["name"].."> 的fanart页面", NM_HIDE)
+                kiko.execute(true, "cmd", {"/c", "start", "https://fanart.tv/movie/"..anime_data.media_id})
+            else
+                kiko.message("未找到 <"..anime["name"].."> 的fanart页面。\n请右键资料库的媒体尝试重新刮削详细信息。", NM_HIDE|NM_ERROR)
+            end
+        elseif anime_data.media_type=="tv" then
+            if not string.isEmpty(anime_data.tvdb_id) then
+                kiko.message("打开 <"..anime["name"].."> 的fanart页面", NM_HIDE)
+                kiko.execute(true, "cmd", {"/c", "start", "https://fanart.tv/series/"..anime_data.tvdb_id})
+            else
+                kiko.message("未找到 <"..anime["name"].."> 的fanart页面。\n请右键资料库的媒体尝试重新刮削详细信息。", NM_HIDE|NM_ERROR)
+            end
+        else
+            kiko.message("未找到 <"..anime["name"].."> 的fanart页面。\n请右键资料库的媒体尝试重新刮削详细信息。", NM_HIDE|NM_ERROR)
+        end
+    elseif menuid == "open_webpage_multiple_subtitle" then
+        kiko.log("Open multiple subtitle page of <"..anime["name"].."> by IMDb id.")
+        kiko.message("打开 <"..anime["name"].."> 的字幕搜索页面", NM_HIDE)
+        if not string.isEmpty(anime_data.original_title) then
+            local tmpSeasont=""
+            if anime_data.media_type=="tv" and not string.isEmpty(anime_data.season_number) and tonumber(anime_data.season_number)~=nil then
+                tmpSeasont=tmpSeasont.."" -- ..string.format("%d",math.floor(tonumber( anime_data.season_number )))
+            end
+            kiko.execute(true, "cmd", {"/c", "start", "https://zmk.pw/search?q="..string.gsub(anime_data.original_title," ","+")..tmpSeasont})
+            if anime_data.media_type=="tv" and not string.isEmpty(anime_data.season_number) and tonumber(anime_data.season_number)~=nil then
+                tmpSeasont=tmpSeasont.."%20S"..string.format("%02d",math.floor(tonumber( anime_data.season_number )))
+            end
+            kiko.execute(true, "cmd", {"/c", "start", "https://subhd.tv/search/"..string.gsub(anime_data.original_title," ","%%20")..tmpSeasont})
+        end
+        if not string.isEmpty(anime_data.imdb_id) then
+            kiko.execute(true, "cmd", {"/c", "start", "https://www.yysub.net/search/index?keyword="..anime_data.imdb_id.."&search_type="})
+            kiko.execute(true, "cmd", {"/c", "start", "https://www.opensubtitles.com/zh-CN/zh-CN,zh-TW,en/search-all/q-"..
+                        anime_data.imdb_id.. "/hearing_impaired-include/machine_translated-include/trusted_sources-"})
+        else
+            kiko.message("未找到 <"..anime["name"].."> 的IMDb id。\n请右键资料库的媒体尝试重新刮削详细信息。", NM_HIDE|NM_ERROR)
         end
     elseif menuid == "show_media_matadata" then
         -- 显示媒体元数据
@@ -2566,6 +2644,9 @@ function menuclick(menuid, anime)
             if anime_data["tv_in_production"]==true or anime_data["tv_in_production"]=="true" then
                 tipString = tipString ..", 未完结"
             end
+        end
+        if not table.isEmpty(anime_data.mo_belongs_to_collection) and not string.isEmpty(anime_data.mo_belongs_to_collection.name) then
+            tipString = tipString .. "\n所属系列：\t" .. anime_data.mo_belongs_to_collection.name
         end
         tipString = tipString .. "\n流派：\t\t" .. (Array.toStringLine(anime_data["genre_names"]) or "")
         if anime_data["mo_is_adult"]==true or anime_data["mo_is_adult"]=="true" then
@@ -2636,14 +2717,14 @@ function menuclick(menuid, anime)
         tipString = tipString .. "\n背景链接：\t" .. Image_tmdb.prefix..Image_tmdb.backdrop[Image_tmdb.max_ix] ..  (tmpString or anime_data["background_path"] or "")
         local function getStrFanartImage(value, fiType)
             local tmpLine="\n"
-            tmpLine= tmpLine..string.format("%8s",fiType or "").." ("..string.format("%3s",value.lang or"")
+            tmpLine= tmpLine..string.format("%4s",fiType or "").."("..string.format("%2s",value.lang or"")
             if not string.isEmpty(value.disc_type) then
-                tmpLine= tmpLine..","..string.format("%7s",value.disc_type or"")
+                tmpLine= tmpLine..","..string.format("%6s",value.disc_type or"")
             end
             if not string.isEmpty(value.season) then
-                tmpLine= tmpLine..","..string.format(" %02s",value.season or"")
+                tmpLine= tmpLine..","..string.format("%02s",value.season or"")
             end
-            tmpLine= tmpLine.. " )：\t"
+            tmpLine= tmpLine.. ")\t"
             if not string.isEmpty(value.url) then
                 tmpLine= tmpLine..Image_fanart.prefix..Image_fanart.size[2]..(value.url or"")
             end
@@ -2666,22 +2747,22 @@ function menuclick(menuid, anime)
         tipString = tipString .. "\n\n演员表：\t\t\n"
         if table.isEmpty(anime_data.person_cast) then
             for _, value in ipairs(anime.crt or {}) do
-                tipString = tipString ..""..string.format("%32s",value.actor or"").."\t"..value.name.."\n"
+                tipString = tipString ..""..string.format("%s",value.actor or"").."\t\t\t"..value.name.."\n"
             end
         else
             for _, value in ipairs(anime_data.person_cast or {}) do
-                tipString = tipString ..""..string.format("%32s",value.original_name or"").."\t"..value.character.."\n"
+                tipString = tipString ..""..string.format("%s",value.original_name or"").."\t\t\t"..value.character.."\n"
             end
         end
         tipString = tipString .. "\n职员表：\t\t\n"
         if table.isEmpty(anime_data.person_crew) then
             for djobstr, value in ipairs(anime.staff or {}) do
-                tipString = tipString..""..string.format("%40s",djobstr or "").."\t"..(value or"").."\n"
+                tipString = tipString..""..string.format("%s",djobstr or "").."\t\t\t"..(value or"").."\n"
             end
         else
             for _, value in ipairs(anime_data.person_crew or {}) do
-                tipString = tipString..""..string.format("%40s",(value.department or "")..( string.isEmpty(value.job) and{""}or{
-                    " - "..value.job})[1]) .."\t"..value.original_name.."\n"
+                tipString = tipString..""..string.format("%s",(value.department or "")..( string.isEmpty(value.job) and{""}or{
+                    " - "..value.job})[1]) .."\t\t\t"..value.original_name.."\n"
             end
         end
         local dataString = ""
@@ -3075,7 +3156,8 @@ function string.split(input, delimiter)
 end
 -- string.isEmpty():: nil->true | "" -> true
 function string.isEmpty(input)
-    if(input==nil or tostring(input)=="") then
+    if input==nil or tostring(input)==""
+            or not (type(input)=="string" or type(input)=="number" or type(input)=="boolean") then
         return true
     else return false
     end
