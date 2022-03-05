@@ -5,8 +5,9 @@
 info = {
     ["name"] = "TVmazeList",
     ["id"] = "Kikyou.b.TVmazeList",
-	["desc"] = "TVmaze 剧集日历脚本（测试中，不稳定）：从 (api.)tvmaze.com 中获取刮削的剧集时间表 Edited by: kafovin",
-	["version"] = "0.1", -- 0.1.0.20220302_build
+	["desc"] = "TVmaze 剧集日历脚本（测试中，不稳定） Edited by: kafovin \n"..
+                "从 tvmaze.com 刮削剧集的日历时间表。",
+	["version"] = "0.1", -- 0.0.20220305_build
 }
 
 -- 设置项
@@ -54,12 +55,12 @@ settings = {
 
 --[[ copy from & thanks to "../bgm_calendar/bgmlist.lua" in "KikoPlay/bgm_calendar"|KikoPlayScript
 _, Site_map = kiko.json2table([[{"acfun":{"title":"AcFun","urlTemplate":"https://www.acfun.cn/bangumi/aa{{id}}","regions":["CN"],"type":"onair"},"bilibili":{"title":"哔哩哔哩","urlTemplate":"https://www.bilibili.com/bangumi/media/md{{id}}/","regions":["CN"],"type":"onair"},"bilibili_hk_mo_tw":{"title":"哔哩哔哩（港澳台）","urlTemplate":"https://www.bilibili.com/bangumi/media/md{{id}}/","regions":["HK","MO","TW"],"type":"onair"},"sohu":{"title":"搜狐视频","urlTemplate":"https://tv.sohu.com/{{id}}","regions":["CN"],"type":"onair"},"youku":{"title":"优酷","urlTemplate":"https://list.youku.com/show/id_z{{id}}.html","regions":["CN"],"type":"onair"},"qq":{"title":"腾讯视频","urlTemplate":"https://v.qq.com/detail/{{id}}.html","regions":["CN"],"type":"onair"},"iqiyi":{"title":"爱奇艺","urlTemplate":"https://www.iqiyi.com/{{id}}.html","regions":["CN"],"type":"onair"},"letv":{"title":"乐视","urlTemplate":"https://www.le.com/comic/{{id}}.html","regions":["CN"],"type":"onair"},"pptv":{"title":"PPTV","urlTemplate":"http://v.pptv.com/page/{{id}}.html","regions":["CN"],"type":"onair"},"mgtv":{"title":"芒果tv","urlTemplate":"https://www.mgtv.com/h/{{id}}.html","regions":["CN"],"type":"onair"},"nicovideo":{"title":"Niconico","urlTemplate":"https://ch.nicovideo.jp/{{id}}","regions":["JP"],"type":"onair"},"netflix":{"title":"Netflix","urlTemplate":"https://www.netflix.com/title/{{id}}","type":"onair"},"gamer":{"title":"動畫瘋","urlTemplate":"https://acg.gamer.com.tw/acgDetail.php?s={{id}}","regions":["TW"],"type":"onair"},"muse_hk":{"title":"木棉花 HK","urlTemplate":"https://www.youtube.com/playlist?list={{id}}","regions":["HK","MO"],"type":"onair"},"ani_one_asia":{"title":"Ani-One Asia","urlTemplate":"https://www.youtube.com/playlist?list={{id}}","regions":["HK","TW","MO","SG","MY","PH","TH","ID","VN","KH","BD","BN","BT","FJ","FM","IN","KH","LA","LK","MH","MM","MN","MV","NP","NR","PG","PK","PW","SB","TL","TO","TV","VU","WS"],"type":"onair"},"viu":{"title":"Viu","urlTemplate":"https://www.viu.com/ott/hk/zh-hk/vod/{{id}}/","regions":["HK","SG","MY","IN","PH","TH","MM","BH","EG","JO","KW","OM","QA","SA","AE","ZA"],"type":"onair"}}]]
---)
+--)]]
 -- as above
 
 Array={}
 Datetime={}
-Schedule_info={["country"]= {"US","GB"},}
+Schedule_info={["country"]= {"US","GB","JP"},}
 Calendar_group={
     ["deviance"]={-1,1,0}
 }
@@ -200,9 +201,9 @@ function getbgmlist(season)
             ["text"]= pdatestr,
         })
             sunday0100= Datetime.strToStamp(resInput)
-            kiko.log("[TEST]  in  "..os.date(Date_time_info.str_format,sunday0100))
+            -- kiko.log("[TEST]  in  "..os.date(Date_time_info.str_format,sunday0100))
             sunday0100=(os.time(Datetime.stampToDate(sunday0100,true))) -43200 -- 12*3600
-            kiko.log("[TEST]  sun "..os.date(Date_time_info.str_format,sunday0100))
+            -- kiko.log("[TEST]  sun "..os.date(Date_time_info.str_format,sunday0100))
         -- 从对话框确定媒体类型
         if resDiaTF == "accept" or resDiaTF == true then
         elseif resDiaTF == "reject" or resDiaTF == false then
@@ -228,31 +229,38 @@ function getbgmlist(season)
             replyCs,contentCs, objCs,objCsw=nil,nil, {},{}
 
             err,replyCs = kiko.httpget(urlPrefixLocal, queryCs, header)
-            if err ~= nil then
-                kiko.log("[ERROR] TVmaze.schedule.reply-week."..queryCs.date..".of." ..(season.title or"") .. ".local.httpget: " .. err)
+            if err ~= nil or replyCs==nil then
+                kiko.log("[ERROR] TVmaze.schedule.reply-week."..queryCs.date..".of." ..(season.title or"") ..countrySi.. ".local.httpget: " .. (err or""))
+                goto continue_gbl_wi
                 -- error(err)
             end
             contentCs = replyCs["content"]
             err, objCs = kiko.json2table(contentCs)
             if err ~= nil then
-                kiko.log("[ERROR] TVmaze.schedule.reply-week."..queryCs.date..".of." ..(season.title or"") .. ".local.json2table: " .. err)
+                kiko.log("[ERROR] TVmaze.schedule.reply-week."..queryCs.date..".of." ..(season.title or"") ..countrySi.. ".local.json2table: " .. err)
+                goto continue_gbl_wi
                 -- error(err)
             end
             err,replyCs = kiko.httpget(urlPrefixWeb, queryCs, header)
             if err ~= nil then
-                kiko.log("[ERROR] TVmaze.schedule.reply-week."..queryCs.date..".of." ..(season.title or"") .. ".web.httpget: " .. err)
+                kiko.log("[ERROR] TVmaze.schedule.reply-week."..queryCs.date..".of." ..(season.title or"") ..countrySi.. ".web.httpget: " .. err)
+                goto continue_gbl_wi
                 -- error(err)
             end
             contentCs = replyCs["content"]
             err, objCsw = kiko.json2table(contentCs)
             if err ~= nil then
-                kiko.log("[ERROR] TVmaze.schedule.reply-week."..queryCs.date..".of." ..(season.title or"") .. ".web.json2table: " .. err)
+                kiko.log("[ERROR] TVmaze.schedule.reply-week."..queryCs.date..".of." ..(season.title or"") ..countrySi.. ".web.json2table: " .. err)
+                goto continue_gbl_wi
                 -- error(err)
             end
 
             Array.extend(objCs,objCsw)
             objCsw=nil
             for _,ep in ipairs(objCs) do
+                if table.isEmpty(ep.show) then goto continue_gbl_wii
+                elseif string.isEmpty((ep.show or{}).name) then goto continue_gbl_wii
+                end
                 local dtStamp= (Datetime.strToStamp(ep.airstamp))
                 if dtStamp<sunday0100 or dtStamp>=(sunday0100 +604800) then-- 7*24*3600=604800
                     goto continue_gbl_wii
@@ -266,37 +274,59 @@ function getbgmlist(season)
                 end
 
                 local wSites={}
-                if (tonumber(ep.season)~=nil or tonumber(ep.number)~=nil) then
+                -- if (tonumber(ep.season)~=nil or tonumber(ep.number)~=nil) then
+                if (tonumber(ep.number)~=nil) then
                     table.insert(wSites,{
                             ["name"]=--((tonumber(ep.season)==nil) and{ "" } or{ string.format("S%02s", math.floor(tonumber(ep.season))) })[1] ..
                                 ((tonumber(ep.number)==nil) and{ "" } or{ string.format("E%02s", math.floor(tonumber(ep.number))) })[1],
                         })
                 end
                 if not string.isEmpty(((ep.show or{}).network or{}).name) then
-                    table.insert(wSites,{ ["name"]=((ep.show or{}).network or{}).name,})
+                    table.insert(wSites,{ ["name"]=((ep.show or{}).network or{}).name, ["url"]=(ep.show or{}).officialSite})
                 end
                 if not string.isEmpty(((ep.show or{}).webChannel or{}).name) then
-                    table.insert(wSites,{ ["name"]=((ep.show or{}).webChannel or{}).name,})
+                    table.insert(wSites,{ ["name"]=((ep.show or{}).webChannel or{}).name, ["url"]=(ep.show or{}).officialSite})
                 end
-                if not string.isEmpty((ep.show or{}).officialSite) then
-                    table.insert(wSites,{ ["name"]="主页", ["url"]=(ep.show or{}).officialSite})
-                end
+                -- if not string.isEmpty((ep.show or{}).officialSite) then
+                --     table.insert(wSites,{ ["name"]="主页", ["url"]=(ep.show or{}).officialSite})
+                -- end
                 if not string.isEmpty(ep.url) then
                     table.insert(wSites,{ ["name"]="TVmaze", ["url"]=(ep.show or{}).url,})
                 end
                 if not string.isEmpty(((ep.show or{}).externals or{}).imdb) then
                     table.insert(wSites,{ ["name"]="IMDb", ["url"]="https://www.imdb.com/title/"..((ep.show or{}).externals or{}).imdb})
                 end
+                if not string.isEmpty((ep.show or{}).name) then
+                    local tmpSeasont=""
+                    if not string.isEmpty(ep.season) and tonumber(ep.season)~=nil then
+                        tmpSeasont=tmpSeasont..""--..string.format("%02d",math.floor(tonumber( ep.season )))
+                    end
+                    table.insert(wSites,{ ["name"]="字幕库", ["url"]="https://zmk.pw/search?q="..string.gsub((ep.show or{}).name or""," ","+")..tmpSeasont})
+                end
+                if not string.isEmpty((ep.show or{}).name) then
+                    local tmpSeasont=""
+                    if not string.isEmpty(ep.season) and tonumber(ep.season)~=nil then
+                        tmpSeasont=tmpSeasont.."%20S"..string.format("%02d",math.floor(tonumber( ep.season )))
+                    end
+                    table.insert(wSites,{ ["name"]="SubHD", ["url"]="https://subhd.tv/search/"..string.gsub((ep.show or{}).name or""," ","%%20")..tmpSeasont})
+                end
+                if not string.isEmpty(((ep.show or{}).externals or{}).imdb) then
+                    table.insert(wSites,{ ["name"]="YYeTs", ["url"]="https://www.yysub.net/search/index?search_type=&keyword="..((ep.show or{}).externals or{}).imdb})
+                end
+                if not string.isEmpty(((ep.show or{}).externals or{}).imdb) then
+                    table.insert(wSites,{ ["name"]="OpenSubtitles", ["url"]="https://www.opensubtitles.com/zh-CN/zh-CN,zh-TW,en/search-all/q-"..
+                                ((ep.show or{}).externals or{}).imdb.. "/hearing_impaired-include/machine_translated-include/trusted_sources-"})
+                end
                 -- if not string.isEmpty(((ep.show or{}).externals or{}).thetvdb) then
                 --     table.insert(wSites,{ ["name"]="TVDb", ["url"]="https://thetvdb.com/series/"..((ep.show or{}).externals or{}).thetvdb})
                 -- end
                 -- if not string.isEmpty(((ep.show or{}).externals or{}).tvrage) then
-                --     table.insert(wSites,{ ["name"]="TVDb", ["url"]="https://www.tvrage.com/"..((ep.show or{}).externals or{}).thetvdb})
+                --     table.insert(wSites,{ ["name"]="TVRage", ["url"]="https://www.tvrage.com/"..((ep.show or{}).externals or{}).thetvdb})
                 -- end
                 
                 table.insert(weeksInfo,{
-                    ["title"]=((ep.show or{}).name or"").. ((tonumber(ep.season)==nil and tonumber(ep.number)==nil)and{""}or{" "})[1] ..
-                            ((tonumber(ep.season)==nil) and{ "" } or{ string.format("S%02s", math.floor(tonumber(ep.season))) })[1],-- ..
+                    ["title"]=((ep.show or{}).name or"").. ((tonumber(ep.season)==nil and tonumber(ep.number)==nil)and{""}
+                                or{ string.format(" S%02s", math.floor(tonumber(ep.season))) })[1],-- ..
                             -- ((tonumber(ep.number)==nil) and{ "" } or{ string.format("E%02s", math.floor(tonumber(ep.number))) })[1],
                     ["weekday"]= ((tonumber( os.date("%w",dtStamp) )==nil)and{ nil }or{ math.floor(tonumber( os.date("%w",dtStamp) ))})[1], --放送星期，取值0(星期日)~6(星期六)
                     -- ["weekday"]=Date_time_info.weekEnNum[(((ep.show or{}).schedule or{}).days or{})[1]],
@@ -310,6 +340,7 @@ function getbgmlist(season)
                 })
                 ::continue_gbl_wii::
             end
+            ::continue_gbl_wi::
         end
     end
     kiko.log("[INFO]  Finished getting " .. #weeksInfo .. " info of < " .. season.title .. ">")
