@@ -7,7 +7,7 @@ info = {
     ["id"] = "Kikyou.l.TMDb",
     ["desc"] = "The Movie Database (TMDb) 脚本 （测试中，不稳定） Edited by: kafovin \n"..
                 "从 themoviedb.org 刮削影剧元数据，也可设置选择刮削fanart的媒体图片、Emby的本地元数据。",
-    ["version"] = "0.1" -- 0.1.2.220303_build
+    ["version"] = "0.1" -- 0.1.2.220305_build
 }
 -- 设置项
 -- `key`为设置项的`key`，`value`是一个`table`。设置项值`value`的类型都是字符串。
@@ -70,7 +70,7 @@ settings = {
         ["desc"] = "搜索何种语言的资料作元数据，选择你需要的`语言编码-地区编码`。看着有很多语言，其实大部分都缺乏资料。\n" ..
                     "注意：再次关联导致标题改变时，弹幕仍然按照旧标题识别，请在`管理弹幕池`中手动复制弹幕到新标题。\n" ..
                     "zh-CN：中文(中国)。zh-HK：中文(香港特區,中國)。zh-TW：中文(台灣省，中國)。\n" ..
-                    "en-US：English(US)。fr-FR：Français(France)。ja-JP：日本語(日本)。ru-RU：Русский(Россия)。",
+                    "en-US：English(US)。es-ES：español(España)。fr-FR：Français(France)。ja-JP：日本語(日本)。ru-RU：Русский(Россия)。",
         ["choices"] = "af-ZA,ar-AE,ar-SA,be-BY,bg-BG,bn-BD,ca-ES,ch-GU,cn-CN,cs-CZ,cy-GB,da-DK" ..
                     ",de-AT,de-CH,de-DE,el-GR,en-AU,en-CA,en-GB,en-IE,en-NZ,en-US,eo-EO,es-ES,es-MX,et-EE" ..
                     ",eu-ES,fa-IR,fi-FI,fr-CA,fr-FR,ga-IE,gd-GB,gl-ES,he-IL,hi-IN,hr-HR,hu-HU,id-ID,it-IT" ..
@@ -144,6 +144,7 @@ Metadata_person_max_crew = 7 -- 职员表最多保留
 Metadata_display_imgtype="background" -- 图片类型使用背景
 
 Array={}
+Kikoplus={}
 Path={}
 -- 说明: 三目运算符 ((condition) and {trueCDo} or {falseCDo})[1] === (condition)?(trueCDo):(falseCDo)
 -- (()and{}or{})[1]
@@ -161,7 +162,7 @@ Media_genre = {
 Image_tmdb = {
     ["prefix"]= "https://image.tmdb.org/t/p/", -- 网址前缀
     -- path="https://image.tmdb.org/t/p/" .. "size" .. "/q1w2e3.png"
-    ["min_ix"]= 1, -- 尺寸索引
+    ["min_ix"]= 2, -- 尺寸索引
     ["mid_ix"]= 5,
     ["max_ix"]= 7,
     ["backdrop"]= {"w300","w300","w780","w780","w1280","w1280","original"}, -- 影/剧剧照
@@ -173,6 +174,9 @@ Image_tmdb = {
 Image_fanart = {
     ["prefix"]= "https://assets.fanart.tv/",
     ["size"]= {"preview","fanart"},
+    ["min_ix"]= 1, -- 尺寸索引
+    ["mid_ix"]= 1,
+    ["max_ix"]= 2,
     ["len_preix_size"]= 31, -- https://assets.fanart.tv/fanart (30) not https
     -- image_path="/movies/id/type/title-name-q1w2e3.png" "/tv/id/type/title-name-q1w2e3.png"
     ["movie"]={"movieposter","moviebanner","moviethumb","moviebackground",
@@ -413,7 +417,7 @@ function searchMediaInfo(keyword, settings_search_type)
         data["release_date"] = mediai["release_date"] or mediai["first_air_date"] -- 首映/首播/发行日期
         data["original_language"] = mediai["original_language"] -- 原始语言
         data["origin_country"] = table.deepCopy(mediai["origin_country"]) -- 原始首映/首播国家地区
-        data["overview"] = string.gsub(string.gsub(mediai["overview"], "\n\n", "\n"), "\r\n\r\n", "\r\n") -- 剧情梗概
+        data["overview"] = (string.isEmpty(mediai.overview) and{""} or{string.gsub(string.gsub(mediai["overview"], "\n\n", "\n"), "\r\n\r\n", "\r\n") })[1] -- 剧情梗概
         data["vote_average"] = mediai["vote_average"] -- 平均tmdb评分
         -- genre_ids -> genre_names
         data["genre_names"] = {} -- 流派类型 table/Array
@@ -459,36 +463,8 @@ function searchMediaInfo(keyword, settings_search_type)
                 ["api_key"] = settings["api_key"],
                 ["language"] = settings["metadata_lang"]
             }
-            if settings["api_key"] == "<<API_Key_Here>>" then
-                kiko.log("Wrong api_key! 请在脚本设置中填写正确的TMDb的API密钥。")
-                kiko.message("[错误] 请在脚本设置中填写正确的 `TMDb的API密钥`！",1|8)
-                kiko.execute(true, "cmd", {"/c", "start", "https://www.themoviedb.org/settings/api"})
-                error("Wrong api_key! 请在脚本设置中填写正确的API密钥。")
-            end
-            -- tmdb_id_mo
-            local err, replyMo = kiko.httpget(string.format(
-                "http://api.themoviedb.org/3/" .. data["media_type"] .. "/" .. data["media_id"]), queryMo, header)
-
-            if err ~= nil then
-                kiko.log("[ERROR] TMDb.API.reply-search."..data["media_type"] .. ".id.httpget: " .. err)
-                if tostring(err) == ("Host requires authentication") then
-                    kiko.message("[错误] 请在脚本设置中填写正确的 `TMDb的API密钥`！",1|8)
-                    kiko.execute(true, "cmd", {"/c", "start", "https://www.themoviedb.org/settings/api"})
-                end
-                error(err)
-            end
-            local contentMo = replyMo["content"]
-            local err, objMo = kiko.json2table(contentMo)
-            if err ~= nil then
-                kiko.log("[ERROR] TMDb.API.reply-search."..data["media_type"] .. ".id.json2table: " .. err)
-                error(err)
-            end
             -- info
-            if objMo["tagline"] ~= "" then
-                data["tagline"]=objMo["tagline"]
-                data["overview"] = string.gsub(string.gsub(objMo["tagline"], "\n\n", "\n"), "\r\n\r\n", "\r\n") ..
-                    "\n" .. data["overview"]
-            end
+            local objMo= Kikoplus.httpgetMediaId(queryMo,data["media_type"].."/"..data["media_id"])
             
             --? OTHER_INFO m&t of mo
             data["runtime"] = ( objMo["runtime"]==nil or objMo["runtime"]=="" )and{ nil }or{ tostring(objMo["runtime"]) }
@@ -523,7 +499,23 @@ function searchMediaInfo(keyword, settings_search_type)
             data["mo_budget"] = tonumber(objMo["budget"]or"")
             data["media_imdbid"]= (( objMo["imdb_id"]==nil or objMo["imdb_id"]=="" )and{ nil }or{ objMo["imdb_id"] })[1]
             data["mo_revenue"] = tonumber(objMo["revenue"]or"")
-                        
+
+            local objMoo={}
+            if string.isEmpty(objMo.tagline) or objMo.tagline==objMo.title or objMo.tagline==objMo.original_title then
+                objMoo=Kikoplus.httpgetMediaId({
+                    ["api_key"] = settings["api_key"],
+                    ["language"] = (string.isEmpty(data.original_language) and{"en"} or{data.original_language})[1]
+                },data["media_type"].."/"..data["media_id"])
+                data.tagline= objMoo.tagline
+                if string.isEmpty(objMo.overview) or objMo.overview==objMo.title or objMo.overview==objMo.original_title then
+                    data.overview= objMoo.overview
+                end
+            elseif true then
+                data["tagline"]=objMo["tagline"]
+            end
+            data["overview"] = string.gsub(string.gsub(objMo["tagline"], "\n\n", "\n"), "\r\n\r\n", "\r\n") ..
+                    ((string.isEmpty(objMo.tagline))and{""}or{"\n"})[1] .. data["overview"]
+            
             local media_data_json
             -- 把媒体信息<table>转为json的字符串
             err, media_data_json = kiko.table2json(table.deepCopy(data))
@@ -560,38 +552,9 @@ function searchMediaInfo(keyword, settings_search_type)
                 ["api_key"] = settings["api_key"],
                 ["language"] = settings["metadata_lang"]
             }
-            if settings["api_key"] == "<<API_Key_Here>>" then
-                kiko.log("Wrong api_key! 请在脚本设置中填写正确的TMDb的API密钥。")
-                kiko.message("[错误] 请在脚本设置中填写正确的 `TMDb的API密钥`！",1|8)
-                kiko.execute(true, "cmd", {"/c", "start", "https://www.themoviedb.org/settings/api"})
-                error("Wrong api_key! 请在脚本设置中填写正确的API密钥。")
-            end
-            -- tmdb_id_tv
-            local err, replyTv = kiko.httpget(string.format(
-                "http://api.themoviedb.org/3/" .. data["media_type"] .. "/" .. data["media_id"]), queryTv, header)
-
-            if err ~= nil then
-                kiko.log("[ERROR] TMDb.API.reply-search."..data["media_type"] .. ".id.httpget: " .. err)
-                if tostring(err) == ("Host requires authentication") then
-                    kiko.message("[错误] 请在脚本设置中填写正确的 `TMDb的API密钥`！",1|8)
-                    kiko.execute(true, "cmd", {"/c", "start", "https://www.themoviedb.org/settings/api"})
-                end
-                error(err)
-            end
-            local contentTv = replyTv["content"]
-            local err, objTv = kiko.json2table(contentTv)
-            if err ~= nil then
-                kiko.log("[ERROR] TMDb.API.reply-search."..data["media_type"] .. ".id.json2table: " .. err)
-                error(err)
-            end
-            
+            local objTv=Kikoplus.httpgetMediaId(queryTv,data["media_type"] .. "/" .. data["media_id"])
             -- info
-            if objTv["tagline"] ~= "" then
-                data["tagline"]=objTv["tagline"]
-                data["overview"] = string.gsub(string.gsub(objTv["tagline"], "\n\n", "\n"), "\r\n\r\n", "\r\n") ..
-                    "\n" .. data["overview"]
-            end
-            local data_overview = data["overview"]
+            
             data["tv_first_air_date"] = data["release_date"]
             data["tv_poster_path"] = data["poster_path"]
             data["season_count"] = objTv["number_of_seasons"]
@@ -656,6 +619,24 @@ function searchMediaInfo(keyword, settings_search_type)
             end
             data["tv_type"]= (( objTv["type"]==nil or objTv["type"]=="" )and{ nil }or{ objTv["type"] })[1]
 
+            local objTvo={}
+            if string.isEmpty(objTv.tagline) or objTv.tagline==objTv.title or objTv.tagline==objTv.original_title then
+                objTvo=Kikoplus.httpgetMediaId({
+                    ["api_key"] = settings["api_key"],
+                    ["language"] = (string.isEmpty(data.original_language) and{"en"} or{data.original_language})[1]
+                },data["media_type"] .. "/" .. data["media_id"])
+                data.tagline= objTvo.tagline
+                if string.isEmpty(objTv.overview) or objTv.overview==objTv.title or objTv.overview==objTv.original_title then
+                    data.overview= objTvo.overview
+                end
+            elseif true then
+                data["tagline"]=objTv["tagline"]
+            end
+            data["overview"] = string.gsub(string.gsub(objTv["tagline"], "\n\n", "\n"), "\r\n\r\n", "\r\n") ..
+                    ((string.isEmpty(objTv.tagline))and{""}or{"\n"})[1] .. data["overview"]
+            
+            local data_overview = data["overview"]
+            
             -- Table:obj -> Array:mediai
             -- local tvSeasonsIxs = {}
             for _, tvSeasonsIx in pairs(objTv['seasons'] or {}) do
@@ -666,7 +647,7 @@ function searchMediaInfo(keyword, settings_search_type)
                 data["season_title"] = tvSeasonsIx["name"]
                 if tvSeasonsIx["overview"] ~= "" then
                     data["overview"] = string.gsub(string.gsub(tvSeasonsIx["overview"], "\n\n", "\n"), "\r\n\r\n",
-                        "\r\n") .. "\n" .. data_overview
+                        "\r\n") .. ((string.isEmpty(tvSeasonsIx.overview))and{""}or{"\n"})[1] .. data_overview
                 else
                     data["overview"] = data_overview
                 end
@@ -2509,13 +2490,13 @@ menus = {{
         ["title"] = "打开媒体主页",
         ["id"] = "open_webpage_media_home",
     },{
-        ["title"] = "打开TMDb页面",
-        ["id"] = "open_webpage_media_tmdb",
+        ["title"] = "打开TMDb/IMDb",
+        ["id"] = "open_webpage_media_tmdb_imdb",
     },{
-        ["title"] = "打开IMDb页面",
-        ["id"] = "open_webpage_media_imdb",
+        ["title"] = "使用豆瓣/贴吧搜索",
+        ["id"] = "open_webpage_douban_tieba",
     },{
-        ["title"] = "打开fanart页面",
+        ["title"] = "打开fanart",
         ["id"] = "open_webpage_media_fanart",
     },{
         ["title"] = "使用字幕搜索",
@@ -2545,13 +2526,35 @@ function menuclick(menuid, anime)
         kiko.log("[WARN]  (AnimeLite)anime[\"data\"][\"media_type\"] not found.")
     end
 
-    if menuid == "open_webpage_media_tmdb" then
+    if menuid == "open_webpage_media_tmdb_imdb" then
         kiko.log("Open TMDb page of <"..anime["name"]..">.")
         if not string.isEmpty(anime["url"]) then
             kiko.message("打开 <"..anime["name"].."> 的TMDb页面", NM_HIDE)
             kiko.execute(true, "cmd", {"/c", "start", anime["url"]})
         else
             kiko.message("未找到 <"..anime["name"].."> 的TMDb页面。\n请右键资料库的媒体尝试重新刮削详细信息。", NM_HIDE|NM_ERROR)
+        end
+        kiko.log("Open IMDb page of <"..anime["name"]..">.")
+        if not string.isEmpty(anime_data.imdb_id) then
+            kiko.message("打开 <"..anime["name"].."> 的IMDb页面", NM_HIDE)
+            kiko.execute(true, "cmd", {"/c", "start", "https://www.imdb.com/title/"..anime_data.imdb_id})
+        else
+            kiko.message("未找到 <"..anime["name"].."> 的IMDb页面。\n请右键资料库的媒体尝试重新刮削详细信息。", NM_HIDE|NM_ERROR)
+        end
+    elseif menuid == "open_webpage_douban_tieba" then
+        kiko.log("Open douban page of <"..anime["name"]..">.")
+        if not string.isEmpty(anime_data.media_title) then
+            kiko.message("打开 <"..anime["name"].."> 的豆瓣页面", NM_HIDE)
+            kiko.execute(true, "cmd", {"/c", "start", "https://www.douban.com/search?cat=1002^&q=".. string.gsub(anime_data.media_title.." ".. (anime_data.season_title or""), "[ %c%p]","%%20")})
+        else
+            kiko.message("未找到 <"..anime["name"].."> 的豆瓣页面。\n请右键资料库的媒体尝试重新刮削详细信息。", NM_HIDE|NM_ERROR)
+        end
+        kiko.log("Open tieba page of <"..anime["name"]..">.")
+        if not string.isEmpty(anime_data.media_title) then
+            kiko.message("打开 <"..anime["name"].."> 的贴吧页面", NM_HIDE)
+            kiko.execute(true, "cmd", {"/c", "start", "https://tieba.baidu.com/f/search/fm?ie=UTF-8^&qw=".. string.gsub(anime_data.media_title, "[ %c%p]", "%%20")})
+        else
+            kiko.message("未找到 <"..anime["name"].."> 的贴吧页面。\n请右键资料库的媒体尝试重新刮削详细信息。", NM_HIDE|NM_ERROR)
         end
     elseif menuid == "open_webpage_media_home" then
         kiko.log("Open home page of <"..anime["name"]..">.")
@@ -2560,14 +2563,6 @@ function menuclick(menuid, anime)
             kiko.execute(true, "cmd", {"/c", "start", anime_data.homepage_path})
         else
             kiko.message("未找到 <"..anime["name"].."> 的媒体主页。", NM_HIDE|NM_ERROR)
-        end
-    elseif menuid == "open_webpage_media_imdb" then
-        kiko.log("Open IMDb page of <"..anime["name"]..">.")
-        if not string.isEmpty(anime_data.imdb_id) then
-            kiko.message("打开 <"..anime["name"].."> 的IMDb页面", NM_HIDE)
-            kiko.execute(true, "cmd", {"/c", "start", "https://www.imdb.com/title/"..anime_data.imdb_id})
-        else
-            kiko.message("未找到 <"..anime["name"].."> 的IMDb页面。\n请右键资料库的媒体尝试重新刮削详细信息。", NM_HIDE|NM_ERROR)
         end
     elseif menuid == "open_webpage_media_fanart" then
         kiko.log("Open fanart page of <"..anime["name"]..">.")
@@ -2619,10 +2614,12 @@ function menuclick(menuid, anime)
         -- 格式化输出字符串
         tmpString = anime["name"]
         tipString = tipString .. "媒体标题：\t" .. (tmpString or "")
+        tipString = tipString .. "\n标题：\t\t" .. (anime_data.media_title or "")
         tipString = tipString .. "\n原标题：\t\t" .. (anime_data["original_title"] or "")
         if anime_data["media_type"]=="movie" then
             tipString = tipString .. "\n首映：\t\t"
         elseif anime_data["media_type"]=="tv" then
+            tipString = tipString .. "\n季标题：\t\t" .. (anime_data.season_title or "")
             tipString = tipString .. "\n首播：\t\t"
         else tipString = tipString .. "\n首映/首播：\t"
         end
@@ -2681,7 +2678,7 @@ function menuclick(menuid, anime)
         end
         tmpString = anime["epcount"]
         if anime_data["media_type"]~="movie" then
-            tipString = tipString .. "\n分集总数：\t" .. (tmpString or anime_data["episode_count"] or "")
+            tipString = tipString .. "\n分集总数：\t" .. (tmpString or tostring(math.floor(tonumber(anime_data["episode_count"]))) or "")
         end
         if not string.isEmpty(anime_data["runtime"]) then
             tipString = tipString .. "\n时长：\t\t" .. anime_data["runtime"][1]
@@ -2782,7 +2779,7 @@ function menuclick(menuid, anime)
         -- resTF ∈ ["accept","reject"]
         
         -- 获取 背景图 的二进制数据
-        local sizeOfFanart,sizeOfTMDb = 2,5
+        -- local sizeOfFanart,sizeOfTMDb = 2,5
         local mImgPTmp = "TMDb_prior"
         if settings["metadata_image_priority"]=="fanart_only"
             or settings["metadata_image_priority"]=="TMDb_only"
@@ -2808,10 +2805,11 @@ function menuclick(menuid, anime)
                         }
             local paramImgPath= paramImgFth[sign]
             if paramImgPath==nil then return "" end
-            local backgUrlTmp = ""
+            local backgUrlTmp ,backgUrlTmpP = "",""
             if mImgPTmp=="TMDb_prior" or mImgPTmp=="TMDb_only" then
                 backgUrlTmp = anime_data[paramImgPath["tmdb_path"] or""]
                 if not string.isEmpty(backgUrlTmp) then
+                    backgUrlTmpP = Image_tmdb.prefix..Image_tmdb.backdrop[Image_tmdb.min_ix] .. backgUrlTmp
                     backgUrlTmp = Image_tmdb.prefix..Image_tmdb.backdrop[Image_tmdb.max_ix] .. backgUrlTmp
                 end
             end
@@ -2824,7 +2822,7 @@ function menuclick(menuid, anime)
                     end
                 end
                 if not string.isEmpty(backgUrlTmp) then
-                    backgUrlTmp = Image_fanart.prefix..Image_fanart.size[sizeOfFanart]..backgUrlTmp
+                    backgUrlTmp = backgUrlTmp
                 else
                     if Metadata_info_origin_image==true then
                         backgUrlTmp = ((((anime_data.fanart_path or{})[Image_fanart[anime_data.media_type] [paramImgPath.img_fx or 4]] or{}).origin or{}).url or"")
@@ -2833,26 +2831,32 @@ function menuclick(menuid, anime)
                     end
                 end
                 if not string.isEmpty(backgUrlTmp) then
-                    backgUrlTmp = Image_fanart.prefix..Image_fanart.size[2]..backgUrlTmp
+                    backgUrlTmpP = Image_fanart.prefix..Image_fanart.size[Image_fanart.min_ix]..backgUrlTmp
+                    backgUrlTmp = Image_fanart.prefix..Image_fanart.size[Image_fanart.max_ix]..backgUrlTmp
                 elseif mImgPTmp=="fanart_prior" then
                     backgUrlTmp = anime_data["poster_path"]
                     if not string.isEmpty(backgUrlTmp) then
+                        backgUrlTmpP = Image_tmdb.prefix..Image_tmdb.poster[Image_tmdb.min_ix] .. backgUrlTmp
                         backgUrlTmp = Image_tmdb.prefix..Image_tmdb.poster[Image_tmdb.max_ix] .. backgUrlTmp
                     end
                 end
             end
-            return {["path"]=backgUrlTmp,["header_suffix"]=paramImgPath.header_suffix or"jpeg"}
+            return {["path"]=backgUrlTmp,["path_preview"]=backgUrlTmpP,["header_suffix"]=paramImgPath.header_suffix or"jpeg"}
         end
 
 
         local img_back_data=nil
         local tmpImgPath=getImgPath(settings["metadata_display_imgtype"] or Metadata_display_imgtype)
-        if not string.isEmpty(tmpImgPath) then
+        if not table.isEmpty(tmpImgPath) then
             local header = {["Accept"] = "image/"..tmpImgPath.header_suffix}
             local err, reply = kiko.httpget(tmpImgPath.path, {} , header)
             if err ~= nil then
                 kiko.log("[ERROR] TMDb.API.reply-showmnfo.httpget: " .. err)
-                goto jumpover_metadatadisplay_img_scraping
+                err, reply = kiko.httpget(tmpImgPath.path_preview, {} , header)
+                if err ~= nil then
+                    kiko.log("[ERROR] TMDb.API.reply-showmnfo.httpget: " .. err)
+                    goto jumpover_metadatadisplay_img_scraping
+                end
             end
             img_back_data=reply["content"]
         end
@@ -3088,6 +3092,36 @@ function Path.readxmlfile(path_xml)
         return nil;
     end
     return kxml_file_nfo
+end
+
+-- query, namespace
+function Kikoplus.httpgetMediaId(queryMe,namespace)
+    if settings["api_key"] == "<<API_Key_Here>>" then
+        kiko.log("Wrong api_key! 请在脚本设置中填写正确的TMDb的API密钥。")
+        kiko.message("[错误] 请在脚本设置中填写正确的 `TMDb的API密钥`！",1|8)
+        kiko.execute(true, "cmd", {"/c", "start", "https://www.themoviedb.org/settings/api"})
+        error("Wrong api_key! 请在脚本设置中填写正确的API密钥。")
+    end
+    local header = {["Accept"] = "application/json"}
+    -- tmdb_id_media
+    local err, replyMe = kiko.httpget(string.format(
+        "http://api.themoviedb.org/3/" .. namespace), queryMe, header)
+
+    if err ~= nil then
+        kiko.log("[ERROR] TMDb.API.reply-"..namespace.."."..(queryMe.language or"")..".httpget: " .. err)
+        if tostring(err) == ("Host requires authentication") then
+            kiko.message("[错误] 请在脚本设置中填写正确的 `TMDb的API密钥`！",1|8)
+            kiko.execute(true, "cmd", {"/c", "start", "https://www.themoviedb.org/settings/api"})
+        end
+        error(err)
+    end
+    local contentMe = replyMe["content"]
+    local err, objMe = kiko.json2table(contentMe)
+    if err ~= nil then
+        kiko.log("[ERROR] TMDb.API.reply-"..namespace.."."..(queryMe.language or"")..".json2table: " .. err)
+        error(err)
+    end
+    return objMe
 end
 
 -- 特殊字符转换 "&amp;" -> "&"  "&quot;" -> "\""
