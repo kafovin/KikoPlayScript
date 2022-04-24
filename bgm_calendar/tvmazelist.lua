@@ -7,7 +7,7 @@ info = {
     ["id"] = "Kikyou.b.TVmazeList",
 	["desc"] = "TVmaze 剧集日历脚本（测试中，不稳定） Edited by: kafovin \n"..
                 "从 tvmaze.com 刮削剧集的日历时间表。",
-	["version"] = "0.1", -- 0.0.20220305_build
+	["version"] = "0.1.1", -- 0.1.1.220424_build
 }
 
 -- 设置项
@@ -299,19 +299,12 @@ function getbgmlist(season)
                 if not string.isEmpty((ep.show or{}).name) then
                     local tmpSeasont=""
                     if not string.isEmpty(ep.season) and tonumber(ep.season)~=nil then
-                        tmpSeasont=tmpSeasont..""--..string.format("%02d",math.floor(tonumber( ep.season )))
-                    end
-                    table.insert(wSites,{ ["name"]="字幕库", ["url"]="https://zmk.pw/search?q="..string.gsub((ep.show or{}).name or""," ","+")..tmpSeasont})
-                end
-                if not string.isEmpty((ep.show or{}).name) then
-                    local tmpSeasont=""
-                    if not string.isEmpty(ep.season) and tonumber(ep.season)~=nil then
                         tmpSeasont=tmpSeasont.."%20S"..string.format("%02d",math.floor(tonumber( ep.season )))
                     end
-                    table.insert(wSites,{ ["name"]="SubHD", ["url"]="https://subhd.tv/search/"..string.gsub((ep.show or{}).name or""," ","%%20")..tmpSeasont})
-                end
-                if not string.isEmpty(((ep.show or{}).externals or{}).imdb) then
-                    table.insert(wSites,{ ["name"]="YYeTs", ["url"]="https://www.yysub.net/search/index?search_type=&keyword="..((ep.show or{}).externals or{}).imdb})
+                    
+                    table.insert(wSites,{ ["name"]="字幕库", ["url"]="https://zmk.pw/search?q="..string.gsub((ep.show or{}).name or"","[ %c%p]","+")})
+                    table.insert(wSites,{ ["name"]="SubHD", ["url"]="https://subhd.tv/search/"..string.gsub((ep.show or{}).name or"","[ %c%p]","%%20")})
+                    table.insert(wSites,{ ["name"]="YYeTs", ["url"]="https://www.yysub.net/search/index?search_type=&keyword="..string.gsub((ep.show or{}).name or"","[ %c%p]","+")})
                 end
                 if not string.isEmpty(((ep.show or{}).externals or{}).imdb) then
                     table.insert(wSites,{ ["name"]="OpenSubtitles", ["url"]="https://www.opensubtitles.com/zh-CN/zh-CN,zh-TW,en/search-all/q-"..
