@@ -8,7 +8,7 @@ info = {
     ["desc"] = "The Movie Database (TMDb) 脚本 （测试中，不稳定） Edited by: kafovin \n"..
                 "从 themoviedb.org 刮削影剧元数据，也可设置选择刮削fanart的媒体图片、Emby的本地元数据。",
     --            "▲与前一版本不兼容▲ 建议搜索旧关联用`本地数据库`，仅刮削详旧资料细信息时设置`搜索-关键词作标题`为`1`。",
-    ["version"] = "0.2.2" -- 0.2.2.220424_build
+    ["version"] = "0.2.2" -- 0.2.1.220428_build
 }
 -- 设置项
 -- `key`为设置项的`key`，`value`是一个`table`。设置项值`value`的类型都是字符串。
@@ -53,7 +53,7 @@ settings = {
         ["desc"] = "搜索的数据仅限此媒体类型。\n movie：电影。 multi：电影/剧集 (默认)。 tv：剧集。", -- 丢弃`person`的演员搜索结果
         ["choices"] = "movie,multi,tv",
     },
-    ["match_type"] = {
+    ["match_source"] = {
         ["title"] = "匹配 - 数据来源",
         ["default"] = "online_TMDb_filename",
         ["desc"] = "自动匹配本地媒体文件的数据来源。值为<local_Emby_nfo>时需要用软件Emby提前刮削过。\n" ..
@@ -107,7 +107,7 @@ settings = {
     ["metadata_display_imgtype"] = {
         ["title"] = "元数据 - 显示的图片种类",
         ["default"] = "background",
-        ["desc"] = "仅限资料库媒体的右键菜单里`显示媒体元数据`弹出窗口中 所显示的那一张图片的种类。\n"..
+        ["desc"] = "仅限资料夹的右键菜单里`显示媒体元数据`弹出窗口中 所显示的那一张图片的种类。\n"..
                     "当 `元数据 - 图片主要来源` 设置为`TMDb_only`时，仅海报、背景可用。\n"..
                     "当 `元数据 - 图片主要来源` 设置为`fanart_prior`或`TMDb_prior`时，以下均有效（除非图片未刮削到）。\n" ..
                     "poster: 海报。banner: 横幅。thumb: 缩略图。background: 背景 (默认)。\n"..
@@ -118,23 +118,23 @@ settings = {
     },
     ["metadata_image_priority"]={
         ["title"] = "元数据 - 图片主要来源",
-        ["default"] = "TMDb_prior",
+        ["default"] = "TMDb_only",
         ["desc"] = "元数据的图片源是使用TMDb还是fanart，需要各自的api密钥。\n"..
-                    "其中，fanart的网络连接比较缓慢、图片种类更多 (可完全覆盖TMDb中所有图片种类)。\n"..
+                    "其中，fanart的网络连接比较缓慢 (经常会加载失败)、图片种类更多 (可完全覆盖TMDb中所有图片种类)。\n"..
                     "fanart_prior：图片优先fanart，(由于fanart的图片种类较多，因此TMDb的图片通常会被忽略)。\n"..
-                    "TMDb_only：图片仅TMDb，(不会从fanart刮削图片，仅此项不需要 fanart的API密钥)。\n"..
-                    "TMDb_prior：图片优先TMDb，TMDb提供海报、背景，其他的由fanart提供 (默认)。",
+                    "TMDb_only：图片仅TMDb，(不会从fanart刮削图片，仅此项不需要 fanart的API密钥) (默认)。\n"..
+                    "TMDb_prior：图片优先TMDb，TMDb提供海报、背景，其他的由fanart提供。",
         ["choices"] = "fanart_prior,TMDb_only,TMDb_prior",
     },
     ["metadata_castcrew_castcount"]={
         ["title"] = "元数据 - 演员总数至多为",
-        ["default"] = "10",
+        ["default"] = "15",
         ["desc"] = "元数据的演员表至多保留多少演员 (默认 10)。\n"..
                     "其中，数目>0时，为至多保留的数目；数目=0时，不保留；数目<0时，保留所有；小数，则向负无穷方向取整。",
     },
     ["metadata_castcrew_crewcount"]={
         ["title"] = "元数据 - 职员总数至多为",
-        ["default"] = "7",
+        ["default"] = "15",
         ["desc"] = "元数据的职员表至多保留多少职员 (默认 7)。\n"..
                     "其中，数目>0时，为至多保留的数目；数目=0时，不保留；数目<0时，保留所有；小数，则向负无穷方向取整。",
     },
@@ -146,9 +146,16 @@ Metadata_search_adult = false -- Choose whether to inlcude adult content in the 
 -- 会  在运行函数内更新值
 Metadata_info_origin_title = true -- 是否使用源语言标题
 Metadata_info_origin_image = true -- 是否使用源语言图片 --仅fanart图片
-Metadata_person_max_cast = 10 -- 演员表最多保留
-Metadata_person_max_crew = 7 -- 职员表最多保留
+Metadata_person_max_cast = 15 -- 演员表最多保留
+Metadata_person_max_crew = 15 -- 职员表最多保留
 Metadata_display_imgtype="background" -- 图片类型使用背景
+Tag_rating_on_region = {"FR", "GB", "HK", "RU","US",}
+
+NM_HIDE = 1 -- 一段时间后自动隐藏
+NM_PROCESS = 2 -- 显示busy动画
+NM_SHOWCANCEL = 4 -- 显示cancel按钮
+NM_ERROR = 8 -- 错误信息
+NM_DARKNESS_BACK = 16 -- 显示暗背景，阻止用户执行其他操作
 
 Array={}
 Kikoplus={}
@@ -156,15 +163,6 @@ Path={}
 -- 说明: 三目运算符 ((condition) and {trueCDo} or {falseCDo})[1] === (condition)?(trueCDo):(falseCDo)
 -- (()and{}or{})[1]
 
--- 媒体所属的流派类型，tmdb的id编号->类型名 的对应
-Media_genre = {
-    [28] = "动作", [12] = "冒险", [16] = "动画", [35] = "喜剧", [80] = "犯罪", [99] = "纪录",
-    [18] = "剧情", [10751] = "家庭", [14] = "奇幻", [36] = "历史", [27] = "恐怖",
-    [10402] = "音乐", [9648] = "悬疑", [10749] = "爱情", [878] = "科幻", [10770] = "电视电影",
-    [53] = "惊悚", [10752] = "战争", [37] = "西部", [10759] = "动作冒险", [10762] = "儿童",
-    [10763] = "新闻", [10764] = "真人秀", [10765] = "幻想", [10766] = "连续剧",
-    [10767] = "脱口秀", [10768] = "War & Politics",
-}
 -- TMDb图片配置
 Image_tmdb = {
     ["prefix"]= "https://image.tmdb.org/t/p/", -- 网址前缀
@@ -199,10 +197,147 @@ Image_fanart = {
         ["seasonposter"]="本季海报",["seasonbanner"]="本季横幅",["seasonthumb"]="本季缩略图",
     },
 }
-Status_tmdb = {
-    ["Rumored"]= "传言中", ["Planned"]= "筹划中", ["In Production"]= "制作中", 
-    ["Post Production"]= "已制作", ["Released"]= "已播映", ["Canceled"]="已取消",["Ended"]="已完结",[""]="",
+
+Translation = {
+    ["language"]={
+        ["aa"]= "阿法尔语", ["ab"]= "阿布哈兹语", ["af"]= "南非荷兰语", ["ak"]= "阿坎语", ["sq"]= "阿尔巴尼亚语", ["am"]= "阿姆哈拉语", ["ar"]= "阿拉伯语", ["an"]= "阿拉贡语", ["hy"]= "亚美尼亚语", ["as"]= "阿萨姆语", ["av"]= "阿瓦尔语", ["ae"]= "阿维斯陀语", ["ay"]= "艾马拉语", ["az"]= "阿塞拜疆语", ["ba"]= "巴什基尔语",
+        ["bm"]= "班巴拉语", ["eu"]= "巴斯克语", ["be"]= "白俄罗斯语", ["bn"]= "孟加拉语", ["bh"]= "比哈尔语", ["bi"]= "比斯拉玛语", ["bs"]= "波斯尼亚语", ["br"]= "布里多尼语", ["bg"]= "保加利亚语", ["my"]= "缅甸语", ["ca"]= "加泰罗尼亚语", ["ch"]= "查莫罗语", ["ce"]= "车臣语", ["zh"]= "汉语", ["cu"]= "教会斯拉夫语",
+        ["cv"]= "楚瓦什语", ["kw"]= "康沃尔语", ["co"]= "科西嘉语", ["cr"]= "克里语", ["cs"]= "捷克语", ["da"]= "丹麦语", ["dv"]= "迪维希语", ["nl"]= "荷兰语", ["dz"]= "不丹语", ["en"]= "英语", ["eo"]= "世界语", ["et"]= "爱沙尼亚语", ["ee"]= "埃维语", ["fo"]= "法罗语", ["fj"]= "斐济语", ["fi"]= "芬兰语", ["fr"]= "法语",
+        ["fy"]= "弗里西亚语", ["ff"]= "富拉语", ["ka"]= "格鲁吉亚语", ["de"]= "德语", ["gd"]= "苏格兰盖尔语", ["ga"]= "爱尔兰语", ["gl"]= "加利西亚语", ["gv"]= "马恩岛语", ["el"]= "现代希腊语", ["gn"]= "瓜拉尼语", ["gu"]= "古吉拉特语", ["ht"]= "海地克里奥尔语", ["ha"]= "豪萨语", ["he"]= "希伯来语", ["hz"]= "赫雷罗语",
+        ["hi"]= "印地语", ["ho"]= "希里莫图语", ["hr"]= "克罗地亚语", ["hu"]= "匈牙利语", ["ig"]= "伊博语", ["is"]= "冰岛语", ["io"]= "伊多语", ["ii"]= "四川彝语", ["iu"]= "伊努伊特语", ["ie"]= "国际语E", ["ia"]= "拉丁国际语", ["id"]= "印尼语", ["ik"]= "依努庇克语", ["it"]= "意大利语", ["jv"]= "爪哇语", ["ja"]= "日语",
+        ["kl"]= "格陵兰语", ["kn"]= "卡纳达语", ["ks"]= "克什米尔语", ["kr"]= "卡努里语", ["kk"]= "哈萨克语", ["km"]= "高棉语", ["ki"]= "基库尤语", ["rw"]= "基尼阿万达语", ["ky"]= "吉尔吉斯语", ["kv"]= "科米语", ["kg"]= "刚果语", ["ko"]= "朝鲜语", ["kj"]= "宽亚玛语", ["ku"]= "库尔德语", ["lo"]= "老挝语", ["la"]= "拉丁语",
+        ["lv"]= "拉脱维亚语", ["li"]= "林堡语", ["ln"]= "林加拉语", ["lt"]= "立陶宛语", ["lb"]= "卢森堡语", ["lu"]= "卢巴-加丹加语", ["lg"]= "干达语", ["mk"]= "马其顿语", ["mh"]= "马绍尔语", ["ml"]= "马拉雅拉姆语", ["mi"]= "毛利语", ["mr"]= "马拉提语", ["ms"]= "马来语", ["mg"]= "马达加斯加语", ["mt"]= "马耳他语",
+        ["mo"]= "摩尔达维亚语", ["mn"]= "蒙古语", ["na"]= "蒙古语", ["nv"]= "纳瓦霍语", ["nr"]= "南恩德贝勒语", ["nd"]= "北恩德贝勒语", ["ng"]= "恩敦加语", ["ne"]= "尼泊尔语", ["nn"]= "新挪威语", ["nb"]= "挪威布克莫尔语", ["no"]= "书面挪威语", ["ny"]= "尼扬贾语", ["oc"]= "奥克语", ["oj"]= "奥杰布瓦语", ["or"]= "奥利亚语",
+        ["om"]= "奥洛莫语", ["os"]= "奥塞梯语", ["pa"]= "旁遮普语", ["fa"]= "波斯语", ["pi"]= "巴利语", ["pl"]= "波兰语", ["pt"]= "葡萄牙语", ["ps"]= "普什图语", ["qu"]= "凯楚亚语", ["rm"]= "利托-罗曼语", ["ro"]= "罗马尼亚语", ["rn"]= "基隆迪语", ["ru"]= "俄语", ["sg"]= "桑戈语", ["sa"]= "梵语", ["si"]= "僧加罗语",
+        ["sk"]= "斯洛伐克语", ["sl"]= "斯洛文尼亚语", ["se"]= "北萨莫斯语", ["sm"]= "萨摩亚语", ["sn"]= "绍纳语", ["sd"]= "信德语", ["so"]= "索马里语", ["st"]= "南索托语", ["es"]= "西班牙语", ["sc"]= "撒丁语", ["sr"]= "塞尔维亚语", ["ss"]= "斯瓦特语", ["su"]= "巽他语", ["sw"]= "斯瓦希里语", ["sv"]= "瑞典语",
+        ["ty"]= "塔希提语", ["ta"]= "泰米尔语", ["tt"]= "塔塔尔语", ["te"]= "泰卢固语", ["tg"]= "塔吉克语", ["tl"]= "塔加洛语", ["th"]= "泰语", ["bo"]= "藏语", ["ti"]= "提格里尼亚语", ["to"]= "汤加语", ["tn"]= "塞茨瓦纳语", ["ts"]= "宗加语", ["tk"]= "土库曼语", ["tr"]= "土耳其语", ["tw"]= "特威语", ["ug"]= "维吾尔语",
+        ["uk"]= "乌克兰语", ["ur"]= "乌尔都语", ["uz"]= "乌兹别克语", ["ve"]= "文达语", ["vi"]= "越南语", ["vo"]= "沃拉普克语", ["cy"]= "威尔士语", ["wa"]= "沃伦语", ["wo"]= "沃洛夫语", ["xh"]= "科萨语", ["yi"]= "依地语", ["yo"]= "约鲁巴语", ["za"]= "壮语", ["zu"]= "祖鲁语",
+        ["Unknown"]="未知", [""]="其他", ["cmn"]="普通话", ["mis"]="未识别", ["mul"]="多语言", ["und"]="未确定", ["zxx"]="无语言",
+    },
+    ["region"]={
+        ["AC"]= "阿森松岛", ["AD"]= "安道尔", ["AE"]= "阿拉伯联合酋长国", ["AF"]= "阿富汗", ["AG"]= "安提瓜和巴布达", ["AI"]= "安圭拉", ["AL"]= "阿尔巴尼亚", ["AM"]= "亚美尼亚", ["AN"]= "荷属安的列斯群岛", ["AO"]= "安哥拉", ["AQ"]= "南极洲", ["AR"]= "阿根廷", ["AS"]= "美属萨摩亚", ["AT"]= "奥地利", ["AU"]= "澳大利亚",
+        ["AW"]= "阿鲁巴", ["AX"]= "奥兰群岛", ["AZ"]= "阿塞拜疆", ["BA"]= "波斯尼亚和黑塞哥维那", ["BB"]= "巴巴多斯", ["BD"]= "孟加拉国", ["BE"]= "比利时", ["BF"]= "布基纳法索", ["BG"]= "保加利亚", ["BH"]= "巴林", ["BI"]= "布隆迪", ["BJ"]= "贝宁", ["BL"]= "圣巴泰勒米", ["BM"]= "百慕大", ["BN"]= "文莱", ["BO"]= "玻利维亚",
+        ["BQ"]= "荷兰加勒比区", ["BR"]= "巴西", ["BS"]= "巴哈马", ["BT"]= "不丹", ["BV"]= "布维特岛", ["BW"]= "博茨瓦纳", ["BY"]= "白俄罗斯", ["BZ"]= "伯利兹", ["CA"]= "加拿大", ["CC"]= "科科斯（基林）群岛", ["CD"]= "刚果（金）", ["CF"]= "中非共和国", ["CG"]= "刚果（布）", ["CH"]= "瑞士", ["CI"]= "科特迪瓦",
+        ["CK"]= "库克群岛", ["CL"]= "智利", ["CM"]= "喀麦隆", ["CN"]= "中国", ["CO"]= "哥伦比亚", ["CP"]= "克利珀顿岛", ["CR"]= "哥斯达黎加", ["CU"]= "古巴", ["CV"]= "佛得角", ["CW"]= "库拉索", ["CX"]= "圣诞岛", ["CY"]= "塞浦路斯", ["CZ"]= "捷克共和国", ["DE"]= "德国", ["DG"]= "迪戈加西亚岛", ["DJ"]= "吉布提",
+        ["DK"]= "丹麦", ["DM"]= "多米尼克", ["DO"]= "多米尼加共和国", ["DZ"]= "阿尔及利亚", ["EA"]= "休达及梅利利亚", ["EC"]= "厄瓜多尔", ["EE"]= "爱沙尼亚", ["EG"]= "埃及", ["EH"]= "西撒哈拉", ["ER"]= "厄立特里亚", ["ES"]= "西班牙", ["ET"]= "埃塞俄比亚", ["EU"]= "欧盟", ["FI"]= "芬兰", ["FJ"]= "斐济", ["FK"]= "马尔维纳斯群岛",
+        ["FM"]= "密克罗尼西亚", ["FO"]= "法罗群岛", ["FR"]= "法国", ["GA"]= "加蓬", ["GB"]= "英国", ["GD"]= "格林纳达", ["GE"]= "格鲁吉亚", ["GF"]= "法属圭亚那", ["GG"]= "根西岛", ["GH"]= "加纳", ["GI"]= "直布罗陀", ["GL"]= "格陵兰", ["GM"]= "冈比亚", ["GN"]= "几内亚", ["GP"]= "瓜德罗普", ["GQ"]= "赤道几内亚", ["GR"]= "希腊",
+        ["GS"]= "南乔治亚岛和南桑威齐群岛", ["GT"]= "危地马拉", ["GU"]= "关岛", ["GW"]= "几内亚比绍", ["GY"]= "圭亚那", ["HK"]= "中国香港特别行政区", ["HM"]= "赫德岛和麦克唐纳群岛", ["HN"]= "洪都拉斯", ["HR"]= "克罗地亚", ["HT"]= "海地", ["HU"]= "匈牙利", ["IC"]= "加纳利群岛", ["ID"]= "印度尼西亚", ["IE"]= "爱尔兰",
+        ["IL"]= "以色列", ["IM"]= "曼岛", ["IN"]= "印度", ["IO"]= "英属印度洋领地", ["IQ"]= "伊拉克", ["IR"]= "伊朗", ["IS"]= "冰岛", ["IT"]= "意大利", ["JE"]= "泽西岛", ["JM"]= "牙买加", ["JO"]= "约旦", ["JP"]= "日本", ["KE"]= "肯尼亚", ["KG"]= "吉尔吉斯斯坦", ["KH"]= "柬埔寨", ["KI"]= "基里巴斯", ["KM"]= "科摩罗",
+        ["KN"]= "圣基茨和尼维斯", ["KP"]= "朝鲜", ["KR"]= "韩国", ["KW"]= "科威特", ["KY"]= "开曼群岛", ["KZ"]= "哈萨克斯坦", ["LA"]= "老挝", ["LB"]= "黎巴嫩", ["LC"]= "圣卢西亚", ["LI"]= "列支敦士登", ["LK"]= "斯里兰卡", ["LR"]= "利比里亚", ["LS"]= "莱索托", ["LT"]= "立陶宛", ["LU"]= "卢森堡", ["LV"]= "拉脱维亚",
+        ["LY"]= "利比亚", ["MA"]= "摩洛哥", ["MC"]= "摩纳哥", ["MD"]= "摩尔多瓦", ["ME"]= "黑山共和国", ["MF"]= "法属圣马丁", ["MG"]= "马达加斯加", ["MH"]= "马绍尔群岛", ["MK"]= "马其顿", ["ML"]= "马里", ["MM"]= "缅甸", ["MN"]= "蒙古", ["MO"]= "中国澳门特别行政区", ["MP"]= "北马里亚纳群岛", ["MQ"]= "马提尼克",
+        ["MR"]= "毛里塔尼亚", ["MS"]= "蒙特塞拉特", ["MT"]= "马耳他", ["MU"]= "毛里求斯", ["MV"]= "马尔代夫", ["MW"]= "马拉维", ["MX"]= "墨西哥", ["MY"]= "马来西亚", ["MZ"]= "莫桑比克", ["NA"]= "纳米比亚", ["NC"]= "新喀里多尼亚", ["NE"]= "尼日尔", ["NF"]= "诺福克岛", ["NG"]= "尼日利亚", ["NI"]= "尼加拉瓜", ["NL"]= "荷兰",
+        ["NO"]= "挪威", ["NP"]= "尼泊尔", ["NR"]= "瑙鲁", ["NU"]= "纽埃", ["NZ"]= "新西兰", ["OM"]= "阿曼", ["PA"]= "巴拿马", ["PE"]= "秘鲁", ["PF"]= "法属波利尼西亚", ["PG"]= "巴布亚新几内亚", ["PH"]= "菲律宾", ["PK"]= "巴基斯坦", ["PL"]= "波兰", ["PM"]= "圣皮埃尔和密克隆群岛", ["PN"]= "皮特凯恩群岛", ["PR"]= "波多黎各",
+        ["PS"]= "巴勒斯坦", ["PT"]= "葡萄牙", ["PW"]= "帕劳", ["PY"]= "巴拉圭", ["QA"]= "卡塔尔", ["QO"]= "大洋洲外围群岛", ["RE"]= "留尼汪", ["RO"]= "罗马尼亚", ["RS"]= "塞尔维亚", ["RU"]= "俄罗斯", ["RW"]= "卢旺达", ["SA"]= "沙特阿拉伯", ["SB"]= "所罗门群岛", ["SC"]= "塞舌尔", ["SD"]= "苏丹", ["SE"]= "瑞典",
+        ["SG"]= "新加坡", ["SH"]= "圣赫勒拿", ["SI"]= "斯洛文尼亚", ["SJ"]= "斯瓦尔巴特和扬马延", ["SK"]= "斯洛伐克", ["SL"]= "塞拉利昂", ["SM"]= "圣马力诺", ["SN"]= "塞内加尔", ["SO"]= "索马里", ["SR"]= "苏里南", ["SS"]= "南苏丹", ["ST"]= "圣多美和普林西比", ["SV"]= "萨尔瓦多", ["SX"]= "荷属圣马丁", ["SY"]= "叙利亚",
+        ["SZ"]= "斯威士兰", ["TA"]= "特里斯坦-达库尼亚群岛", ["TC"]= "特克斯和凯科斯群岛", ["TD"]= "乍得", ["TF"]= "法属南部领地", ["TG"]= "多哥", ["TH"]= "泰国", ["TJ"]= "塔吉克斯坦", ["TK"]= "托克劳", ["TL"]= "东帝汶", ["TM"]= "土库曼斯坦", ["TN"]= "突尼斯", ["TO"]= "汤加", ["TR"]= "土耳其", ["TT"]= "特立尼达和多巴哥",
+        ["TV"]= "图瓦卢", ["TW"]= "中国台湾", ["TZ"]= "坦桑尼亚", ["UA"]= "乌克兰", ["UG"]= "乌干达", ["UM"]= "美国本土外小岛屿", ["US"]= "美国", ["UY"]= "乌拉圭", ["UZ"]= "乌兹别克斯坦", ["VA"]= "梵蒂冈", ["VC"]= "圣文森特和格林纳丁斯", ["VE"]= "委内瑞拉", ["VG"]= "英属维京群岛", ["VI"]= "美属维京群岛", ["VN"]= "越南",
+        ["VU"]= "瓦努阿图", ["WF"]= "瓦利斯和富图纳", ["WS"]= "萨摩亚", ["XK"]= "科索沃地区", ["YE"]= "也门", ["YT"]= "马约特", ["ZA"]= "南非", ["ZM"]= "赞比亚", ["ZW"]= "津巴布韦",
+        [""]="其他", ["Unknown"]="未知", ["XX"]="未确定", ["XZ"]="国际水域", ["ZZ"]="未识别", ["International"]="国际",
+    },
+
+    -- 媒体所属的流派类型，tmdb的id编号->类型名 的对应
+    ["media_genre"] = {
+        [28] = "动作", [10759] = "动作冒险", [12] = "冒险", [16] = "动画",
+        [35] = "喜剧", [80] = "犯罪", [99] = "纪录", [18] = "剧情",
+        [10751] = "家庭", [14] = "奇幻", [36] = "历史", [27] = "恐怖", [10762] = "少儿",
+        [10402] = "音乐", [9648] = "悬疑", [10763] = "新闻", [10764] = "真人", [10749] = "爱情",
+        [10765] = "幻想", [878] = "科幻", [10766] = "连续剧", [10770] = "电视电影",
+        [10767] = "访谈", [53] = "惊悚", [10752] = "战争", [10768] = "战争政治", [37] = "西部",
+        [""]="其他", ["Unknown"]= "未知",
+    },
+    ["media_status"] = {
+        ["Rumored"]= "传闻", ["Planned"]= "筹划",
+        ["In Production"]= "开拍", ["TV In Production"]= "在摄制", ["Post Production"]= "后期制作",
+        ["Pilot"]= "试播中", ["Returning Series"]= "更新中",
+        ["Released"]= "已上映", ["Canceled"]="已取消", ["Ended"]="已完结",
+        [""]="其他", ["Unknown"]= "未知",
+    },
+    ["media_type"] = {
+        ["movie"]= "电影", ["tv"]= "剧集", ["Movie Video"]= "影像",
+        ["Scripted"]= "剧本类", ["Miniseries"]= "迷你剧", ["Video"]= "影像集",
+        ["Reality"]= "真人节目", ["Talk Show"]="访谈", ["News"]= "新闻", ["Documentary"]= "纪录",
+        [""]= "其他", ["Unknown"]= "未知",
+    },
+    ["character_gsub"] = {
+        {"^Self - ","自己 - "}, {" (voice)$"," (配音)"}, {" (cameo)$"," (客串)"}, {" (special guest)$"," (特邀嘉宾)"}, {" - Guest$"," (嘉宾)"}, {" - Host$"," (主持)"},
+    },
+    ["department"] = {
+        ["Acting"]= "表演", ["Actors"]= "参演", ["Art"]= "美术", ["Camera"]= "摄像", ["Costume & Make-Up"]= "服化", ["Creator"]= "创作", ["Directing"]= "执导",
+        ["Editing"]= "剪辑", ["Lighting"]= "灯光", ["Production"]= "制片", ["Sound"]= "音响", ["Visual Effects"]= "视效", ["Writing"]= "剧作", ["Crew"]= "职员",
+        [""]= "其他", ["Unknown"]= "未知",
+    },
+    ["credit_job"] = {
+        ["24 Frame Playback"]= "24 帧播放", ["2D Artist"]= "2D 艺术家", ["2D Sequence Supervisor"]= "2D 序列管理", ["2D Supervisor"]= "2D 监督员", ["3D Animator"]= "3D 动画师", ["3D Artist"]= "3D 艺术家", ["3D Coordinator"]= "3D 协调员",
+        ["3D Digital Colorist"]= "3D 数码调色师", ["3D Director"]= "3D 导演", ["3D Editor"]= "3D 编辑器", ["3D Generalist"]= "3D 多样化", ["3D Modeller"]= "3D 建模", ["3D Sequence Supervisor"]= "3D 序列管理", ["3D Supervisor"]= "3D 总监",
+        ["3D Tracking Layout"]= "3D 追踪图层", ["ADR & Dubbing"]= "配音", ["ADR Coordinator"]= "ADR 协调", ["ADR Editor"]= "ADR 编辑", ["ADR Engineer"]= "ADR 工程师", ["ADR Mixer"]= "配音混音", ["ADR Post Producer"]= "配音后期制作",
+        ["ADR Recording Engineer"]= "配音录音师", ["ADR Recordist"]= "配音录音员", ["ADR Supervisor"]= "配音指导", ["ADR Voice Casting"]= "配音演员", ["Accountant"]= "会计", ["Accounting Clerk Assistant"]= "助理会计师",
+        ["Accounting Supervisor"]= "财务主管", ["Accounting Trainee"]= "会计师", ["Acting Double"]= "动作替身", ["Action Director"]= "动作导演", ["Actor"]= "演员", ["Actor's Assistant"]= "演员助理", ["Adaptation"]= "改编",
+        ["Additional Camera"]= "副摄像", ["Additional Casting"]= "临时演员", ["Additional Colorist"]= "额外调色师", ["Additional Construction"]= "副建造", ["Additional Construction Grip"]= "副建造师", ["Additional Dialogue"]= "副对白",
+        ["Additional Director of Photography"]= "副摄影指导", ["Additional Editing"]= "副剪辑", ["Additional Editor"]= "额外编辑人", ["Additional Editorial Assistant"]= "副剪辑助理", ["Additional Effects Development"]= "副效果部",
+        ["Additional First Assistant Camera"]= "副第一摄影助理", ["Additional Gaffer"]= "额外领班", ["Additional Grip"]= "副器械工", ["Additional Hairstylist"]= "副发型师", ["Additional Key Construction Grip"]= "副器械建造师",
+        ["Additional Key Grip"]= "副器械师", ["Additional Lighting Technician"]= "副灯光工", ["Additional Music"]= "副音乐", ["Additional Music Supervisor"]= "副音乐总监", ["Additional Post-Production Supervisor"]= "副制作总监",
+        ["Additional Photography"]= "副摄影", ["Additional Production Assistant"]= "副制作助理", ["Additional Production Sound Mixer"]= "副制作混音师", ["Additional Script Supervisor"]= "副剧本监制", ["Additional Set Dresser"]= "临时服装师",
+        ["Additional Second Assistant Camera"]= "副第二摄影助理", ["Additional Second Assistant Director"]= "副导演", ["Additional Soundtrack"]= "副原声", ["Additional Writing"]= "副编剧", ["Administration"]= "行政",
+        ["Administrative Assistant"]= "首席助理", ["Aerial Camera"]= "航拍镜头", ["Aerial Camera Technician"]= "航拍镜头技术支持", ["Aerial Coordinator"]= "航拍协调", ["Animal Coordinator"]= "动物协调员",
+        ["Aerial Director of Photography"]= "航拍摄像导演", ["Animation"]= "动画", ["Animation Coordinator"]= "动画协调", ["Animation Department Coordinator"]= "动画部协调", ["Animation Director"]= "动画导演",
+        ["Animation Fix Coordinator"]= "动画修复协调", ["Animation Manager"]= "动画经理", ["Animation Production Assistant"]= "动画摄制助理", ["Animation Supervisor"]= "动画总监", ["Animation Technical Director"]= "动画技术导演",
+        ["Animatronic and Prosthetic Effects"]= "电子动物和假肢特效", ["Animatronics Designer"]= "动画设计师", ["Animatronics Supervisor"]= "动画咨询师", ["Apprentice Sound Editor"]= "实习声音编辑器", ["Armorer"]= "军械员",
+        ["Archival Footage Coordinator"]= "档案影像协调", ["Archival Footage Research"]= "档案影像研究", ["Armory Coordinator"]= "军械协调员", ["Art Department Assistant"]= "艺术部助理", ["Art Department Coordinator"]= "艺术部协调",
+        ["Art Department Manager"]= "艺术部经理", ["Art Direction"]= "艺术指导", ["Assistant Art Director"]= "助理艺术指导", ["Assistant Costume Designer"]= "助理服装设计师", ["Assistant Director"]= "助理导演",
+        ["Assistant Editor"]= "助理剪辑师", ["Assistant Location Manager"]= "外景制片助理", ["Assistant Makeup Artist"]= "化妆助理", ["Assistant Music Supervisor"]= "音乐总监助理", ["Assistant Picture Editor"]= "图片编辑助理",
+        ["Assistant Production Coordinator"]= "制片协调人助理", ["Assistant Production Manager"]= "制片经理助理", ["Assistant Property Master"]= "助理道具管理员", ["Assistant Script"]= "脚本助理", ["Associate Producer"]= "助理制片人",
+        ["Associate Choreographer"]= "助理编导", ["Author"]= "作者", ["Background Designer"]= "布景", ["Battle Motion Coordinator"]= "动作指导", ["Best Boy Electric"]= "照明助手", ["Best Boy Electrician"]= "照明助手", ["Book"]= "原著",
+        ["Boom Operator"]= "录音话筒操作员", ["CG Engineer"]= "CG 工程师", ["CG Painter"]= "CG 绘画", ["CG Supervisor"]= "CG 总监", ["CGI Supervisor"]= "CGI 总监", ["Cableman"]= "电缆员", ["Cameo"]= "浮雕", ["Camera Intern"]= "见习摄像师",
+        ["Camera Department Manager"]= "摄像经理", ["Camera Operator"]= "摄像师", ["Camera Supervisor"]= "摄像总监", ["Camera Technician"]= "摄像技术员", ["Carpenter"]= "木工", ["Casting"]= "选角", ["Casting Associate"]= "演员部助理",
+        ["Character Technical Supervisor"]= "角色技术总监", ["Characters"]= "角色", ["Chef"]= "厨师", ["Chief Technician / Stop-Motion Expert"]= "主任技师 / 定格动画专家", ["Choreographer"]= "编舞", ["Cinematography"]= "摄影",
+        ["Cloth Setup"]= "服装设定", ["Co-Art Director"]= "联合艺术总监", ["Co-Costume Designer"]= "联合服装设计", ["Co-Executive Producer"]= "联合执行制片人", ["Co-Producer"]= "联合制片人", ["Co-Writer"]= "联合编剧",
+        ["Color Designer"]= "色彩师", ["Color Timer"]= "配光员", ["Comic Book"]= "漫画书", ["Commissioning Editor"]= "组稿编辑", ["Compositor"]= "合成", ["Conceptual Design"]= "概念设计", ["Construction Coordinator"]= "建筑协调",
+        ["Construction Foreman"]= "建筑工头", ["Consulting Producer"]= "制片顾问", ["Costume Design"]= "服装设计", ["Costume Supervisor"]= "服装总监", ["Craft Service"]= "膳食服务", ["Creative Consultant"]= "创意顾问",
+        ["Creative Producer"]= "创意制作", ["Creator"]= "创作人", ["Creature Design"]= "生物设计", ["Department Administrator"]= "部门主管", ["Development Manager"]= "部门经理", ["Dialect Coach"]= "方言教练", ["Dialogue"]= "对白",
+        ["Dialogue Editor"]= "对白编辑", ["Digital Compositor"]= "数字合成", ["Digital Effects Supervisor"]= "数字效果总监", ["Digital Intermediate"]= "数字中间片", ["Directing Lighting Artist"]= "照明艺术指导",
+        ["Digital Producer"]= "数字制作", ["Director"]= "导演", ["Director of Photography"]= "摄影指导", ["Documentation & Support"]= "文稿支持", ["Dolby Consultant"]= "杜比顾问", ["Dramaturgy"]= "剧作理论", ["Driver"]= "司机",
+        ["Editor"]= "剪辑", ["Editorial Coordinator"]= "剪辑协调", ["Editorial Manager"]= "编辑经理", ["Editorial Production Assistant"]= "剪辑制作助理", ["Editorial Services"]= "剪辑服务", ["Editorial Staff"]= "剪辑人员",
+        ["Electrician"]= "电工", ["Executive Consultant"]= "执行顾问", ["Executive In Charge Of Post Production"]= "执行后期制作主管", ["Executive In Charge Of Production"]= "执行制片主管", ["Executive Music Producer"]= "执行音乐制作",
+        ["Executive Producer"]= "执行制片人", ["Executive Visual Effects Producer"]= "执行视效制作", ["Executive in Charge of Finance"]= "执行财务主管", ["Facial Setup Artist"]= "面妆艺术", ["First Assistant Camera"]= "第一助理摄像",
+        ["Finance"]= "财政", ["First Assistant Editor"]= "第一助理剪辑", ["First Assistant Sound Editor"]= "第一助理音响编辑", ["Fix Animator"]= "固定动画师", ["Foley"]= "特殊音效", ["Graphic Novel Illustrator"]= "图文小说插画",
+        ["Gaffer"]= "电工", ["Greensman"]= "植物道具员", ["Grip"]= "场务", ["Gun Wrangler"]= "枪支管理", ["Hair Department Head"]= "发型部主管", ["Hair Designer"]= "发型设计师", ["Hair Setup"]= "发型设置", ["Hairstylist"]= "发型师",
+        ["Helicopter Camera"]= "直升机摄像", ["I/O Manager"]= "I/O 经理", ["I/O Supervisor"]= "I/O 总监", ["Idea"]= "创意", ["Imaging Science"]= "影像科学", ["Information Systems Manager"]= "信息系统经理", ["Interior Designer"]= "室内设计",
+        ["Key Hair Stylist"]= "关键发型师", ["Keyboard Programmer"]= "键盘程序员", ["Layout"]= "布局", ["Lead Painter"]= "画家长", ["Leadman"]= "工长", ["Legal Services"]= "法律服务", ["Lighting Artist"]= "灯光艺术", ["Lighting Camera"]= "灯光摄影",
+        ["Lighting Coordinator"]= "灯光协调", ["Lighting Manager"]= "灯光经理", ["Lighting Production Assistant"]= "灯光制作助理", ["Lighting Supervisor"]= "灯光总监", ["Lighting Technician"]= "灯光师", ["Line Producer"]= "现场制片人",
+        ["Loader"]= "搬运工", ["Location Manager"]= "场地管理经理", ["Location Scout"]= "场地寻找", ["Machinist"]= "机械师", ["Makeup Artist"]= "化妆师", ["Makeup Department Head"]= "化妆部主管", ["Makeup Designer"]= "化妆设计",
+        ["Makeup Effects"]= "化妆效果", ["Manager of Operations"]= "运营经理", ["Martial Arts Choreographer"]= "武术指导", ["Master Lighting Artist"]= "主灯光师", ["Mechanical & Creature Designer"]= "机械与生物设计师",
+        ["Mix Technician"]= "混音技术员", ["Mixing Engineer"]= "混音师", ["Modeling"]= "模型", ["Motion Actor"]= "动作演员", ["Motion Capture Artist"]= "动作捕捉师", ["Music"]= "音乐", ["Music Director"]= "音乐指导",
+        ["Music Editor"]= "音乐编辑", ["Music Supervisor"]= "音乐总监", ["Musical"]= "音乐", ["Novel"]= "小说", ["Opera"]= "歌剧", ["Orchestrator"]= "配器师", ["Original Music Composer"]= "原创音乐作曲", ["Original Story"]= "原创小说",
+        ["Other"]= "其他", ["Painter"]= "画家", ["Photoscience Manager"]= "Photoscience 经理", ["Picture Car Coordinator"]= "车辆场景协调员", ["Post Production Assistant"]= "后期制作助理", ["Post Production Consulting"]= "后期制作顾问",
+        ["Poem"]= "诗歌", ["Post Production Supervisor"]= "后期制作总监", ["Post-Production Manager"]= "后期制作经理", ["Producer"]= "制片人", ["Production Accountant"]= "制片助理", ["Production Artist"]= "制片艺术",
+        ["Production Controller"]= "制片控制", ["Production Coordinator"]= "制片协调", ["Production Design"]= "制片设计", ["Production Director"]= "制片指导", ["Production Illustrator"]= "插画制作", ["Production Intern"]= "见习制片人",
+        ["Production Manager"]= "制片主任", ["Production Office Assistant"]= "制片办公室助理", ["Production Office Coordinator"]= "制片办公室协调人", ["Production Sound Mixer"]= "现场混音师", ["Production Supervisor"]= "制片总监",
+        ["Projection"]= "投影", ["Prop Maker"]= "道具制作", ["Property Master"]= "道具管理员", ["Propmaker"]= "道具制作", ["Prosthetic Supervisor"]= "假肢总监", ["Public Relations"]= "公共关系", ["Publicist"]= "公关",
+        ["Pyrotechnic Supervisor"]= "烟火总监", ["Quality Control Supervisor"]= "质量控制总监", ["Radio Play"]= "广播剧", ["Recording Supervision"]= "录像总监", ["Researcher"]= "研究员", ["Rigging Gaffer"]= "吊具领班",
+        ["Rigging Grip"]= "吊具场务", ["Scenario Writer"]= "剧作家", ["Scenic Artist"]= "布景工", ["Schedule Coordinator"]= "计划协调员", ["Score Engineer"]= "配乐师", ["Scoring Mixer"]= "配乐录音师", ["Screenplay"]= "剧本",
+        ["Screenstory"]= "情节策划", ["Script"]= "剧本", ["Script Coordinator"]= "剧本协调", ["Script Editor"]= "剧本编辑", ["Script Supervisor"]= "剧本指导", ["Sculptor"]= "雕塑", ["Second Film Editor"]= "第二剪辑", ["Seamstress"]= "裁缝",
+        ["Second Unit"]= "第二剧组", ["Second Unit Cinematographer"]= "第二剧组摄影师", ["Security"]= "安全", ["Senior Executive Consultant"]= "高级执行顾问", ["Sequence Artist"]= "序列艺术家", ["Sequence Lead"]= "序列指挥",
+        ["Sequence Supervisor"]= "序列指导", ["Series Composition"]= "剧集构思", ["Series Director"]= "剧集导演", ["Series Writer"]= "剧集编剧", ["Set Costumer"]= "布景供应", ["Set Decoration"]= "布景装饰", ["Set Decoration Buyer"]= "布景装饰采购",
+        ["Set Designer"]= "布景设计", ["Set Dressing Artist"]= "布景艺术", ["Set Dressing Manager"]= "布景经理", ["Set Dressing Production Assistant"]= "布景制作助理", ["Set Dressing Supervisor"]= "布景总监", ["Set Medic"]= "医疗组",
+        ["Set Production Assistant"]= "布景师助理", ["Set Production Intern"]= "见习布景师", ["Sets & Props Artist"]= "布景及道具艺术", ["Sets & Props Supervisor"]= "布景及道具总监", ["Settings"]= "设置", ["Shading"]= "着色处理",
+        ["Shoe Design"]= "鞋设计", ["Short Story"]= "短篇小说", ["Sign Painter"]= "签约画家", ["Simulation & Effects Artist"]= "模拟和效果师", ["Simulation & Effects Production Assistant"]= "模拟和效果制作助理", ["Software Engineer"]= "软件工程师",
+        ["Software Team Lead"]= "软件团队主管", ["Songs"]= "歌曲", ["Sound"]= "声音", ["Sound Design Assistant"]= "声音设计助理", ["Sound Designer"]= "声音设计", ["Sound Director"]= "声音指导", ["Sound Editor"]= "声音编辑",
+        ["Sound Engineer"]= "声响师", ["Sound Effects Editor"]= "音效编辑", ["Sound Mixer"]= "调音", ["Sound Montage Associate"]= "声音蒙太奇助理", ["Sound Re-Recording Mixer"]= "声音混录师", ["Sound Recordist"]= "录音师",
+        ["Special Effects Coordinator"]= "特效协调", ["Special Effects"]= "特效", ["Special Effects Supervisor"]= "特效总监", ["Special Guest"]= "特邀嘉宾", ["Special Guest Director"]= "特邀指导", ["Special Sound Effects"]= "特殊音效",
+        ["Stand In"]= "支援", ["Standby Painter"]= "待机画家", ["Steadicam Operator"]= "摄影稳定操作", ["Steadycam"]= "摄影稳定装置", ["Still Photographer"]= "静态摄像师", ["Story"]= "故事", ["Storyboard"]= "分镜", ["Studio Teacher"]= "片厂教师",
+        ["Stunt Coordinator"]= "特技协调", ["Stunts"]= "特技", ["Stunt Double"]= "特技替身", ["Stunts Coordinator"]= "特技协调", ["Supervising Animator"]= "动画总监", ["Supervising Art Director"]= "艺术指导总监", ["Supervising Producer"]= "监制",
+        ["Supervising Film Editor"]= "影片剪辑总监", ["Supervising Sound Editor"]= "声音编辑总监", ["Supervising Sound Effects Editor"]= "音效编辑总监", ["Supervising Technical Director"]= "技术指导总监", ["Supervisor of Production Resources"]= "制片资源主管",
+        ["Systems Administrators & Support"]= "系统管理员及支持", ["Tattooist"]= "纹身", ["Technical Supervisor"]= "技术总监", ["Telecine Colorist"]= "胶转磁调色师", ["Teleplay"]= "电视剧剧本", ["Temp Music Editor"]= "临时音乐编辑",
+        ["Temp Sound Editor"]= "临时声音编辑", ["Thanks"]= "感谢", ["Theatre Play"]= "剧院播放", ["Title Graphics"]= "标题图形", ["Translator"]= "翻译", ["Transportation Captain"]= "运输队长", ["Transportation Co-Captain"]= "运输联合队长",
+        ["Transportation Coordinator"]= "运输协调员", ["Treatment"]= "文学脚本", ["Underwater Camera"]= "水下摄像", ["Unit Manager"]= "剧组经理", ["Unit Production Manager"]= "剧组制片主任", ["Unit Publicist"]= "剧组公关",
+        ["Utility Stunts"]= "剧组特技", ["VFX Artist"]= "VFX 艺术", ["VFX Editor"]= "VFX 编辑", ["VFX Production Coordinator"]= "VFX 制作协调", ["VFX Supervisor"]= "VFX 总监", ["Video Assist Operator"]= "录像辅助操作员",
+        ["Video Game"]= "电子游戏", ["Visual Development"]= "视觉部", ["Visual Effects"]= "视觉效果", ["Visual Effects Art Director"]= "视觉效果艺术指导", ["Visual Effects Coordinator"]= "视觉效果协调", ["Visual Effects Editor"]= "视觉效果编辑",
+        ["Visual Effects Design Consultant"]= "视觉效果设计顾问", ["Visual Effects Producer"]= "视效制作", ["Visual Effects Supervisor"]= "视觉效果总监", ["Vocal Coach"]= "声乐教练", ["Voice"]= "语音", ["Wigmaker"]= "假发制作", ["Writer"]= "编剧",
+        ["Character Designer"]= "角色设计", ["Foley Editor"]= "拟音编辑",
+        [""]= "其他", ["Unknown"]= "未知",
+    },
 }
+
 --[[
 -- 媒体信息<table>
 Anime_data = {
@@ -213,12 +348,14 @@ Anime_data = {
     ["media_type"] = mediai["media_type"],			-- 媒体类型 movie tv person
     ["genre_ids"] = mediai["genre_ids"],			-- 流派类型的编号 table/Array
     ["genre_names"],			-- 流派类型 table/Array
+    ["keyword_names"]
     ["release_date"] = mediai["release_date"] or mediai["air_date"] or mediai["first_air_date"], -- 首映/本季首播/发行日期
     ["overview"] = mediai["overview"],				-- 剧情梗概 str
     ["overview_season"]
     ["tagline"]                 -- str
     ["vote_average"] = mediai["vote_average"],		-- 平均tmdb评分 num
     ["vote_count"]              -- 评分人数 num
+    ["content_rating"]
     ["rate_mpaa"],				-- MPAA分级 str
     ["homepage_path"]           --主页网址 str
     ["status"]                  -- 发行状态 str
@@ -233,9 +370,9 @@ Anime_data = {
     ["original_language"] = mediai["original_language"], -- 原始语言 "en"
     ["spoken_language"]         -- {str:iso_639_1, str:name}
     ["tv_language"]            -- tv {"en"}
-    ["origin_country"]      	-- tv 原始首播国家地区 {"US"}
-    ["production_country"]      -- {str:iso_3166_1, str:name}
-    ["production_company"],	    -- 出品公司 - {num:id, str:logo_path, str:name, str:origin_country}
+    ["origin_region"]      	-- tv 原始首播国家地区 {"US"}
+    ["production_region"]      -- {str:iso_3166_1, str:name}
+    ["production_company"],	    -- 出品公司 - {num:id, str:logo_path, str:name, str:origin_region}
     ["tv_network"],	        -- 播映剧集的电视网 - {...}
     --["person_staff"],			-- "job1:name1;job2;name2;..."
     --["tv_creator"]              -- {num:id, str:credit_id, str:name, 1/2:gender, str:profile_path}
@@ -353,7 +490,7 @@ function search(keyword)
     return mediais
 end
 function searchMediaInfo(keyword, settings_search_type, old_title)
-    kiko.log("[INFO]  Searching <" .. keyword .. "> in " .. settings_search_type)
+    -- kiko.log("[INFO]  Searching <" .. keyword .. "> in " .. settings_search_type)
     -- 获取 是否 元数据使用原语言标题
     local miotTmp = settings['metadata_info_origin_title']
     if (miotTmp == '0') then
@@ -434,25 +571,11 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
         data["media_id"] = string.format("%d", mediai["id"]) -- 媒体的 tmdb id
         data["release_date"] = mediai["release_date"] or mediai["first_air_date"] -- 首映/首播/发行日期
         data["original_language"] = mediai["original_language"] -- 原始语言
-        data["origin_country"] = table.deepCopy(mediai["origin_country"]) -- 原始首映/首播国家地区
+        data["origin_region"] = table.deepCopy(mediai["origin_country"]) or{} -- 原始首映/首播国家地区
         if not string.isEmpty(mediai.overview) and mediai.overview~=mediai.title and mediai.overview~=mediai.original_title then
             data["overview"] = (string.isEmpty(mediai.overview) and{""} or{ string.gsub(mediai["overview"], "\r?\n\r?\n", "\n") })[1] -- 剧情梗概
         end
         data["vote_average"] = mediai["vote_average"] -- 平均tmdb评分
-        -- genre_ids -> genre_names
-        data["genre_names"] = {} -- 流派类型 table/Array
-        -- 流派类型 id ->名称
-        for key, value in pairs(mediai["genre_ids"] or {}) do -- key-index value-id
-            local genreIdIn = false -- genre_ids.value-id in Media_genre
-            for k, v in pairs(Media_genre or {}) do
-                if k == value then
-                    genreIdIn = true
-                end
-            end
-            if genreIdIn then
-                data["genre_names"][key] = Media_genre[value]
-            end
-        end
         -- 图片链接
         if (mediai["poster_path"] ~= nil and mediai["poster_path"] ~= "") then
             data["poster_path"] = mediai["poster_path"]
@@ -467,8 +590,8 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
         --? OTHER_INFO
         -- data["vote_count"] = tonumber(mediai["vote_count"]or"")
         -- data["popularity_num"] = tonumber(mediai["popularity"]or"")
-        -- data["mo_is_adult"]= (( mediai["adult"]==nil or mediai["adult"]=="" )and{ nil }or{ tostring(mediai["adult"])=="true" })[1]
-        -- data["mo_is_video"]= (( mediai["video"]==nil or mediai["video"]=="" )and{ nil }or{ tostring(mediai["video"])=="true" })[1]
+        data["mo_is_adult"]= (( mediai["adult"]==nil or mediai["adult"]=="" )and{ nil }or{ tostring(mediai["adult"])=="true" })[1]
+        data["mo_is_video"]= (( mediai["video"]==nil or mediai["video"]=="" )and{ nil }or{ tostring(mediai["video"])=="true" })[1]
 
         -- season_number, episode_count,
         if data["media_type"] == "movie" then
@@ -477,6 +600,7 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
             data["season_number"] = 1
             data["episode_count"] = 1
             data["season_count"] = 1
+            data["episode_total"] = 1
             data["season_title"] = data["original_title"]
 
             local queryMo = {
@@ -487,6 +611,14 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
             local objMo= Kikoplus.httpgetMediaId(queryMo,data["media_type"].."/"..data["media_id"])
             
             --? OTHER_INFO m&t of mo
+            -- genre_ids -> genre_names
+            data["genre_names"] = {} -- 流派类型 table/Array
+            -- 流派类型 id ->名称
+            for key, value in pairs(mediai["genres"] or {}) do -- key-index value-id
+                if not string.isEmpty(value.name) then
+                    table.insert(data["genre_names"],Translation.media_genre[value.id] or value.name)
+                end
+            end
             data["runtime"] = ( objMo["runtime"]==nil or objMo["runtime"]=="" )and{ nil }or{ tostring(objMo["runtime"]) }
             data["homepage_path"]= (( objMo["homepage"]==nil or objMo["homepage"]=="" )and{ nil }or{ objMo["homepage"] })[1]
             for index, value in ipairs(objMo["production_companies"] or {}) do
@@ -495,12 +627,12 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
                     -- ["id"]= tonumber(value["id"]or""),
                     -- ["logo_path"]= (( value["logo_path"]==nil or value["logo_path"]=="" )and{ nil }or{ value["logo_path"] })[1],
                     ["name"]= (( value["name"]==nil or value["name"]=="" )and{ nil }or{ value["name"] })[1],
-                    ["origin_country"] = (( value["origin_country"]==nil or value["origin_country"]=="" )and{ nil }or{ value["origin_country"] })[1],
+                    ["origin_region"] = (( value["origin_country"]==nil or value["origin_country"]=="" )and{ nil }or{ value["origin_country"] })[1],
                 })
             end
             for index, value in ipairs(objMo["production_countries"] or {}) do
-                data["production_country"]=data["production_country"]or {}
-                table.insert(data["production_country"],{
+                data["production_region"]=data["production_region"]or {}
+                table.insert(data["production_region"],{
                     ["iso_3166_1"]= (( value["iso_3166_1"]==nil or value["iso_3166_1"]=="" )and{ nil }or{ value["iso_3166_1"] })[1],
                     -- ["name"]= (( value["name"]==nil or value["name"]=="" )and{ nil }or{ value["name"] })[1],
                 })
@@ -513,9 +645,9 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
                     -- ["english_name"]= (( value["english_name"]==nil or value["english_name"]=="" )and{ nil }or{ value["english_name"] })[1],
                 })
             end
-            data["status"]= (( objMo["status"]==nil or objMo["status"]=="" )and{ nil }or{ objMo["status"] })[1]
+            data.status= ( string.isEmpty(objMo.status) and{ "Unknown" }or{ objMo.status })[1]
             --? OTHER_INFO mo
-            data["mo_belongs_to_collection"] = table.deepCopy(objMo["belongs_to_collection"])
+            data["mo_belongs_to_collection"] = table.deepCopy(objMo["belongs_to_collection"]) or{}
             data["mo_budget"] = tonumber(objMo["budget"]or"")
             data["media_imdbid"]= (( objMo["imdb_id"]==nil or objMo["imdb_id"]=="" )and{ nil }or{ objMo["imdb_id"] })[1]
             data["mo_revenue"] = tonumber(objMo["revenue"]or"")
@@ -529,7 +661,7 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
             
             local media_data_json
             -- 把媒体信息<table>转为json的字符串
-            err, media_data_json = kiko.table2json(table.deepCopy(data))
+            err, media_data_json = kiko.table2json(table.deepCopy(data) or{})
             if err ~= nil then
                 kiko.log(string.format("[ERROR] table2json: %s", err))
             end
@@ -542,17 +674,25 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
             local mediaLang={data["original_language"]}
             Array.extendUnique(mediaLang,data["spoken_language"],"iso_639_1")
             Array.extendUnique(mediaLang,data["tv_language"])
-            local mediaCountry=table.deepCopy(data["origin_country"])
-            Array.extendUnique(mediaCountry,data["production_country"],"iso_3166_1")
+            local mediaRegion=table.deepCopy(data["origin_region"]) or{}
+            Array.extendUnique(mediaRegion,data["production_region"],"iso_3166_1")
+            mediaLang={mediaLang[1] or nil}
+            mediaRegion={mediaRegion[1] or nil}
+            for index, value in ipairs(mediaLang) do
+                mediaLang[index]= Translation.language[value] or value
+            end
+            for index, value in ipairs(mediaRegion) do
+                mediaRegion[index]= Translation.region[value] or value
+            end
 
             table.insert(mediais, {
                 ["name"] = (( string.isEmpty(old_title) )and{ mediaName }or{ old_title })[1],
                 ["data"] = media_data_json,
-                ["extra"] = "类型：" .. data["media_type"] .. "  |  首映：" ..
-                    ((data["release_date"] or "") .. " " .. (data["first_air_date"] or "")) ..
-                        "  |  语言：" .. Array.toStringLine(mediaLang) .. "  " .. Array.toStringLine(mediaCountry) ..
-                    (data["original_language"] or "") .. "  " .. Array.toStringLine(data["origin_country"]) ..
-                    "  |  状态：" .. (Status_tmdb[data["status"]] or data["status"] or "") ..
+                ["extra"] = "类型：" .. (Translation.media_type[data.media_type] or data.media_type or Translation.media_type["Unknown"] or"") ..
+                        ((data.mo_is_video==true or data.mo_is_video=="true") and{ ", ".. (Translation.media_type["Movie Video"] or"Video Movie") }or{ "" })[1] ..
+                    "  |  首映：" .. ((data["release_date"] or "") .. " " .. (data["first_air_date"] or "")) ..
+                        "  |  语言：" .. Array.toStringLine(mediaLang) .. "; " .. Array.toStringLine(mediaRegion) ..
+                    "  |  状态：" .. (Translation.media_status[data.status] or data.status or Translation.media_status["Unknown"] or "") ..
                     "\r\n简介：" .. string.gsub(data.overview or"", "\r?\n", " ")..
                     (( string.isEmpty(old_title) )and{ "" }or{ "\r\n弃用的标题：" ..mediaName })[1],
                 ["scriptId"] = "Kikyou.l.TMDb",
@@ -571,9 +711,23 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
             data["tv_poster_path"] = data["poster_path"]
             data["season_count"] = objTv["number_of_seasons"]
             data["episode_total"] = objTv["number_of_episodes"]
+            if tonumber(data.season_count) then
+                data.season_count= math.floor(tonumber(data.season_count))
+            end
+            if tonumber(data.episode_total) then
+                data.episode_total= math.floor(tonumber(data.episode_total))
+            end
 
             --? OTHER_INFO m&t of tv
-            data["runtime"] = table.deepCopy(objTv["episode_run_time"])
+            -- genre_ids -> genre_names
+            data["genre_names"] = {} -- 流派类型 table/Array
+            -- 流派类型 id ->名称
+            for key, value in pairs(mediai["genres"] or {}) do -- key-index value-id
+                if not string.isEmpty(value.name) then
+                    table.insert(data["genre_names"],Translation.media_genre[value.id] or value.name)
+                end
+            end
+            data["runtime"] = table.deepCopy(objTv["episode_run_time"]) or{}
             data["homepage_path"]= (( objTv["homepage"]==nil or objTv["homepage"]=="" )and{ nil }or{ objTv["homepage"] })[1]
             for index, value in ipairs(objTv["production_companies"] or {}) do
                 data["production_company"]=data["production_company"] or {}
@@ -581,12 +735,12 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
                     -- ["id"]= tonumber(value["id"]or""),
                     -- ["logo_path"]= (( value["logo_path"]==nil or value["logo_path"]=="" )and{ nil }or{ value["logo_path"] })[1],
                     ["name"]= (( value["name"]==nil or value["name"]=="" )and{ nil }or{ value["name"] })[1],
-                    ["origin_country"] = (( value["origin_country"]==nil or value["origin_country"]=="" )and{ nil }or{ value["origin_country"] })[1],
+                    ["origin_region"] = (( value["origin_country"]==nil or value["origin_country"]=="" )and{ nil }or{ value["origin_country"] })[1],
                 })
             end
             for index, value in ipairs(objTv["production_countries"] or {}) do
-                data["production_country"]=data["production_country"] or {}
-                table.insert(data["production_country"],{
+                data["production_region"]=data["production_region"] or {}
+                table.insert(data["production_region"],{
                     ["iso_3166_1"]= (( value["iso_3166_1"]==nil or value["iso_3166_1"]=="" )and{ nil }or{ value["iso_3166_1"] })[1],
                     -- ["name"]= (( value["name"]==nil or value["name"]=="" )and{ nil }or{ value["name"] })[1],
                 })
@@ -599,7 +753,7 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
                     -- ["english_name"]= (( value["english_name"]==nil or value["english_name"]=="" )and{ nil }or{ value["english_name"] })[1],
                 })
             end
-            data["status"]= (( objTv["status"]==nil or objTv["status"]=="" )and{ nil }or{ objTv["status"] })[1]
+            data.status= ( string.isEmpty(objTv.status) and{ "Unknown" }or{ objTv.status })[1]
             --? OTHER_INFO tv
             for _, value in ipairs(objTv["created_by"] or {}) do
                 data["person_crew"]=data["person_crew"] or {}
@@ -608,7 +762,7 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
                     ["name"]= (( value["name"]==nil or value["name"]=="" )and{ nil }or{ value["name"] })[1],
                     ["original_name"]= (( value["name"]==nil or value["name"]=="" )and{ nil }or{ value["name"] })[1],
                     ["profile_path"]= (( value["profile_path"]==nil or value["profile_path"]=="" )and{ nil }or{ value["profile_path"] })[1],
-                    ["department"]= "Crew",
+                    ["department"]= "Writing",
                     ["job"]="Creator",
                 
                     ["id"] = tonumber(value["id"]or""),
@@ -616,20 +770,20 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
                 })
             end
             data["tv_in_production"]= (( objTv["in_production"]==nil or objTv["in_production"]=="" )and{ nil }or{ tostring(objTv["in_production"])=="true" })[1]
-            data["tv_language"] = table.deepCopy(objTv["languages"])
-            -- data["tv_last_air_date"]= (( objTv["last_air_date"]==nil or objTv["last_air_date"]=="" )and{ nil }or{ objTv["last_air_date"] })[1]
-            -- data["tv_last_episode_to_air"] = table.deepCopy(objTv["last_episode_to_air"])
-            -- data["tv_next_episode_to_air"]= table.deepCopy(objTv["next_episode_to_air"])
+            data["tv_language"] = table.deepCopy(objTv["languages"]) or{}
+            data["tv_last_air_date"]= (( objTv["last_air_date"]==nil or objTv["last_air_date"]=="" )and{ nil }or{ objTv["last_air_date"] })[1]
+            -- data["tv_last_episode_to_air"] = table.deepCopy(objTv["last_episode_to_air"]) or{}
+            -- data["tv_next_episode_to_air"]= table.deepCopy(objTv["next_episode_to_air"]) or{}
             for index, value in ipairs(objTv["networks"] or {}) do
                 data["tv_network"]=data["tv_network"] or {}
                 table.insert(data["tv_network"],{
                     -- ["id"]= tonumber(value["id"]or""),
                     -- ["logo_path"]= (( value["logo_path"]==nil or value["logo_path"]=="" )and{ nil }or{ value["logo_path"] })[1],
                     ["name"]= (( value["name"]==nil or value["name"]=="" )and{ nil }or{ value["name"] })[1],
-                    ["origin_country"] = (( value["origin_country"]==nil or value["origin_country"]=="" )and{ nil }or{ value["origin_country"] })[1],
+                    ["origin_region"] = (( value["origin_country"]==nil or value["origin_country"]=="" )and{ nil }or{ value["origin_country"] })[1],
                 })
             end
-            data["tv_type"]= (( objTv["type"]==nil or objTv["type"]=="" )and{ nil }or{ objTv["type"] })[1]
+            data["tv_type"]= (( objTv["type"]==nil or objTv["type"]=="" )and{ "Unknown" }or{ objTv["type"] })[1]
 
             objTv.tagline= string.gsub(objTv.tagline or"", "[\n\r]", "")
             if string.isEmpty(objTv.tagline) or objTv.tagline==objTv.title or objTv.tagline==objTv.original_title then
@@ -660,6 +814,12 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
 
                 data["season_number"] = math.floor(tvSeasonsIx["season_number"])
                 data["episode_count"] = math.floor(tvSeasonsIx["episode_count"]) -- of this season
+                if tonumber(data.season_number) then
+                    data.season_number= math.floor(tonumber(data.season_number))
+                end
+                if tonumber(data.episode_count) then
+                    data.episode_count= math.floor(tonumber(data.episode_count))
+                end
 
                 local seasonNameNormal -- 是否为 普通的季名称 S00/Specials/特别篇/S05/Season 5/第 5 季
                 seasonNameNormal = (data["season_title"] == string.format("Season %d", data["season_number"])) or
@@ -692,7 +852,7 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
                 end
 
                 local media_data_json
-                err, media_data_json = kiko.table2json(table.deepCopy(data))
+                err, media_data_json = kiko.table2json(table.deepCopy(data) or{})
                 if err ~= nil then
                     kiko.log(string.format("[ERROR] table2json: %s", err))
                 end
@@ -706,19 +866,29 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
                 local mediaLang={data["original_language"]}
                 Array.extendUnique(mediaLang,data["spoken_language"],"iso_639_1")
                 Array.extendUnique(mediaLang,data["tv_language"])
-                local mediaCountry=table.deepCopy(data["origin_country"])
-                Array.extendUnique(mediaCountry,data["production_country"],"iso_3166_1")
-                local mediaLang={data["original_language"]}
+                local mediaRegion=table.deepCopy(data["origin_region"]) or{}
+                Array.extendUnique(mediaRegion,data["production_region"],"iso_3166_1")
+                mediaLang={mediaLang[1] or nil}
+                mediaRegion={mediaRegion[1] or nil}
+                for index, value in ipairs(mediaLang) do
+                    mediaLang[index]= Translation.language[value] or value
+                end
+                for index, value in ipairs(mediaRegion) do
+                    mediaRegion[index]= Translation.region[value] or value
+                end
 
                 table.insert(mediais, {
                     ["name"] = (( string.isEmpty(old_title) )and{ mediaNameSeason }or{ old_title })[1] ,
                     ["data"] = media_data_json,
-                    ["extra"] = "类型：" .. data["media_type"] .. "          |  首播：" ..
-                        ((data["release_date"] or "") .. " " .. (data["first_air_date"] or "")) ..
-                        "  |  语言：" .. Array.toStringLine(mediaLang) .. "  " .. Array.toStringLine(mediaCountry) ..
+                    ["extra"] = "类型：" .. (Translation.media_type[data.media_type] or data.media_type or Translation.media_type["Unknown"] or"") ..
+                            (string.isEmpty(data.tv_type) and{ "" }or{ ", ".. (Translation.media_type[data.tv_type] or data.tv_type or Translation.media_type[""] or"") })[1] ..
+                        "  |  首播：" .. ((data["release_date"] or "") .. " " .. (data["first_air_date"] or "")) ..
+                        "  |  语言：" .. Array.toStringLine(mediaLang) .. "; " .. Array.toStringLine(mediaRegion) ..
                         "  |  " .. seasonTextNormal .. string.format(" (共%2d季) ", data["season_count"] or "") ..
                         "  |  集数：" .. string.format("%d", data["episode_count"] or "") ..
-                        "  |  状态：" .. (Status_tmdb[data["status"]] or data["status"] or "") ..
+                        "  |  状态：" .. (Translation.media_status[data.status] or data.status or Translation.media_status["Unknown"] or"") ..
+                                (( data.tv_in_production==true or data.tv_in_production=="true")and
+                                        { ", "..(Translation.media_status["TV In Production"] or"In Production TV")}or{ "" })[1] ..
                         "\r\n简介：" .. ( string.isEmpty(data.overview_season) and{ "" }or
                                 { string.gsub(data.overview_season or"", "\r?\n", " ") .."\r\n" })[1] ..
                             (string.gsub(data.overview or"", "\r?\n", " ") or "")..
@@ -743,7 +913,7 @@ end
 function getep(anime)
     --分集类型包括 EP, SP, OP, ED, Trailer, MAD, Other 七种，分别用1-7表示， 默认情况下为1（即EP，本篇）
 
-    kiko.log("[INFO]  Getting episodes of <" .. anime["name"] .. ">")
+    -- kiko.log("[INFO]  Getting episodes of <" .. anime["name"] .. ">")
     -- 获取 是否 元数据使用原语言标题
     local miotTmp = settings['metadata_info_origin_title']
     if (miotTmp == '0') then
@@ -815,7 +985,7 @@ function getep(anime)
         if (objS["episodes"] == nil or #(objS["episodes"]) == 0) then
             return eps
         end
-        local seasonEpsI = objS["episodes"][1] -- 以第一集为例
+        local seasonEpsI = objS["episodes"][1] or{} -- 以第一集为例
         if seasonEpsI ~= nil then
             -- number:集序数
             seasonEpsI["episode_number"] = math.floor(tonumber(seasonEpsI["episode_number"]))
@@ -902,7 +1072,7 @@ end
 -- anime： AnimeLite
 -- 返回：Anime
 function detail(anime)
-    kiko.log("[INFO]  Getting detail of <" .. anime["name"] .. ">")
+    -- kiko.log("[INFO]  Getting detail of <" .. anime["name"] .. ">")
     -- table.toStringLog(anime) -- kiko.log()
     -- 把媒体信息"data"的json的字符串转为<table>
     local err, anime_data = kiko.json2table(anime["data"])
@@ -942,14 +1112,168 @@ function detail(anime)
         anime_data.season_number= math.floor(tonumber(anime_data.season_number))
     end
     if tonumber(anime_data.episode_count) then
-        anime_data.season_number= math.floor(tonumber(anime_data.season_number))
+        anime_data.episode_count= math.floor(tonumber(anime_data.episode_count))
     end
 
     if anime_data.season_title == string.format("第 %d 季", anime_data.season_number) then
         anime_data.season_title= string.format("第%d季", anime_data.season_number)
     end
+    --
+    local objMoll,objTvll,objTsll,objMell= {},{},{},{}
+    local objMolo,objTvlo,objTslo,objMelo= {},{},{},{}
+    if anime_data.media_type=="movie" then
+        objMoll=Kikoplus.httpgetMediaId({
+            ["api_key"] = settings["api_key"],
+            ["language"] = settings["metadata_lang"],
+            ["append_to_response"] = "credits,release_dates,keywords,external_ids", -- collections
+        },anime_data.media_type.."/"..anime_data.media_id)
+        objMell= objMoll
+    elseif anime_data.media_type=="tv" then
+        objTvll=Kikoplus.httpgetMediaId({
+            ["api_key"] = settings["api_key"],
+            ["language"] = settings["metadata_lang"],
+            ["append_to_response"] = "content_ratings,keywords,external_ids",
+        },anime_data.media_type.."/"..anime_data.media_id)
+        objMell=objTvll
+        objTsll=Kikoplus.httpgetMediaId({
+            ["api_key"] = settings["api_key"],
+            ["language"] = settings["metadata_lang"],
+            ["append_to_response"] = "credits,external_ids",
+        },anime_data.media_type.."/"..anime_data.media_id .. "/season/" .. anime_data.season_number)
+    end
 
-    local objMl, objSl={}, {}
+    if anime_data.media_type=="movie" or anime_data.media_type=="tv" then
+        -- anime_data["media_id"] = string.format("%d", objMell["id"])
+        anime_data["release_date"] = objMell["release_date"] or objMell["first_air_date"]
+        anime_data["original_language"] = objMell["original_language"]
+        anime_data["origin_country"]= nil
+        anime_data["origin_region"] = table.deepCopy(objMell["origin_country"] or {}) or{}
+        if not string.isEmpty(objMell.overview) and objMell.overview~=objMell.title and objMell.overview~=objMell.original_title then
+            anime_data["overview"] = (string.isEmpty(objMell.overview) and{""} or{ string.gsub(objMell["overview"], "\r?\n\r?\n", "\n") })[1]
+        end
+        anime_data["vote_average"] = objMell["vote_average"]
+        anime_data["genre_names"] = {}
+        for key, value in pairs(objMell["genres"] or {}) do
+            if not string.isEmpty(value.name) then
+                table.insert(anime_data["genre_names"],Translation.media_genre[value.id] or value.name)
+            end
+        end
+        if (objMell["poster_path"] ~= nil and objMell["poster_path"] ~= "") then
+            anime_data["poster_path"] = objMell["poster_path"]
+        else
+            anime_data["poster_path"] = ""
+        end
+        if (objMell["backdrop_path"] ~= nil and objMell["backdrop_path"] ~= "") then
+            anime_data["background_path"] = objMell["backdrop_path"]
+        else
+            anime_data["background_path"] = ""
+        end
+        -- anime_data["vote_count"] = tonumber(objMell["vote_count"]or"")
+        -- anime_data["popularity_num"] = tonumber(objMell["popularity"]or"")
+        
+        anime_data["homepage_path"]= (( objMell["homepage"]==nil or objMell["homepage"]=="" )and{ nil }or{ objMell["homepage"] })[1]
+        anime_data.status= ( string.isEmpty(objMell.status) and{ "Unknown" }or{ objMell.status })[1]
+        if string.isEmpty(objMell.tagline) or objMell.tagline==objMell.title or objMell.tagline==objMell.original_title then
+            anime_data.tagline= nil
+        elseif true then
+            anime_data.tagline= string.gsub(objMell.tagline or"", "[\n\r]", "")
+        end
+        objMell.tagline= string.gsub(objMell.tagline or"", "[\n\r]", "")
+        anime_data["production_company"]= {}
+        anime_data["production_country"]= nil
+        anime_data["production_region"]= {}
+        anime_data["spoken_language"]= {}
+        for index, value in ipairs(objMell["production_companies"] or {}) do
+            table.insert(anime_data["production_company"],{
+                -- ["id"]= tonumber(value["id"]or""),
+                -- ["logo_path"]= (( value["logo_path"]==nil or value["logo_path"]=="" )and{ nil }or{ value["logo_path"] })[1],
+                ["name"]= (( value["name"]==nil or value["name"]=="" )and{ nil }or{ value["name"] })[1],
+                ["origin_region"] = (( value["origin_country"]==nil or value["origin_country"]=="" )and{ nil }or{ value["origin_country"] })[1],
+            })
+        end
+        for index, value in ipairs(objMell["production_countries"] or {}) do
+            table.insert(anime_data["production_region"],{
+                ["iso_3166_1"]= (( value["iso_3166_1"]==nil or value["iso_3166_1"]=="" )and{ nil }or{ value["iso_3166_1"] })[1],
+                -- ["name"]= (( value["name"]==nil or value["name"]=="" )and{ nil }or{ value["name"] })[1],
+            })
+        end
+        for index, value in ipairs(objMell["spoken_languages"] or {}) do
+            table.insert(anime_data["spoken_language"],{
+                ["iso_639_1"]= (( value["iso_639_1"]==nil or value["iso_639_1"]=="" )and{ nil }or{ value["iso_639_1"] })[1],
+                -- ["name"]= (( value["name"]==nil or value["name"]=="" )and{ nil }or{ value["name"] })[1],
+                -- ["english_name"]= (( value["english_name"]==nil or value["english_name"]=="" )and{ nil }or{ value["english_name"] })[1],
+            })
+        end
+    end
+    if anime_data.media_type=="movie" then
+        anime_data["mo_is_adult"]= (( objMoll["adult"]==nil or objMoll["adult"]=="" )and{ nil }or{ tostring(objMoll["adult"])=="true" })[1]
+        anime_data["mo_is_video"]= (( objMoll["video"]==nil or objMoll["video"]=="" )and{ nil }or{ tostring(objMoll["video"])=="true" })[1]
+
+        anime_data["runtime"] = ( objMoll["runtime"]==nil or objMoll["runtime"]=="" )and{ nil }or{ tostring(objMoll["runtime"]) }
+        
+        --? OTHER_INFO mo
+        anime_data["mo_belongs_to_collection"] = table.deepCopy(objMoll["belongs_to_collection"]) or{}
+        anime_data["mo_budget"] = tonumber(objMoll["budget"]or"")
+        anime_data["mo_revenue"] = tonumber(objMoll["revenue"]or"")
+    elseif anime_data.media_type=="tv" then
+        anime_data["tv_first_air_date"] = anime_data["release_date"]
+        anime_data["tv_poster_path"] = anime_data["poster_path"]
+        anime_data["season_count"] = objTvll["number_of_seasons"]
+        anime_data["episode_total"] = objTvll["number_of_episodes"]
+        if tonumber(anime_data.season_count) then
+            anime_data.season_count= math.floor(tonumber(anime_data.season_count))
+        end
+        if tonumber(anime_data.episode_total) then
+            anime_data.episode_total= math.floor(tonumber(anime_data.episode_total))
+        end
+        --? OTHER_INFO m&t of tv
+        anime_data["runtime"] = table.deepCopy(objTvll["episode_run_time"]) or{}
+        
+        --? OTHER_INFO tv
+        for _, value in ipairs(objTvll["created_by"] or {}) do
+            anime_data["person_crew"]= {}
+            table.insert(anime_data["person_crew"],{
+                -- ["gender"]= (( tonumber(value["gender"])==1 or tonumber(value["gender"])==2 )and{ tonumber(value["gender"]) }or{ nil })[1],
+                ["name"]= (( value["name"]==nil or value["name"]=="" )and{ nil }or{ value["name"] })[1],
+                ["original_name"]= (( value["name"]==nil or value["name"]=="" )and{ nil }or{ value["name"] })[1],
+                ["profile_path"]= (( value["profile_path"]==nil or value["profile_path"]=="" )and{ nil }or{ value["profile_path"] })[1],
+                ["department"]= "Writing",
+                ["job"]="Creator",
+            
+                ["id"] = tonumber(value["id"]or""),
+                -- ["credit_id"]= (( value["credit_id"]==nil or value["credit_id"]=="" )and{ nil }or{ value["credit_id"] })[1],
+            })
+        end
+        anime_data["tv_in_production"]= (( objTvll["in_production"]==nil or objTvll["in_production"]=="" )and{ nil }or{ tostring(objTvll["in_production"])=="true" })[1]
+        anime_data["tv_language"] = table.deepCopy(objTvll["languages"]) or{}
+        anime_data["tv_last_air_date"]= (( objTvll["last_air_date"]==nil or objTvll["last_air_date"]=="" )and{ nil }or{ objTvll["last_air_date"] })[1]
+        -- anime_data["tv_last_episode_to_air"] = table.deepCopy(objTvll["last_episode_to_air"]) or{}
+        -- anime_data["tv_next_episode_to_air"]= table.deepCopy(objTvll["next_episode_to_air"]) or{}
+        anime_data["tv_network"]= {}
+        for index, value in ipairs(objTvll["networks"] or {}) do
+            table.insert(anime_data["tv_network"],{
+                -- ["id"]= tonumber(value["id"]or""),
+                -- ["logo_path"]= (( value["logo_path"]==nil or value["logo_path"]=="" )and{ nil }or{ value["logo_path"] })[1],
+                ["name"]= (( value["name"]==nil or value["name"]=="" )and{ nil }or{ value["name"] })[1],
+                ["origin_region"] = (( value["origin_country"]==nil or value["origin_country"]=="" )and{ nil }or{ value["origin_country"] })[1],
+            })
+        end
+        anime_data["tv_type"]= (( objTvll["type"]==nil or objTvll["type"]=="" )and{ "Unknown" }or{ objTvll["type"] })[1]
+
+        anime_data["release_date"] = objTsll["air_date"] -- 首播日期7
+        if not string.isEmpty(objTsll.overview) and objTsll.overview~=anime_data.overview and
+                objTsll.overview~=anime_data.title and objTsll.overview~=anime_data.original_title then
+            anime_data.overview_season = string.gsub(objTsll.overview, "\r?\n\r?\n", "\n")
+        end
+        if (objTsll["poster_path"] ~= nil and objTsll["poster_path"] ~= "") then
+            anime_data["poster_path"] = objTsll["poster_path"]
+        elseif (anime_data["tv_poster_path"] ~= nil and anime_data["tv_poster_path"] ~= "") then
+            anime_data["poster_path"] = anime_data["tv_poster_path"]
+        else
+            anime_data["poster_path"] = ""
+        end
+    end
+
     if string.isEmpty(anime_data.tagline) or anime_data.tagline==anime_data.title or anime_data.tagline==anime_data.original_title then
         anime_data.tagline= nil
     end
@@ -957,17 +1281,28 @@ function detail(anime)
         anime_data.overview=nil
     end
     if string.isEmpty(anime_data.tagline) or string.isEmpty(anime_data.overview) then
-        objMl=Kikoplus.httpgetMediaId({
-            ["api_key"] = settings["api_key"],
-            ["language"] = (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1]
-        },anime_data.media_type.."/"..anime_data.media_id)
-        if (not string.isEmpty(objMl.tagline)) and string.isEmpty(anime_data.tagline) and
-                objMl.tagline~=anime_data.title and objMl.tagline~=anime_data.original_title then
-            anime_data.tagline= string.gsub(objMl.tagline or"", "\r?\n\r?\n", "\n")
+        if anime_data.media_type=="movie" then
+            objMolo=Kikoplus.httpgetMediaId({
+                ["api_key"] = settings["api_key"],
+                ["language"] = (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1],
+                -- ["append_to_response"] = "",
+            },anime_data.media_type.."/"..anime_data.media_id)
+            objMelo=objMolo
+        elseif anime_data.media_type=="tv" then
+            objTvlo=Kikoplus.httpgetMediaId({
+                ["api_key"] = settings["api_key"],
+                ["language"] = (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1],
+                -- ["append_to_response"] = "",
+            },anime_data.media_type.."/"..anime_data.media_id)
+            objMelo=objTvlo
         end
-        if (not string.isEmpty(objMl.overview)) and string.isEmpty(anime_data.overview) and
-                objMl.overview~=anime_data.title and objMl.overview~=anime_data.original_title then
-            anime_data.overview= string.gsub(objMl.overview or"", "\r?\n\r?\n", "\n")
+        if (not string.isEmpty(objMelo.tagline)) and string.isEmpty(anime_data.tagline) and
+                objMelo.tagline~=anime_data.title and objMelo.tagline~=anime_data.original_title then
+            anime_data.tagline= string.gsub(objMelo.tagline or"", "\r?\n\r?\n", "\n")
+        end
+        if (not string.isEmpty(objMelo.overview)) and string.isEmpty(anime_data.overview) and
+                objMelo.overview~=anime_data.title and objMelo.overview~=anime_data.original_title then
+            anime_data.overview= string.gsub(objMelo.overview or"", "\r?\n\r?\n", "\n")
         end
     end
     if string.isEmpty(anime_data.overview_season) or anime_data.overview_season==anime_data.overview or
@@ -975,56 +1310,20 @@ function detail(anime)
         anime_data.overview_season=nil
     end
     if string.isEmpty(anime_data.overview_season) and anime_data.media_type=="tv" then
-        objSl=Kikoplus.httpgetMediaId({
-            ["api_key"] = settings["api_key"],
-            ["language"] = (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1]
-        },anime_data.media_type.."/"..anime_data.media_id .. "/season/" .. anime_data.season_number)
-        
-        objSl.overview= string.gsub(objSl.overview or"", "\r?\n\r?\n", "\n")
-        if (not string.isEmpty(objSl.overview)) and string.isEmpty(anime_data.overview_season) and objSl.overview~=(anime_data.overview or"") and
-                objSl.overview~=anime_data.title and objSl.overview~=anime_data.original_title then
-            anime_data.overview_season= objSl.overview
+        objTslo=Kikoplus.httpgetMediaId({
+                ["api_key"] = settings["api_key"],
+                ["language"] = (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1],
+                -- ["append_to_response"] = "",
+            },anime_data.media_type.."/"..anime_data.media_id .. "/season/" .. anime_data.season_number)
+        objTslo.overview= string.gsub(objTslo.overview or"", "\r?\n\r?\n", "\n")
+        if (not string.isEmpty(objTslo.overview)) and string.isEmpty(anime_data.overview_season) and objTslo.overview~=(anime_data.overview or"") and
+                objTslo.overview~=anime_data.title and objTslo.overview~=anime_data.original_title then
+            anime_data.overview_season= objTslo.overview
         end
     end
     -- string.gsub(anime_data.tagline or"", "\r?\n\r?\n", "\n")
 
-    local queryCr = {
-        ["api_key"] = settings["api_key"],
-        ["language"] = settings["metadata_lang"]
-    }
-    local header = {["Accept"] = "application/json"}
-    if settings["api_key"] == "<<API_Key_Here>>" then
-        kiko.log("Wrong api_key! 请在脚本设置中填写正确的TMDb的API密钥。")
-        kiko.message("[错误] 请在脚本设置中填写正确的 `TMDb的API密钥`！",1|8)
-        kiko.execute(true, "cmd", {"/c", "start", "https://www.themoviedb.org/settings/api"})
-        error("Wrong api_key! 请在脚本设置中填写正确的API密钥。")
-    end
-    local err,replyCr
-    if anime_data["media_type"]=="movie" then
-        -- tmdb_id_mo_cr
-        err, replyCr = kiko.httpget(string.format("http://api.themoviedb.org/3/" ..
-            anime_data["media_type"] .. "/" .. anime_data["media_id"]).."/credits", queryCr, header)
-    elseif anime_data["media_type"]=="tv" then
-        -- tmdb_id_tv_s_cr
-        err, replyCr = kiko.httpget(string.format(
-            "http://api.themoviedb.org/3/" .. anime_data["media_type"] .. "/" .. anime_data["media_id"] ..
-            "/season/" .. (anime_data["season_number"]).."/credits"), queryCr, header)
-    end
-    if err ~= nil then
-        kiko.log("[ERROR] TMDb.API.reply-details."..anime_data["media_type"] .. ".id.credit.httpget: " .. err)
-        if tostring(err) == ("Host requires authentication") then
-            kiko.message("[错误] 请在脚本设置中填写正确的 `TMDb的API密钥`！",1|8)
-            kiko.execute(true, "cmd", {"/c", "start", "https://www.themoviedb.org/settings/api"})
-        end
-        error(err)
-    end
-    local contentCr = replyCr["content"]
-    local err, objCr = kiko.json2table(contentCr)
-    if err ~= nil then
-        kiko.log("[ERROR] TMDb.API.reply-details."..anime_data["media_type"] .. ".id.credit.json2table: " .. err)
-        error(err)
-    end
-    
+    local objCr= table.deepCopy(((anime_data.media_type=="movie")and{ objMoll.credits }or{ objTsll.credits })[1]) or{}
     local tmpAnimeCharacter, tmpMcCast,tmpMcCrew={}, 0,0
     tmpMcCast= math.floor(tonumber( settings["metadata_castcrew_castcount"] ) or Metadata_person_max_cast)
     if tmpMcCast<0 then tmpMcCast=math.maxinteger end
@@ -1036,6 +1335,9 @@ function detail(anime)
     -- anime_data["person_cast"]=anime_data["person_cast"] or {}
     for _, value in ipairs(objCr.cast or {}) do
         if #(anime_data["person_cast"])>=Metadata_person_max_cast then break end
+        for _, crtGpair in ipairs(Translation.character_gsub or{}) do
+            string.gsub(value.character,crtGpair[1] or"",crtGpair[2] or crtGpair[1] or"")
+        end
         table.insert(anime_data["person_cast"],{
             -- ["gender"]= (( tonumber(value.gender)==1 or tonumber(value.gender)==2 )and{ tonumber(value.gender) }or{ nil })[1],
             ["name"]= (( string.isEmpty(value.name) )and{
@@ -1046,7 +1348,7 @@ function detail(anime)
             ["department"]= "Actors",
             ["job"]="Actor",
         
-            -- ["adult"]= (( string.isEmpty(value.adult) )and{ nil }or{ value.adult })[1],
+            ["adult"]= (( string.isEmpty(value.adult) )and{ nil }or{ value.adult })[1],
             ["id"] = tonumber(value.id or""),
             -- ["known_for_department"]= (( string.isEmpty(value.known_for_department)) and{ nil }or{ value.known_for_department })[1],
             -- ["popularity"]= tonumber(value.popularity or""),
@@ -1058,23 +1360,26 @@ function detail(anime)
         if Metadata_info_origin_title then
             tmpAnimeCharacterName= ( string.isEmpty(value.original_name) and{ nil }or{ value.original_name})[1]
         else
-            tmpAnimeCharacterName= ( string.isEmpty(value.original_name) and{ nil }or{
-                (string.isEmpty(value.name) and{ value.original_name }or{ value.name })[1]})[1]
+            tmpAnimeCharacterName= ( string.isEmpty(value.name) and{ (string.isEmpty(value.original_name) and
+                    { nil }or{ value.original_name })[1] }or{ value.name })[1]
         end
         if #(anime_data["person_cast"])>tmpMcCast then goto continue_detail_ccc_cast end
         table.insert(tmpAnimeCharacter,{
             ["name"]= ( string.isEmpty(value.character) and{ nil }or{ value.character })[1],
             ["actor"]=tmpAnimeCharacterName,
             ["link"]="https://www.themoviedb.org/person/"..value.id,
-            ["imgurl"]= (( string.isEmpty(value.profile_path))and{ nil }or{ 
+            ["imgurl"]= (( string.isEmpty(value.profile_path))and{ nil }or{
                     Image_tmdb.prefix..Image_tmdb.profile[Image_tmdb.max_ix] .. value.profile_path })[1],
         })
         ::continue_detail_ccc_cast::
     end
+    Array.extendUniqueFields(tmpAnimeCharacter,anime.crt,{"name","actor"},true,false)
     tmpAnimeCharacter= tmpAnimeCharacter or{} -- anime_data.person_cast.id = objCr.id
     local tmpAnimeStaff=""
     for _, value in ipairs(anime_data.person_crew or {}) do
-        tmpAnimeStaff=tmpAnimeStaff ..( string.isEmpty(value.name) and{ "" }or{"Creator:".. value.name ..";" })[1]
+        tmpAnimeStaff=tmpAnimeStaff ..( string.isEmpty(value.name) and{ "" }or{
+                ((Translation.department[value.department] or value.department).."-"..(Translation.credit_job[value.job] or (" "..value.job))) ..":"..
+                ( string.isEmpty(value.original_name) and{ value.name }or{value.original_name })[1] ..";" })[1]
     end
     anime_data["person_crew"]=anime_data.person_crew or {}
     -- anime_data["person_crew"]=anime_data["person_crew"] or {}
@@ -1089,7 +1394,7 @@ function detail(anime)
             ["department"]= (( string.isEmpty(value.department))and{ nil }or{ value.department })[1],
             ["job"]= (( string.isEmpty(value.job) )and{ nil }or{ value.job })[1],
             
-            -- ["adult"]= (( string.isEmpty(value.adult) )and{ nil }or{ value.adult })[1],
+            ["adult"]= (( string.isEmpty(value.adult) )and{ nil }or{ value.adult })[1],
             ["id"] = tonumber(value.id or""),
             -- ["known_for_department"]= (( string.isEmpty(value.known_for_department)) and{ nil }or{ value.known_for_department })[1],
             -- ["popularity"]= tonumber(value.popularity or""),
@@ -1098,52 +1403,79 @@ function detail(anime)
         if #(anime_data["person_crew"])>tmpMcCrew then goto continue_detail_ccc_crew end
         if (not string.isEmpty(value.original_name)) or (not string.isEmpty(value.name)) then
             if Metadata_info_origin_title then
-                tmpAnimeStaff= tmpAnimeStaff ..(value.department.." - "..value.job) ..":"..
-                            ( string.isEmpty(value.original_name) and{ value.name }or{value.name })[1] ..";"
+                tmpAnimeStaff= tmpAnimeStaff ..((Translation.department[value.department] or value.department).."-"..(Translation.credit_job[value.job] or (" "..value.job))) ..":"..
+                            ( string.isEmpty(value.original_name) and{ value.name }or{value.original_name })[1] ..";"
             else
-                tmpAnimeStaff= tmpAnimeStaff ..(value.department.." - "..value.job) ..":"..
-                            ( string.isEmpty(value.name) and{ value.original_name }or{value.name })[1] ..";"
+                tmpAnimeStaff= tmpAnimeStaff ..((Translation.department[value.department] or value.department).."-"..(Translation.credit_job[value.job] or (" "..value.job))) ..":"..
+                            ( string.isEmpty(value.original_name) and{ value.name }or{value.original_name })[1] ..";"
             end
         end
         ::continue_detail_ccc_crew::
     end
     tmpAnimeStaff= tmpAnimeStaff or "" -- anime_data.person_crew.id = objCr.id
-    local queryEi = {
-        ["api_key"] = settings["api_key"],
-        ["language"] = settings["metadata_lang"]
-    }
-    if settings["api_key"] == "<<API_Key_Here>>" then
-        kiko.log("Wrong api_key! 请在脚本设置中填写正确的TMDb的API密钥。")
-        kiko.message("[错误] 请在脚本设置中填写正确的 `TMDb的API密钥`！",1|8)
-        kiko.execute(true, "cmd", {"/c", "start", "https://www.themoviedb.org/settings/api"})
-        error("Wrong api_key! 请在脚本设置中填写正确的API密钥。")
-    end
-    local replyEi
-    -- tmdb_id_mo_cr
-    err, replyEi = kiko.httpget(string.format("http://api.themoviedb.org/3/" ..
-            anime_data["media_type"] .. "/" .. anime_data["media_id"]).."/external_ids", queryEi, header)
-    if err ~= nil then
-        kiko.log("[ERROR] TMDb.API.reply-details."..anime_data["media_type"] .. ".id.xid.httpget: " .. err)
-        if tostring(err) == ("Host requires authentication") then
-            kiko.message("[错误] 请在脚本设置中填写正确的 `TMDb的API密钥`！",1|8)
-            kiko.execute(true, "cmd", {"/c", "start", "https://www.themoviedb.org/settings/api"})
-        end
-        error(err)
-    end
-    local contentEi = replyEi["content"]
-    local err, objEi = kiko.json2table(contentEi)
-    if err ~= nil then
-        kiko.log("[ERROR] TMDb.API.reply-details."..anime_data["media_type"] .. ".id.xid.json2table: " .. err)
-        error(err)
-    end
+    objCr={}
 
+    local objMc={}
+    anime_data.content_rating= {}
+    local tmp_content_rating= {}
+    if anime_data.media_type=="movie" then
+        objMc= table.deepCopy( objMoll.release_dates or{}) or{}
+        for _, value in ipairs(objMc.results or{}) do
+            local tmp_cr0, tmp_cr3=nil,nil
+            for _, vr in ipairs(value.release_dates or{}) do
+                if string.isEmpty(tmp_cr0) and not string.isEmpty(vr.certification) then
+                    tmp_cr0=vr.certification
+                end
+                if string.isEmpty(tmp_cr3) and ((tonumber(vr.type) and{ math.floor(tonumber(vr.type))==math.floor(3) }or{ false })[1]) and
+                        not string.isEmpty(vr.certification) then
+                    tmp_cr3=vr.certification
+                end
+            end
+            if not string.isEmpty(tmp_cr3) or not string.isEmpty(tmp_cr0) then
+                table.insert(tmp_content_rating,{
+                        ["rating"]= tmp_cr3 or tmp_cr0 or "?",
+                        ["origin_region"]=value.iso_3166_1,})
+            end
+        end
+    elseif anime_data.media_type=="tv" then
+        objMc= table.deepCopy( objTvll.content_ratings ) or{}
+        for _, value in ipairs(objMc.results or{}) do
+            if not string.isEmpty(value.rating) then
+                table.insert(tmp_content_rating,{
+                        ["rating"]=value.rating or"?",
+                        ["origin_region"]=value.iso_3166_1,})
+            end
+        end
+    end
+    Array.extendUniqueFields(anime_data.content_rating,tmp_content_rating,{"rating","origin_region"},true,false)
+    objMc={}
+
+    local objMk,tmp_keyword_names= {},{}
+    anime_data.keyword_names= anime_data.keyword_names or{}
+    if anime_data.media_type=="movie" or anime_data.media_type=="tv" then
+        objMk=  table.deepCopy(((anime_data.media_type=="movie")and{ objMoll.keywords }or{ objTvll.keywords })[1]) or{}
+        for _, value in ipairs(objMk[ ((anime_data.media_type=="movie")and{"keywords"}or{"results"})[1] ] or{}) do
+            if not string.isEmpty(value.name) then
+                table.insert(tmp_keyword_names,{
+                        ["id"]=value.id,
+                        ["name"]=value.name,})
+            end
+        end
+    end
+    Array.extendUniqueFields(anime_data.keyword_names,tmp_keyword_names,{"id","name"},true,false)
+    objMk, tmp_keyword_names= {},{}
+
+    local objEi=  table.deepCopy(((anime_data.media_type=="movie")and{ objMoll.external_ids }or{ objTvll.external_ids })[1]) or{}
     anime_data.imdb_id= ( string.isEmpty(objEi.imdb_id) and{ nil }or{ objEi.imdb_id })[1]
     anime_data.facebook_id= ( string.isEmpty(objEi.facebook_id) and{ nil }or{ objEi.facebook_id })[1]
     anime_data.instagram_id= ( string.isEmpty(objEi.instagram_id) and{ nil }or{ objEi.instagram_id })[1]
     anime_data.twitter_id= ( string.isEmpty(objEi.twitter_id) and{ nil }or{ objEi.twitter_id })[1]
     if anime_data.media_type=="tv" then
         anime_data.tvdb_id= ((objEi.tvdb_id ==nil)and{nil}or{tostring(math.floor(tonumber(objEi.tvdb_id)))})[1]
+        anime_data.tvdb_id_season= (((objTsll.external_ids or{}).tvdb_id ==nil)and{nil}or{
+                tostring(math.floor(tonumber((objTsll.external_ids or{}).tvdb_id)))})[1]
     end
+    objEi={}
 
     local mImgPTmp = "TMDb_prior"
     if settings["metadata_image_priority"]=="fanart_prior"
@@ -1155,6 +1487,7 @@ function detail(anime)
         local queryFan = {
             ["api_key"] = settings["api_key_fanart"]
         }
+        local header = {["Accept"] = "application/json"}
         if settings["api_key_fanart"] == "<<API_Key_Here>>" then
             kiko.log("Wrong api_key! 请在脚本设置中填写正确的 `fanart的API密钥`。")
             kiko.message("[错误] 请在脚本设置中填写正确的 `fanart的API密钥`！\n"..
@@ -1274,27 +1607,27 @@ function detail(anime)
                         value.season=""
                     end
                     if(imgPathSoine.origin==nil and value.lang==originLang) then
-                        imgPathSoine.origin= table.deepCopy(getFti(value))
+                        imgPathSoine.origin= table.deepCopy(getFti(value)) or{}
                     end
                     if(imgPathSoine.interf==nil and value.lang==interfLang) then
-                        imgPathSoine.interf= table.deepCopy(getFti(value))
+                        imgPathSoine.interf= table.deepCopy(getFti(value)) or{}
                     end
                     if(imgPathSoine.noLang==nil and (value.lang=="00" or string.isEmpty(value.lang))) then
-                        imgPathSoine.noLang= table.deepCopy(getFti(value))
+                        imgPathSoine.noLang= table.deepCopy(getFti(value)) or{}
                     end
                     if(imgPathSoine.en==nil and value.lang=="en") then
-                        imgPathSoine.en= table.deepCopy(getFti(value))
+                        imgPathSoine.en= table.deepCopy(getFti(value)) or{}
                     end
                     ::continue_detail_fan_tfti::
                 end
                 (anime_data.fanart_path or{})[fti]={}
-                (anime_data.fanart_path or{})[fti]["origin"]=table.deepCopy(imgPathSoine.origin or imgPathSoine.noLang)
+                (anime_data.fanart_path or{})[fti]["origin"]=table.deepCopy(imgPathSoine.origin or imgPathSoine.noLang) or{}
                 if Metadata_info_origin_image==true then
                     (anime_data.fanart_path or{})[fti]["interf"]= table.deepCopy(imgPathSoine.origin or
-                            imgPathSoine.noLang or imgPathSoine.interf or imgPathSoine.en)
+                            imgPathSoine.noLang or imgPathSoine.interf or imgPathSoine.en) or{}
                 else
                     (anime_data.fanart_path or{})[fti]["interf"]=
-                            table.deepCopy(imgPathSoine.interf or imgPathSoine.noLang or imgPathSoine.en)
+                            table.deepCopy(imgPathSoine.interf or imgPathSoine.noLang or imgPathSoine.en) or{}
                 end
             end
         end
@@ -1333,8 +1666,9 @@ function detail(anime)
             end
         end
     end
+
     -- kiko.log(table.toStringBlock(anime_data))
-    local err, media_data_json = kiko.table2json(table.deepCopy(anime_data))
+    local err, media_data_json = kiko.table2json(table.deepCopy(anime_data) or{})
     if err ~= nil then
         kiko.log(string.format("[ERROR] table2json: %s", err))
     end
@@ -1372,7 +1706,7 @@ end
 -- 返回： Array[string]，Tag列表
 function gettags(anime)
     -- KikoPlay支持多级Tag，用"/"分隔，你可以返回类似“动画制作/A1-Pictures”这样的标签
-    kiko.log("[INFO]  Starting getting tags of <" .. anime["name"]..">")
+    -- kiko.log("[INFO]  Starting getting tags of <" .. anime["name"]..">")
     -- table.toStringLog(anime) -- kiko.log()
     -- 把媒体信息"data"的json的字符串转为<table>
     local err, anime_data = kiko.json2table(anime["data"])
@@ -1389,70 +1723,126 @@ function gettags(anime)
         kiko.log("[WARN]  (AnimeLite)anime[\"data\"][\"media_type\"] not found.")
     end
     -- table.toStringLog(anime_data) -- kiko.log("")
+    
     local mtag = {} -- 标签数组
     local genre_name_tmp -- 暂存字符串
-
     for _, value in pairs(anime_data["genre_names"] or {}) do
-        if (value ~= nil) then
+        if not string.isEmpty(value) then
             genre_name_tmp = value .. ""
-            table.insert(mtag, "流派/"..genre_name_tmp)
+            table.insert(mtag, "流派/".. string.gsub( genre_name_tmp ,"[/]","∕"))
         end
     end
     if anime_data["mo_is_adult"]==true or anime_data["mo_is_adult"]=="true" then
         table.insert(mtag, "流派/成人")
     end
+    local mediaKeyword= {}
+    Array.extendUnique(mediaKeyword,anime_data.keyword_names,"name")
+    for _, value in ipairs(mediaKeyword or {}) do
+        if not string.isEmpty(value) then
+            genre_name_tmp = value .. ""
+            table.insert(mtag, "标签/".. string.gsub( genre_name_tmp ,"[/]","∕"))
+        end
+    end
+    mediaKeyword= {}
 
-    if anime_data["media_type"] == "movie" then
-        table.insert(mtag, "媒体类型/电影")
+    if anime_data.media_type=="movie" and not table.isEmpty(anime_data.mo_belongs_to_collection) and
+            not string.isEmpty((anime_data.mo_belongs_to_collection or{}).name) then
+        table.insert(mtag, "系列/电影/".. string.gsub( string.gsub(
+                anime_data.mo_belongs_to_collection.name,"[ ]*（系列）",""),"[/]","∕"))
+    elseif anime_data.media_type=="tv" and tonumber(anime_data.season_count)~=nil and
+            math.floor(tonumber(anime_data.season_count))>math.floor(1) then
+        table.insert(mtag, "系列/剧集/".. string.gsub( anime_data.media_title ..
+                string.format(' (%s)', string.sub(anime_data.tv_first_air_date, 1, 4)),"[/]","∕"))
+    end
 
-    elseif anime_data["media_type"] == "tv" then
-        table.insert(mtag, "媒体类型/剧集")
+    if anime_data["media_type"] == "movie" or anime_data["media_type"] == "tv" then
+        table.insert(mtag, "类型/".. Translation.media_type[anime_data.media_type])
     else
-        table.insert(mtag, "媒体类型/其他")
+        table.insert(mtag, "类型/".. (anime_data.media_type or Translation.media_type["Unknown"]))
     end
     if anime_data["tv_type"]~=nil and anime_data["tv_type"]~="" then
-        table.insert(mtag, "媒体类型/" .. anime_data["tv_type"])
+        table.insert(mtag, "类型/" .. string.gsub(
+                (Translation.media_type[anime_data.tv_type] or anime_data.tv_type or Translation.media_type[""]) ,"[/]","∕"))
     end
-    if not string.isEmpty(anime_data["status"]) then
-        table.insert(mtag, "播映状态/" .. (Status_tmdb[anime_data["status"] or""] or anime_data["status"] or ""))
+    if anime_data.mo_is_video==true or anime_data.mo_is_video=="true" then
+        table.insert(mtag, "类型/" .. string.gsub(
+                (Translation.media_type["Movie Video"] or"Video Movie") ,"[/]","∕"))
+    end
+    if not string.isEmpty(anime_data.status) then
+        table.insert(mtag, "状态/" ..  string.gsub( Translation.media_status[anime_data.status] or
+                anime_data.status or Translation.media_status["Unknown"],"[/]","∕"))
     end
     if anime_data["tv_in_production"]==true or anime_data["tv_in_production"]=="true" then
-        table.insert(mtag, "播映状态/更新中")
+        table.insert(mtag, "状态/".. (Translation.media_status["TV In Production"] or"In Production TV"))
     end
     local mediaLang= {anime_data["original_language"]}
     Array.extendUnique(mediaLang,anime_data["spoken_language"],"iso_639_1")
     Array.extendUnique(mediaLang,anime_data["tv_language"])
-    local mediaCountry= table.deepCopy(anime_data["origin_country"])
-    Array.extendUnique(mediaCountry,anime_data["production_country"],"iso_3166_1")
+    local mediaRegion= table.deepCopy(anime_data["origin_region"]) or{}
+    Array.extendUnique(mediaRegion,anime_data["production_region"],"iso_3166_1")
     local mediaCompany={}
-    Array.extendUnique(mediaCompany,anime_data["production_company"],"name")
+    Array.extendUniqueFields(mediaCompany,anime_data["production_company"],{"name","origin_region"},true,false)
     -- Array.extendUnique(mediaCompany,anime_data["tv_network"],"name")
     local mediaNetwork={}
-    Array.extendUnique(mediaNetwork,anime_data["tv_network"],"name")
-    for _, value in ipairs(mediaLang or {}) do
-        if (value ~= nil) then
-            genre_name_tmp = value .. ""
-            table.insert(mtag, "语言/"..genre_name_tmp)
+    Array.extendUniqueFields(mediaNetwork,anime_data["tv_network"],{"name","origin_region"},true,false)
+    local mediaCRating={}
+    Array.extendUniqueFields(mediaCRating,anime_data.content_rating,{"rating","origin_region"},true,false)
+
+    for index, value in ipairs(mediaLang or {}) do
+        if not string.isEmpty(value) then
+            if index == 1 then
+                table.insert(mtag, "语言/".. string.gsub( Translation.language[value] or value or Translation.language[""] ,"[/]","∕"))
+            else
+                table.insert(mtag, "语言/+/".. string.gsub( Translation.language[value] or value or Translation.language[""] ,"[/]","∕"))
+            end
         end
     end
-    for _, value in ipairs(mediaCountry or {}) do
-        if (value ~= nil) then
-            genre_name_tmp = value .. ""
-            table.insert(mtag, "地区/"..genre_name_tmp)
+    mediaLang={}
+    for index, value in ipairs(mediaRegion or {}) do
+        if not string.isEmpty(value) then
+            if index == 1 then
+                table.insert(mtag, "地区/".. string.gsub( Translation.region[value] or value or Translation.region[""] ,"[/]","∕"))
+            else
+                table.insert(mtag, "地区/+/".. string.gsub( Translation.region[value] or value or Translation.region[""] ,"[/]","∕"))
+            end
         end
     end
+    mediaRegion={}
+    
+    for _, value in ipairs(mediaCRating or {}) do
+        if (not string.isEmpty(value.rating)) then
+            genre_name_tmp = ( string.isEmpty(value.origin_region) and{ Translation.region["Unknown"] }or
+                    { string.gsub(Translation.region[value.origin_region] or value.origin_region or Translation.region["Unknown"] ,"[/]","∕") })[1] ..
+                            "/".. string.gsub( value.rating ,"[/]","∕")
+            local isRon= false
+            for _, ron in ipairs(Tag_rating_on_region) do
+                if ron== value.origin_region then
+                    isRon= true
+                    break
+                end
+            end
+            table.insert(mtag, "分级/"..((isRon) and{ "" }or{ "+/" })[1].. genre_name_tmp)
+        end
+    end
+    mediaCRating={}
     for _, value in ipairs(mediaCompany or {}) do
-        if (value ~= nil) then
-            genre_name_tmp = value .. ""
-            table.insert(mtag, "出品方/"..genre_name_tmp)
+        if (not string.isEmpty(value.name)) then
+            genre_name_tmp = ( string.isEmpty(value.origin_region) and{ Translation.region[""] }or
+                    { string.gsub(Translation.region[value.origin_region] or value.origin_region or Translation.region[""],"[/]","∕") })[1] ..
+                            "/".. string.gsub( value.name ,"[/]","∕")
+            table.insert(mtag, "公司/".. genre_name_tmp)
         end
     end
+    mediaCompany={}
     for _, value in ipairs(mediaNetwork or {}) do
-        if (value ~= nil) then
-            genre_name_tmp = value .. ""
-            table.insert(mtag, "播映平台/"..genre_name_tmp)
+        if (not string.isEmpty(value.name)) then
+            genre_name_tmp = ( string.isEmpty(value.origin_region) and{ Translation.region[""] }or
+                    { string.gsub(Translation.region[value.origin_region] or value.origin_region or Translation.region[""],"[/]","∕") })[1] ..
+                            "/".. string.gsub( value.name ,"[/]","∕")
+            table.insert(mtag, "平台/".. genre_name_tmp)
         end
     end
+    mediaNetwork={}
 
     kiko.log("[INFO]  Finished getting " .. #mtag .. " tags of < " .. anime["name"] .. ">")
     return mtag
@@ -1476,7 +1866,7 @@ function match(path)
 
     local mediainfo, epinfo = {}, {} -- 返回的媒体信息、分集信息 AnimeLite:mediainfo EpInfo:epinfo
     --- 判断关联匹配的信息来源类型
-    if settings["match_type"] == "online_TMDb_filename" then
+    if settings["match_source"] == "online_TMDb_filename" then
         if (kiko.regex) == nil then
             kiko.message("错误! 版本过旧或不支持，请更换KikoPlay至合适的版本。",1|8)
             kiko.log("[Error] Using outdated or unsupported version!")
@@ -1783,7 +2173,7 @@ function match(path)
             ["anime"] = mediainfo,
             ["ep"] = epinfo,
         }
-    elseif settings["match_type"] == "local_Emby_nfo" then
+    elseif settings["match_source"] == "local_Emby_nfo" then
 
         -- 获取需要的各级目录
         -- string.gmatch(path,"\\[%S ^\\]+",-1)
@@ -1922,10 +2312,10 @@ function match(path)
                                 end
                             elseif xml_v_nfo:name() == "country" then
                                 -- "国家"标签
-                                if mdata["origin_country"] == nil then
-                                    mdata["origin_country"] = {}
+                                if mdata["origin_region"] == nil then
+                                    mdata["origin_region"] = {}
                                 end
-                                table.insert(mdata["origin_country"], tmpElem)
+                                table.insert(mdata["origin_region"], tmpElem)
                             elseif xml_v_nfo:name() == "genre" then
                                 -- "流派类型-名称"标签
                                 if mdata["genre_names"] == nil then
@@ -1995,7 +2385,7 @@ function match(path)
                                 -- 向演员信息<table>插入一个演员的信息
                                 table.insert(mdata["person_cast"], {
                                     ["name"] = cname, -- 人物名称
-                                    ["name"] = cactor, -- 演员名称
+                                    ["actor"] = cactor, -- 演员名称
                                     ["url"] = clink -- 人物资料页URL
                                     -- ["imgurl"]=cimgurl,  --人物图片URL
                                 })
@@ -2024,7 +2414,7 @@ function match(path)
                     ename = mdata["media_title"]
 
                     -- 把媒体信息<table>转为json的字符串
-                    local err, movie_data_json = kiko.table2json(table.deepCopy(mdata))
+                    local err, movie_data_json = kiko.table2json(table.deepCopy(mdata) or{})
                     if err ~= nil then
                         -- 转换错误
                         kiko.log(string.format("[ERROR] table2json: %s", err))
@@ -2359,10 +2749,10 @@ function match(path)
                                 mdata["media_imdbid"] = tmpElem
                             elseif xml_tv_nfo:name() == "country" then
                                 -- "国家"标签
-                                if mdata["origin_country"] == nil then
-                                    mdata["origin_country"] = {}
+                                if mdata["origin_region"] == nil then
+                                    mdata["origin_region"] = {}
                                 end
-                                table.insert(mdata["origin_country"], tmpElem)
+                                table.insert(mdata["origin_region"], tmpElem)
                             elseif xml_tv_nfo:name() == "genre" then
                                 -- "流派类型-名称"标签
                                 if mdata["genre_names"] == nil then
@@ -2452,7 +2842,7 @@ function match(path)
                     end
                     -- kiko.log("match - poster_path > ".. mdata["poster_path"])
                     -- 把媒体信息<table>转为json的字符串
-                local err, ts_data_json = kiko.table2json(table.deepCopy(mdata))
+                local err, ts_data_json = kiko.table2json(table.deepCopy(mdata) or{})
                     if err ~= nil then
                         kiko.log(string.format("[ERROR] table2json: %s", err))
                     end
@@ -2543,17 +2933,17 @@ menus = {{
         ["title"] = "打开媒体主页",
         ["id"] = "open_webpage_media_home",
     },{
-        ["title"] = "打开TMDb/IMDb",
-        ["id"] = "open_webpage_media_tmdb_imdb",
+        ["title"] = "打开TMDb/IMDb页面",
+        ["id"] = "open_webpage_media_page",
     },{
-        ["title"] = "使用豆瓣/贴吧搜索",
-        ["id"] = "open_webpage_douban_tieba",
+        ["title"] = "使用贴吧/豆瓣搜索",
+        ["id"] = "open_webpage_media_search",
     },{
         ["title"] = "打开fanart",
-        ["id"] = "open_webpage_media_fanart",
+        ["id"] = "open_webpage_media_artwork",
     },{
         ["title"] = "使用字幕搜索",
-        ["id"] = "open_webpage_multiple_subtitle",
+        ["id"] = "open_webpage_subtitle_multiple",
     },{
         ["title"] = "显示媒体元数据",
         ["id"] = "show_media_matadata",
@@ -2564,11 +2954,6 @@ function menuclick(menuid, anime)
     -- menuid： string，点击的菜单ID
     -- anime： Anime， 条目信息
     -- 返回：无
-    local NM_HIDE = 1 -- 一段时间后自动隐藏
-    local NM_PROCESS = 2 -- 显示busy动画
-    local NM_SHOWCANCEL = 4 -- 显示cancel按钮
-    local NM_ERROR = 8 -- 错误信息
-    local NM_DARKNESS_BACK = 16 -- 显示暗背景，阻止用户执行其他操作
     kiko.log("Menu Click: ", menuid)
     local err, anime_data = kiko.json2table(anime["data"])
     if err ~= nil then
@@ -2582,37 +2967,33 @@ function menuclick(menuid, anime)
         anime_data.season_title= string.format("第%d季", anime_data.season_number)
     end
 
-    if menuid == "open_webpage_media_tmdb_imdb" then
-        kiko.log("Open TMDb page of <"..anime["name"]..">.")
+    if menuid == "open_webpage_media_page" then
+        kiko.log("Open library page of <"..anime["name"]..">.")
+        kiko.message("打开 <"..anime["name"].."> 的TMDb/IMDb资料页", NM_HIDE)
         if not string.isEmpty(anime["url"]) then
-            kiko.message("打开 <"..anime["name"].."> 的TMDb页面", NM_HIDE)
             kiko.execute(true, "cmd", {"/c", "start", anime["url"]})
         else
-            kiko.message("未找到 <"..anime["name"].."> 的TMDb页面。\n请右键资料库的媒体尝试重新刮削详细信息。", NM_HIDE|NM_ERROR)
+            kiko.message("未找到 <"..anime["name"].."> 的TMDb页面。\n请右键资料夹尝试更新详细信息。", NM_HIDE|NM_ERROR)
         end
-        kiko.log("Open IMDb page of <"..anime["name"]..">.")
         if not string.isEmpty(anime_data.imdb_id) then
-            kiko.message("打开 <"..anime["name"].."> 的IMDb页面", NM_HIDE)
             kiko.execute(true, "cmd", {"/c", "start", "https://www.imdb.com/title/"..anime_data.imdb_id})
         else
-            kiko.message("未找到 <"..anime["name"].."> 的IMDb页面。\n请右键资料库的媒体尝试重新刮削详细信息。", NM_HIDE|NM_ERROR)
+            kiko.message("未找到 <"..anime["name"].."> 的IMDb页面。\n请右键资料夹尝试更新详细信息。", NM_HIDE|NM_ERROR)
         end
-    elseif menuid == "open_webpage_douban_tieba" then
-        kiko.log("Open douban page of <"..anime["name"]..">.")
+    elseif menuid == "open_webpage_media_search" then
+        kiko.log("Open searching page of <"..anime["name"]..">.")
+        kiko.message("在豆瓣/贴吧/B站搜索 <"..anime["name"]..">", NM_HIDE)
         if not string.isEmpty(anime_data.media_title) then
-            kiko.message("打开 <"..anime["name"].."> 的豆瓣页面", NM_HIDE)
+            kiko.execute(true, "cmd", {"/c", "start", "https://tieba.baidu.com/f/search/fm?ie=UTF-8^&qw=".. string.gsub(anime_data.media_title, "[ %c%p%^%&%|<>]", "%%20")})
             kiko.execute(true, "cmd", {"/c", "start", "https://www.douban.com/search?cat=1002^&q=".. string.gsub(anime_data.media_title.." ".. (anime_data.season_title or""),
                     "[ %c%p\'\"%^%&%|<>]","%%20")})
+            kiko.execute(true, "cmd", {"/c", "start", "https://search.bilibili.com/all?keyword=".. string.gsub(anime_data.media_title.." ".. (anime_data.season_title or""),
+                    "[ %c%p\'\"%^%&%|<>]","+")})
         else
-            kiko.message("未找到 <"..anime["name"].."> 的豆瓣页面。\n请右键资料库的媒体尝试重新刮削详细信息。", NM_HIDE|NM_ERROR)
+            kiko.message("未找到 <"..anime["name"].."> 的相关搜索页面。\n请右键资料夹尝试更新详细信息。", NM_HIDE|NM_ERROR)
         end
-        kiko.log("Open tieba page of <"..anime["name"]..">.")
-        if not string.isEmpty(anime_data.media_title) then
-            kiko.message("打开 <"..anime["name"].."> 的贴吧页面", NM_HIDE)
-            kiko.execute(true, "cmd", {"/c", "start", "https://tieba.baidu.com/f/search/fm?ie=UTF-8^&qw=".. string.gsub(anime_data.media_title, "[ %c%p%^%&%|<>]", "%%20")})
-        else
-            kiko.message("未找到 <"..anime["name"].."> 的贴吧页面。\n请右键资料库的媒体尝试重新刮削详细信息。", NM_HIDE|NM_ERROR)
-        end
+        Kikoplus.systemAddToPasteboard(anime_data.media_title.." "..anime_data.original_title..
+                    (string.isEmpty(anime_data.season_title) and{ "" }or{ " "..anime_data.season_title })[1],"媒体标题")
     elseif menuid == "open_webpage_media_home" then
         kiko.log("Open home page of <"..anime["name"]..">.")
         if not string.isEmpty(anime_data.homepage_path) then
@@ -2621,26 +3002,26 @@ function menuclick(menuid, anime)
         else
             kiko.message("未找到 <"..anime["name"].."> 的媒体主页。", NM_HIDE|NM_ERROR)
         end
-    elseif menuid == "open_webpage_media_fanart" then
+    elseif menuid == "open_webpage_media_artwork" then
         kiko.log("Open fanart page of <"..anime["name"]..">.")
         if anime_data.media_type=="movie" then
             if not string.isEmpty(anime_data.media_id) then
                 kiko.message("打开 <"..anime["name"].."> 的fanart页面", NM_HIDE)
                 kiko.execute(true, "cmd", {"/c", "start", "https://fanart.tv/movie/"..anime_data.media_id})
             else
-                kiko.message("未找到 <"..anime["name"].."> 的fanart页面。\n请右键资料库的媒体尝试重新刮削详细信息。", NM_HIDE|NM_ERROR)
+                kiko.message("未找到 <"..anime["name"].."> 的fanart页面。\n请右键资料夹尝试更新详细信息。", NM_HIDE|NM_ERROR)
             end
         elseif anime_data.media_type=="tv" then
             if not string.isEmpty(anime_data.tvdb_id) then
                 kiko.message("打开 <"..anime["name"].."> 的fanart页面", NM_HIDE)
                 kiko.execute(true, "cmd", {"/c", "start", "https://fanart.tv/series/"..anime_data.tvdb_id})
             else
-                kiko.message("未找到 <"..anime["name"].."> 的fanart页面。\n请右键资料库的媒体尝试重新刮削详细信息。", NM_HIDE|NM_ERROR)
+                kiko.message("未找到 <"..anime["name"].."> 的fanart页面。\n请右键资料夹尝试更新详细信息。", NM_HIDE|NM_ERROR)
             end
         else
-            kiko.message("未找到 <"..anime["name"].."> 的fanart页面。\n请右键资料库的媒体尝试重新刮削详细信息。", NM_HIDE|NM_ERROR)
+            kiko.message("未找到 <"..anime["name"].."> 的fanart页面。\n请右键资料夹尝试更新详细信息。", NM_HIDE|NM_ERROR)
         end
-    elseif menuid == "open_webpage_multiple_subtitle" then
+    elseif menuid == "open_webpage_subtitle_multiple" then
         kiko.log("Open multiple subtitle page of <"..anime["name"].."> by IMDb id.")
         kiko.message("打开 <"..anime["name"].."> 的字幕搜索页面", NM_HIDE)
         
@@ -2658,9 +3039,6 @@ function menuclick(menuid, anime)
                 tmpTitleO= tmpTitleM
             end
             
-            kiko.message("媒体<"..anime.name..">的标题 已复制至剪切板", NM_HIDE)
-            kiko.execute(true, "cmd", {"/c", "set/p=", string.gsub(anime_data.media_title.." "..anime_data.original_title.." "..
-                    (string.isEmpty(anime_data.season_title) and{ "" }or{ anime_data.season_title })[1] ,"([\"])", " "),"<nul|clip"})
             kiko.execute(true, "cmd", {"/c", "start", "https://zmk.pw/search?q="..tmpTitleO})
             kiko.execute(true, "cmd", {"/c", "start", "https://subhd.tv/search/"..string.gsub(tmpTitleO,"[ %c%p%^%&%|<>]","%%20")})
             kiko.execute(true, "cmd", {"/c", "start", "https://www.yysub.net/search/index?keyword="..tmpTitleO.."^&search_type="})
@@ -2671,8 +3049,11 @@ function menuclick(menuid, anime)
             kiko.execute(true, "cmd", {"/c", "start", "https://www.opensubtitles.com/zh-CN/zh-CN,zh-TW,"..tmpLangO..
                         "/search-all/q-".. anime_data.imdb_id.. "/hearing_impaired-include/machine_translated-include/trusted_sources-"})
         else
-            kiko.message("未找到 <"..anime["name"].."> 的IMDb id。\n请右键资料库的媒体尝试重新刮削详细信息。", NM_HIDE|NM_ERROR)
+            kiko.message("未找到 <"..anime["name"].."> 的IMDb id。\n请右键资料夹尝试更新详细信息。", NM_HIDE|NM_ERROR)
         end
+    
+        Kikoplus.systemAddToPasteboard(anime_data.media_title.." "..anime_data.original_title..
+                (string.isEmpty(anime_data.season_title) and{ "" }or{ " "..anime_data.season_title })[1],"媒体标题")
     elseif menuid == "show_media_matadata" then
         -- 显示媒体元数据
         -- kiko.log(os.time)
@@ -2694,25 +3075,34 @@ function menuclick(menuid, anime)
         end
         tmpString = anime["airdate"]
         tipString = tipString .. (tmpString or anime_data["release_date"] or "")
-
-        tipString = tipString .. "\n\n媒体类型：\t"
-        if anime_data["media_type"] == "movie" then
-            tipString = tipString .. "电影"
-        elseif anime_data["media_type"] == "tv" then
-            tipString = tipString .. "剧集"
-        else tipString = tipString .. "其他"
+        if not string.isEmpty(anime_data["tagline"]) then
+            tipString = tipString .. "\n标语：\t\t".. (anime_data["tagline"] or "")
         end
-        if not string.isEmpty(anime_data["tv_type"]) then
-            tipString = tipString .. ", " .. anime_data["tv_type"]
+        
+        tipString = tipString .. "\n\n类型：\t\t"
+        if anime_data.media_type == "movie" or anime_data.media_type == "tv" then
+            tipString = tipString .. Translation.media_type[anime_data.media_type]
+        else tipString = tipString .. (anime_data.media_type or Translation.media_type["Unknown"])
         end
-        if not string.isEmpty(anime_data["status"]) then
-            tipString = tipString .. "\n播映状态：\t".. (Status_tmdb[anime_data["status"]] or anime_data["status"])
+        if not string.isEmpty(anime_data.tv_type) then
+            tipString = tipString .. ", " .. (Translation.media_type[anime_data.tv_type] or anime_data.tv_type or Translation.media_type[""])
+        end
+        if anime_data.mo_is_video==true or anime_data.mo_is_video=="true" then
+            tipString = tipString .. ", " .. (Translation.media_type["Movie Video"] or"Video Movie")
+        end
+        if not string.isEmpty(anime_data.status) then
+            tipString = tipString .. "\n状态：\t\t".. (Translation.media_status[anime_data.status] or
+                    anime_data.status or Translation.media_status["Unknown"])
             if anime_data["tv_in_production"]==true or anime_data["tv_in_production"]=="true" then
-                tipString = tipString ..", 未完结"
+                tipString = tipString ..", ".. (Translation.media_status["TV In Production"] or"In Production TV")
             end
         end
         if not table.isEmpty(anime_data.mo_belongs_to_collection) and not string.isEmpty(anime_data.mo_belongs_to_collection.name) then
-            tipString = tipString .. "\n所属系列：\t" .. anime_data.mo_belongs_to_collection.name
+            tipString = tipString .. "\n系列：\t\t" .. string.gsub(anime_data.mo_belongs_to_collection.name,"[ ]*（系列）","")
+        elseif anime_data.media_type=="tv" and tonumber(anime_data.season_count)~=nil and
+                math.floor(tonumber(anime_data.season_count))>math.floor(1) then
+            tipString = tipString .. "\n系列：\t\t" .. (anime_data.media_title ..
+                    string.format(' (%s)', string.sub(anime_data.tv_first_air_date, 1, 4)))
         end
         tipString = tipString .. "\n流派：\t\t" .. (Array.toStringLine(anime_data["genre_names"]) or "")
         if anime_data["mo_is_adult"]==true or anime_data["mo_is_adult"]=="true" then
@@ -2721,30 +3111,22 @@ function menuclick(menuid, anime)
         local mediaLang= {anime_data["original_language"]}
         Array.extendUnique(mediaLang,anime_data["spoken_language"],"iso_639_1")
         Array.extendUnique(mediaLang,anime_data["tv_language"])
-        local mediaCountry= table.deepCopy(anime_data["origin_country"])
-        Array.extendUnique(mediaCountry,anime_data["production_country"],"iso_3166_1")
-        local mediaCompany={}
-        Array.extendUnique(mediaCompany,anime_data["production_company"],"name")
-        -- Array.extendUnique(mediaCompany,anime_data["tv_network"],"name")
-        local mediaNetwork={}
-        Array.extendUnique(mediaNetwork,anime_data["tv_network"],"name")
+        local mediaRegion= table.deepCopy(anime_data["origin_region"]) or{}
+        Array.extendUnique(mediaRegion,anime_data["production_region"],"iso_3166_1")
         if not table.isEmpty(mediaLang) then
+            for index, value in ipairs(mediaLang) do
+                mediaLang[index]= Translation.language[value] or value
+            end
             tipString = tipString .. "\n语言：\t\t" .. (Array.toStringLine(mediaLang) or "")
         end
-        if not table.isEmpty(mediaCountry) then
-            tipString = tipString .. "\n地区：\t\t" .. (Array.toStringLine(mediaCountry) or "")
+        mediaLang= {}
+        if not table.isEmpty(mediaRegion) then
+            for index, value in ipairs(mediaRegion) do
+                mediaRegion[index]= Translation.region[value] or value
+            end
+            tipString = tipString .. "\n地区：\t\t" .. (Array.toStringLine(mediaRegion) or "")
         end
-        if not table.isEmpty(mediaCompany) then
-        tipString = tipString .. "\n出品方：\t\t" .. (Array.toStringLine(mediaCompany) or "")
-        end
-        if not table.isEmpty(mediaNetwork) then
-            tipString = tipString .. "\n播映平台：\t" .. (Array.toStringLine(mediaNetwork) or "")
-        end
-
-        tipString = tipString .. "\n"
-        if not string.isEmpty(anime_data["tagline"]) then
-            tipString = tipString .. "\n标语：\t\t".. (Status_tmdb[anime_data["tagline"]] or anime_data["tagline"])
-        end
+        mediaRegion= {}
         tmpString = anime["epcount"]
         if anime_data["media_type"]~="movie" then
             tipString = tipString .. "\n分集总数：\t" .. (tmpString or tostring(math.floor(tonumber(anime_data["episode_count"]))) or "")
@@ -2767,9 +3149,85 @@ function menuclick(menuid, anime)
         if not string.isEmpty(anime_data["tv_last_air_date"]) then
             tipString = tipString .. "\n剧集最新：\t" .. anime_data["tv_last_air_date"]
         end
+        
+        tipString = tipString .. "\n"
         if not string.isEmpty(anime_data["homepage_path"]) then
             tipString = tipString .. "\n媒体主页：\t" .. anime_data["homepage_path"]
         end
+        local mediaNetwork={}
+        Array.extendUniqueFields(mediaNetwork,anime_data["tv_network"],{"name","origin_region"},true,false)
+        local mediaCompany={}
+        Array.extendUniqueFields(mediaCompany,anime_data["production_company"],{"name","origin_region"},true,false)
+        -- Array.extendUnique(mediaCompany,anime_data["tv_network"],"name")
+        local mediaKeyword={}
+        Array.extendUnique(mediaKeyword,anime_data.keyword_names,"name")
+        local mediaCRating={}
+        Array.extendUniqueFields(mediaCRating,anime_data.content_rating,{"rating","origin_region"},true,false)
+        if not table.isEmpty(mediaCRating) then
+            tmpString= {}
+            for _, value in ipairs(mediaCRating or {}) do
+                if (not string.isEmpty(value.rating)) then
+                    table.insert(tmpString,value.rating ..(string.isEmpty(value.origin_region) and{ "" }or
+                            { " (".. (Translation.region[value.origin_region] or value.origin_region) ..")" })[1])
+                end
+            end
+            tipString = tipString .. "\n分级：\t\t" .. (Array.toStringLine(tmpString) or "")
+        end
+        mediaCRating={}
+        if not table.isEmpty(mediaKeyword) then
+            tipString = tipString .."\n标签：\t\t".. (Array.toStringLine(mediaKeyword) or "")
+        end
+        mediaKeyword= {}
+        if not table.isEmpty(mediaNetwork) then
+            tmpString= {}
+            for _, value in ipairs(mediaNetwork or {}) do
+                if (not string.isEmpty(value.name)) then
+                    table.insert(tmpString,value.name ..(string.isEmpty(value.origin_region) and{ "" }or
+                            { " (".. (Translation.region[value.origin_region] or value.origin_region) ..")" })[1])
+                end
+            end
+            tipString = tipString .. "\n平台：\t\t" .. (Array.toStringLine(tmpString) or "")
+        end
+        mediaNetwork={}
+        if not table.isEmpty(mediaCompany) then
+            tmpString= {}
+            for _, value in ipairs(mediaCompany or {}) do
+                if (not string.isEmpty(value.name)) then
+                    table.insert(tmpString,value.name ..(string.isEmpty(value.origin_region) and{ "" }or
+                            { " (".. (Translation.region[value.origin_region] or value.origin_region) ..")" })[1])
+                end
+            end
+            tipString = tipString .. "\n公司：\t\t" .. (Array.toStringLine(tmpString) or "")
+        end
+        mediaCompany= {}
+        
+        tipString = tipString .. "\n"
+        tipString = tipString .. (string.isEmpty(anime_data.overview_season) and{""}or{ "\n本季剧情：\t" .. (anime_data.overview_season or "") })[1]
+        tipString = tipString .. "\n"..((anime_data.media_type~="movie")and{"剧集"}or{"电影"})[1] .."介绍：\t" .. (anime_data.overview or "")
+        
+        tipString = tipString .. "\n\n演员表：\t\t\n"
+        if table.isEmpty(anime_data.person_cast) then
+            for _, value in ipairs(anime.crt or {}) do
+                tipString = tipString ..""..string.format("%s",value.actor or"").."\t\t\t"..(value.name or"").."\n"
+            end
+        else
+            for _, value in ipairs(anime_data.person_cast or {}) do
+                tipString = tipString ..""..string.format("%s",value.original_name or"").."\t\t\t"..(value.character or"").."\n"
+            end
+        end
+        tipString = tipString .. "\n职员表：\t\t\n"
+        if table.isEmpty(anime_data.person_crew) then
+            for djobstr, value in ipairs(anime.staff or {}) do
+                tipString = tipString..""..string.format("%s",djobstr or "").."\t\t\t"..(value or"").."\n"
+            end
+        else
+            for _, value in ipairs(anime_data.person_crew or {}) do
+                tipString = tipString..""..string.format("%s",((Translation.department[value.department] or value.department)..
+                        "-"..(Translation.credit_job[value.job] or (" "..value.job))) ) .."\t\t\t"..value.original_name.."\n"
+            end
+        end
+
+        tipString = tipString .. "\n"
         if not string.isEmpty(anime_data["imdb_id"]) then
             tipString = tipString .. "\nIMDb：\t\t" .. anime_data["imdb_id"]
         end
@@ -2805,32 +3263,7 @@ function menuclick(menuid, anime)
                 end
             end
         end
-
-        tipString = tipString .. "\n"
-        tipString = tipString .. (string.isEmpty(anime_data.overview_season) and{""}or{ "\n本季剧情：\t" .. (anime_data.overview_season or "") })[1]
-        tipString = tipString .. "\n"..((anime_data.media_type~="movie")and{"剧集"}or{"电影"})[1] .."介绍：\t" .. (anime_data.overview or "")
         
-        tipString = tipString .. "\n\n演员表：\t\t\n"
-        if table.isEmpty(anime_data.person_cast) then
-            for _, value in ipairs(anime.crt or {}) do
-                tipString = tipString ..""..string.format("%s",value.actor or"").."\t\t\t"..value.name.."\n"
-            end
-        else
-            for _, value in ipairs(anime_data.person_cast or {}) do
-                tipString = tipString ..""..string.format("%s",value.original_name or"").."\t\t\t"..value.character.."\n"
-            end
-        end
-        tipString = tipString .. "\n职员表：\t\t\n"
-        if table.isEmpty(anime_data.person_crew) then
-            for djobstr, value in ipairs(anime.staff or {}) do
-                tipString = tipString..""..string.format("%s",djobstr or "").."\t\t\t"..(value or"").."\n"
-            end
-        else
-            for _, value in ipairs(anime_data.person_crew or {}) do
-                tipString = tipString..""..string.format("%s",(value.department or "")..( string.isEmpty(value.job) and{""}or{
-                    " - "..value.job})[1]) .."\t\t\t"..value.original_name.."\n"
-            end
-        end
         local dataString = ""
         if anime_data == nil then
             -- 无媒体信息
@@ -3122,7 +3555,7 @@ function Path.getMediaInfoRawByFilename(filename)
     end
     tmpLogPrint=tmpLogPrint..res[1]
 	kiko.log("Finished getting media info RAW by filename.\n" ..
-        "Season\tEp\tEpExt\tTitleExt\tEpType\tTitle:\n"..tmpLogPrint)
+        "Season\tEp\tEpExt\tTitleExt\tEpType\tTitle:\t"..tmpLogPrint)
     return res
 end
 -- 读 xml 文本文件
@@ -3177,7 +3610,7 @@ function Kikoplus.httpgetMediaId(queryMe,namespace)
         "http://api.themoviedb.org/3/" .. namespace), queryMe, header)
 
     if err ~= nil then
-        kiko.log("[ERROR] TMDb.API.reply-"..namespace.."."..(queryMe.language or"")..".httpget: " .. err)
+        kiko.log("[ERROR] TMDb.API.reply-"..namespace.."."..(queryMe.language or"").."."..(queryMe.append_to_response or"-")..".httpget: " .. err)
         if tostring(err) == ("Host requires authentication") then
             kiko.message("[错误] 请在脚本设置中填写正确的 `TMDb的API密钥`！",1|8)
             kiko.execute(true, "cmd", {"/c", "start", "https://www.themoviedb.org/settings/api"})
@@ -3191,6 +3624,19 @@ function Kikoplus.httpgetMediaId(queryMe,namespace)
         error(err)
     end
     return objMe
+end
+-- 添加字符串至剪切板
+function Kikoplus.systemAddToPasteboard(str,info)
+    if str==nil then
+        return nil
+    elseif type(str)=="table" then
+        str= table.toStringBlock(str)
+    elseif type(str)=="number" then
+        str= tostring(str)
+    end
+    kiko.execute(true, "cmd", {"/c", "set/p=", string.gsub(str ,"([\"])", " "),"<nul|clip"})
+    kiko.log("[INFO]  Add "..(info or"") .. " to pasteboard.")
+    return (kiko.message("已复制"..(string.isEmpty(info) and{ "" }or{ " "..info.." " })[1] .. "至剪切板", NM_HIDE))[1]
 end
 
 -- 特殊字符转换 "&amp;" -> "&"  "&quot;" -> "\""
@@ -3268,7 +3714,7 @@ end
 
 --获取默认集数，以秒数计算
 function os.time2EpiodeNum()
-return math.random(1,9)/10+(os.time()%900)+100
+    return math.random(1,9)/10+(os.time()%900)+100
 end
 
 -- 打印 <table> 至 kiko
@@ -3379,7 +3825,10 @@ end
 -- 深拷贝<table>，包含元表(?)，不考虑键key为<table>的情形
 -- copy from & thanks to - https://blog.csdn.net/qq_36383623/article/details/104708468
 function table.deepCopy(tb)
-    if tb == nil or type(tb) ~= "table" then
+    if tb == nil then
+        return {}
+    end
+    if type(tb) ~= "table" then
         -- 排除非<table>的变量
         return nil
     end
@@ -3395,7 +3844,7 @@ function table.deepCopy(tb)
     end
     -- local meta = table.deepCopy(getmetatable(tb))
     -- 设置元表。
-    setmetatable(copy, table.deepCopy(getmetatable(tb)))
+    setmetatable(copy, table.deepCopy(getmetatable(tb)) or{})
     return copy
 end
 
@@ -3410,15 +3859,15 @@ function Array.toStringLine(table0)
     for k, v in pairs(table0) do
         if type(v) ~= "table" then
             -- 普通变量，直接扩展字符串
-            str = str .. tostring(v or"") .. ", "
+            str = str .. (string.isEmpty(str) and{ "" }or{ ", " })[1] .. tostring(v or"")
         else
             -- <table>变量，递归
-            str = str .. "[ " .. table.toStringLine(v) .. " ], "
+            str = str .. (string.isEmpty(str) and{ "[ " }or{ ", [ " })[1] .. table.toStringLine(v) .. " ]"
         end
     end
     return str
 end
--- 将数组tb的所有的值 接续到数组ta的尾部，忽略tb中的键
+-- From: 数组tb的所有元素的值. To: 接续到数组ta的尾部
 function Array.extend(ta,tb)
     if ta == nil or type(ta) ~= "table" or tb == nil or type(tb) ~= "table" then
         -- 排除非<table>的变量
@@ -3428,7 +3877,7 @@ function Array.extend(ta,tb)
         table.insert(ta,value)
     end
 end
--- 将数组tb(或其字段 str:tbField)中所有未出现在数组ta的值 乱序接续到ta的尾部，忽略tb中的键
+-- From: 数组tb各 table:元素 键为string:tbField的 值，To: 这些值中所有未出现在数组ta内的. 乱序接续到ta的尾部。
 function Array.extendUnique(ta,tb,tbField)
     if ta == nil or type(ta) ~= "table" or tb == nil or type(tb) ~= "table" then
         -- 排除非<table>的变量
@@ -3467,5 +3916,67 @@ function Array.extendUnique(ta,tb,tbField)
             end
         end
         ::continue_Array_EU_f::
+    end
+end
+-- 相当于 tbField 存储了多个字段名的 Array.extendUnique(,,)
+-- From: table，以array:tbField中所有出现的string:值 为键，以(非nil)来自数组tb中各table:元素内对应的值 为值。
+-- To: 这些table中所有未出现在数组ta内的 (与ta的table:元素存在某一相等键的值不相等)，乱序接续到ta的尾部。
+function Array.extendUniqueFields(ta,tb,tbField,isExistUnequal,isOnlyGiven)
+    if ta == nil or type(ta) ~= "table" or tb == nil or type(tb) ~= "table" then
+        -- 排除非<table>的变量
+        return
+    end
+    if type(tbField) ~= "table" or tbField == nil then
+        if type(tbField) ~= "string" and type(tbField) ~= "number" and tbField ~= nil then
+            tbField=nil
+        end
+        return Array.extendUnique(ta,tb,tbField)
+    end
+    local isValueOf=false
+    for _, vb in ipairs(tb or {}) do
+        isValueOf=false
+        if vb == nil then
+            goto continue_Array_EUF_s
+        end
+        if isExistUnequal==false and isExistUnequal~="false" then
+            for _, va in ipairs(ta or {}) do
+                for _, vf in ipairs(tbField or{}) do
+                    if vf~=nil then
+                        if vb[vf] == va[vf] then -- 存在值等，跳出
+                            isValueOf=true
+                            break
+                        end
+                    end
+                end
+                if isValueOf then break end -- 所有值不等，比较下一个va
+            end
+        elseif true then
+            for _, va in ipairs(ta or {}) do
+                for _, vf in ipairs(tbField or{}) do
+                    if vf~=nil then
+                        if vb[vf] ~= va[vf] then -- 存在值不等，比较下一个va
+                            goto continue_Array_EUF_f
+                        end
+                    end
+                end
+                isValueOf= true -- 所有值等，跳出
+                break
+                ::continue_Array_EUF_f::
+            end
+        end
+        if not isValueOf then
+            local vbf={}
+            if isOnlyGiven==false and isOnlyGiven~="false" then
+                vbf= table.deepCopy(vb)
+            elseif true then
+                for _, vf in ipairs(tbField or{}) do
+                    if vf~=nil then
+                        vbf[vf]= vb[vf]
+                    end
+                end
+            end
+            table.insert(ta,vbf)
+        end
+        ::continue_Array_EUF_s::
     end
 end
