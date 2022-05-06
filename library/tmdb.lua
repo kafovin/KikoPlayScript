@@ -1,4 +1,4 @@
--- TMDb Scraping
+-- TMDb Scraper
 ----------------
 -- 公共部分
 -- 脚本信息
@@ -8,7 +8,7 @@ info = {
     ["desc"] = "The Movie Database (TMDb) 脚本 （测试中，不稳定） Edited by: kafovin \n"..
                 "从 themoviedb.org 刮削影剧元数据，也可设置选择刮削fanart的媒体图片、Emby的本地元数据。",
     --            "▲与前一版本不兼容▲ 建议搜索旧关联用`本地数据库`，仅刮削详旧资料细信息时设置`搜索-关键词作标题`为`1`。",
-    ["version"] = "0.2.2" -- 0.2.1.220505_fix
+    ["version"] = "0.2.2" -- 0.2.1.220502_fix0506
 }
 -- 设置项
 -- `key`为设置项的`key`，`value`是一个`table`。设置项值`value`的类型都是字符串。
@@ -133,15 +133,22 @@ settings = {
     },
     ["metadata_castcrew_castcount"]={
         ["title"] = "元数据 - 演员总数至多为",
-        ["default"] = "15",
-        ["desc"] = "元数据的演员表至多保留多少演员 (默认 10)。\n"..
+        ["default"] = "12",
+        ["desc"] = "元数据的演员表至多保留多少演员 (默认 12)。\n"..
                     "其中，数目>0时，为至多保留的数目；数目=0时，不保留；数目<0时，保留所有；小数，则向负无穷方向取整。",
     },
     ["metadata_castcrew_crewcount"]={
         ["title"] = "元数据 - 职员总数至多为",
-        ["default"] = "15",
-        ["desc"] = "元数据的职员表至多保留多少职员 (默认 7)。\n"..
+        ["default"] = "12",
+        ["desc"] = "元数据的职员表至多保留多少职员 (默认 12)。\n"..
                     "其中，数目>0时，为至多保留的数目；数目=0时，不保留；数目<0时，保留所有；小数，则向负无穷方向取整。",
+    },
+    ["metadata_castcrew_season_aggregate"]={
+        ["title"] = "元数据 - 本季所有演职员",
+        ["default"] = "0",
+        ["desc"] = "元数据对于剧集某季的演职员表，是否也包括所有单集的演职员。\n"..
+                    "0：仅包括出现于或负责整季的演职员 (默认)。 1：包含前者，以及出现于或负责各集的演职员(按默认顺序)。",
+        ["choices"] = "0,1",
     },
 }
 
@@ -151,8 +158,8 @@ Metadata_search_adult = false -- Choose whether to inlcude adult content in the 
 -- 会  在运行函数内更新值
 Metadata_info_origin_title = true -- 是否使用源语言标题
 Metadata_info_origin_image = true -- 是否使用源语言图片 --仅fanart图片
-Metadata_person_max_cast = 15 -- 演员表最多保留
-Metadata_person_max_crew = 15 -- 职员表最多保留
+Metadata_person_max_cast = 16 -- 演员表最多保留
+Metadata_person_max_crew = 16 -- 职员表最多保留
 Metadata_show_imgtype="background" -- 图片类型使用背景
 Tag_rating_on_region = {"FR", "GB", "HK", "RU","US",}
 
@@ -275,11 +282,14 @@ Translation["zh-CN"] = {
         [""]= "其他", ["Unknown"]= "未知",
     },
     ["character_gsub"] = {
-        {"^Self - ","自己 - "}, {" (voice)$"," (配音)"}, {" (cameo)$"," (客串)"}, {" (special guest)$"," (特邀嘉宾)"}, {" - Guest$"," (嘉宾)"}, {" - Host$"," (主持)"},
+        {"^Self$","自己"}, {"^Voice$","配音"}, {"^Cameo$","客串"}, {"^Special Guest$","特邀嘉宾"}, {"^Guest$","嘉宾"}, {"^Host$","主持"}, {"^Contestant$","参赛"}, {"^Performer$","演出"}, {"^Judge$","评委"},
+        {"Self %- ","自己 - "}, {" %(voice%)"," (配音)"}, {" %(cameo%)"," (客串)"}, {" %(special guest%)"," (特邀嘉宾)"}, {" %(guest%)"," (嘉宾)"}, {" %(host%)"," (主持)"},
+        {" %- Self"," - 自己"}, {" %- Voice"," - 配音"}, {" %- Cameo"," - 客串"}, {" %- Special Guest"," - 特邀嘉宾"}, {" %- Guest"," - 嘉宾"}, {" %- Host"," - 主持"},
+        {" %- Presenter"," - 主持"}, {" %- Various Characters"," - 各种角色"}, {" %- Participant"," - 参赛"}, {" %- Contestant"," - 参赛"}, {" %- Performer"," - 演出"}, {" %- Judge"," - 评委"},
     },
     ["department"] = {
         ["Acting"]= "表演", ["Actors"]= "参演", ["Art"]= "美术", ["Camera"]= "摄像", ["Costume & Make-Up"]= "服化", ["Creator"]= "创作", ["Directing"]= "执导",
-        ["Editing"]= "剪辑", ["Lighting"]= "灯光", ["Production"]= "制片", ["Sound"]= "音响", ["Visual Effects"]= "视效", ["Writing"]= "剧作", ["Crew"]= "职员",
+        ["Editing"]= "剪辑", ["Lighting"]= "灯光", ["Production"]= "制片", ["Sound"]= "声音", ["Visual Effects"]= "视效", ["Writing"]= "剧作", ["Crew"]= "职员",
         [""]= "其他", ["Unknown"]= "未知",
     },
     ["credit_job"] = {
@@ -293,13 +303,13 @@ Translation["zh-CN"] = {
         ["Additional First Assistant Camera"]= "副第一摄影助理", ["Additional Gaffer"]= "额外领班", ["Additional Grip"]= "副器械工", ["Additional Hairstylist"]= "副发型师", ["Additional Key Construction Grip"]= "副器械建造师",
         ["Additional Key Grip"]= "副器械师", ["Additional Lighting Technician"]= "副灯光工", ["Additional Music"]= "副音乐", ["Additional Music Supervisor"]= "副音乐总监", ["Additional Post-Production Supervisor"]= "副制作总监",
         ["Additional Photography"]= "副摄影", ["Additional Production Assistant"]= "副制作助理", ["Additional Production Sound Mixer"]= "副制作混音师", ["Additional Script Supervisor"]= "副剧本监制", ["Additional Set Dresser"]= "临时服装师",
-        ["Additional Second Assistant Camera"]= "副第二摄影助理", ["Additional Second Assistant Director"]= "副导演", ["Additional Soundtrack"]= "副原声", ["Additional Writing"]= "副编剧", ["Administration"]= "行政",
+        ["Additional Second Assistant Camera"]= "副第二摄影助理", ["Additional Second Assistant Director"]= "第二副导演", ["Additional Soundtrack"]= "副原声", ["Additional Writing"]= "副编剧", ["Administration"]= "行政",
         ["Administrative Assistant"]= "首席助理", ["Aerial Camera"]= "航拍镜头", ["Aerial Camera Technician"]= "航拍镜头技术支持", ["Aerial Coordinator"]= "航拍协调", ["Animal Coordinator"]= "动物协调员",
         ["Aerial Director of Photography"]= "航拍摄像导演", ["Animation"]= "动画", ["Animation Coordinator"]= "动画协调", ["Animation Department Coordinator"]= "动画部协调", ["Animation Director"]= "动画导演",
         ["Animation Fix Coordinator"]= "动画修复协调", ["Animation Manager"]= "动画经理", ["Animation Production Assistant"]= "动画摄制助理", ["Animation Supervisor"]= "动画总监", ["Animation Technical Director"]= "动画技术导演",
         ["Animatronic and Prosthetic Effects"]= "电子动物和假肢特效", ["Animatronics Designer"]= "动画设计师", ["Animatronics Supervisor"]= "动画咨询师", ["Apprentice Sound Editor"]= "实习声音编辑器", ["Armorer"]= "军械员",
         ["Archival Footage Coordinator"]= "档案影像协调", ["Archival Footage Research"]= "档案影像研究", ["Armory Coordinator"]= "军械协调员", ["Art Department Assistant"]= "艺术部助理", ["Art Department Coordinator"]= "艺术部协调",
-        ["Art Department Manager"]= "艺术部经理", ["Art Direction"]= "艺术指导", ["Assistant Art Director"]= "助理艺术指导", ["Assistant Costume Designer"]= "助理服装设计师", ["Assistant Director"]= "助理导演",
+        ["Art Department Manager"]= "艺术部经理", ["Art Direction"]= "艺术指导", ["Assistant Art Director"]= "助理艺术指导", ["Assistant Costume Designer"]= "助理服装设计师", ["Assistant Director"]= "副导演",
         ["Assistant Editor"]= "助理剪辑师", ["Assistant Location Manager"]= "外景制片助理", ["Assistant Makeup Artist"]= "化妆助理", ["Assistant Music Supervisor"]= "音乐总监助理", ["Assistant Picture Editor"]= "图片编辑助理",
         ["Assistant Production Coordinator"]= "制片协调人助理", ["Assistant Production Manager"]= "制片经理助理", ["Assistant Property Master"]= "助理道具管理员", ["Assistant Script"]= "脚本助理", ["Associate Producer"]= "助理制片人",
         ["Associate Choreographer"]= "助理编导", ["Author"]= "作者", ["Background Designer"]= "布景", ["Battle Motion Coordinator"]= "动作指导", ["Best Boy Electric"]= "照明助手", ["Best Boy Electrician"]= "照明助手", ["Book"]= "原著",
@@ -349,7 +359,10 @@ Translation["zh-CN"] = {
         ["Utility Stunts"]= "剧组特技", ["VFX Artist"]= "VFX 艺术", ["VFX Editor"]= "VFX 编辑", ["VFX Production Coordinator"]= "VFX 制作协调", ["VFX Supervisor"]= "VFX 总监", ["Video Assist Operator"]= "录像辅助操作员",
         ["Video Game"]= "电子游戏", ["Visual Development"]= "视觉部", ["Visual Effects"]= "视觉效果", ["Visual Effects Art Director"]= "视觉效果艺术指导", ["Visual Effects Coordinator"]= "视觉效果协调", ["Visual Effects Editor"]= "视觉效果编辑",
         ["Visual Effects Design Consultant"]= "视觉效果设计顾问", ["Visual Effects Producer"]= "视效制作", ["Visual Effects Supervisor"]= "视觉效果总监", ["Vocal Coach"]= "声乐教练", ["Voice"]= "语音", ["Wigmaker"]= "假发制作", ["Writer"]= "编剧",
-        ["Character Designer"]= "角色设计", ["Foley Editor"]= "拟音编辑",
+        ["Character Designer"]= "角色设计", ["Original Concept"]= "原始概念", ["Original Series Design"]= "原始系列设计", ["Key Animation"]= "原画", ["Special Effects Makeup Artist"]= "特效化妆师", ["Storyboard Artist"]= "分镜师", ["Art Designer"]= "美术设计",
+        ["Production Executive"]= "制片主管", ["Casting Director"]= "选角导演", ["Casting Consultant"]= "选角顾问", ["First Assistant Director"]= "第一副导演", ["Staff Writer"]= "特约编剧", ["Second Unit Director"]= "第二组导演", ["Floor Runner"]= "场地管理",
+        ["Theme Song Performance"]= "主题曲演唱", ["Music Producer"]= "音乐制作人", ["Foley Editor"]= "拟音编辑", ["Foley Artist"]= "拟音师", ["Sound Effects"]= "音效", ["In Memory Of"]= "以纪念", ["Assistant Director of Photography"]= "摄影副导演",
+        ["Additional Storyboarding"]= "副分镜", ["Key Costumer"]= "关键服饰师",
         [""]= "其他", ["Unknown"]= "未知",
     },
 }
@@ -607,7 +620,7 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
             tmpTmdbartImgpath[data.media_type.."background"]={}
             tmpTmdbartImgpath[data.media_type.."background"].interf= {
                 ["url"]= mediai.backdrop_path,
-                ["lang"]= "zxx",
+                ["lang"]= "und",
             }
         end
         data.tmdb_art_path = (table.isEmpty(tmpTmdbartImgpath) and{ nil }or{ tmpTmdbartImgpath })[1]
@@ -791,7 +804,7 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
                     ["original_name"]= (( value["name"]==nil or value["name"]=="" )and{ nil }or{ value["name"] })[1],
                     ["profile_path"]= (( value["profile_path"]==nil or value["profile_path"]=="" )and{ nil }or{ value["profile_path"] })[1],
                     ["department"]= "Writing",
-                    ["job"]="Creator",
+                    ["job"]={"Creator"},
                 
                     ["id"] = tonumber(value["id"]or""),
                     -- ["credit_id"]= (( value["credit_id"]==nil or value["credit_id"]=="" )and{ nil }or{ value["credit_id"] })[1],
@@ -1140,14 +1153,16 @@ function detail(anime)
         anime_data.season_title= string.format("第%d季", anime_data.season_number)
     end
     --
+    local creditTsall= ((settings["metadata_castcrew_season_aggregate"]=="1") and{ true }or{ false })[1]
+    if anime_data.media_type=="movie" then creditTsall=false end
     local objMoll,objTvll,objTsll,objMell= {},{},{},{}
     if anime_data.media_type=="movie" then
         objMoll=Kikoplus.httpgetMediaId({
             ["api_key"] = settings["api_key"],
             ["language"] = settings["metadata_lang"],
             ["append_to_response"] = "credits,release_dates,keywords,external_ids,translations,images", -- collections
-            ["include_image_language"] = -- string.sub(settings["metadata_lang"],1,2)..","..
-                    (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1]..",null,en", -- collections
+            ["include_image_language"] = string.sub(settings["metadata_lang"],1,2)..","..
+                    (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1]..",en,null", -- collections
         },anime_data.media_type.."/"..anime_data.media_id)
         objMell= objMoll
     elseif anime_data.media_type=="tv" then
@@ -1155,16 +1170,16 @@ function detail(anime)
             ["api_key"] = settings["api_key"],
             ["language"] = settings["metadata_lang"],
             ["append_to_response"] = "content_ratings,keywords,external_ids,translations,images",
-            ["include_image_language"] = -- string.sub(settings["metadata_lang"],1,2)..","..
-            (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1]..",null,en", -- collections
+            ["include_image_language"] = string.sub(settings["metadata_lang"],1,2)..","..
+            (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1]..",en,null", -- collections
         },anime_data.media_type.."/"..anime_data.media_id)
         objMell=objTvll
         objTsll=Kikoplus.httpgetMediaId({
             ["api_key"] = settings["api_key"],
             ["language"] = settings["metadata_lang"],
-            ["append_to_response"] = "credits,external_ids,translations,images",
-            ["include_image_language"] = -- string.sub(settings["metadata_lang"],1,2)..","..
-            (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1]..",null,en", -- collections
+            ["append_to_response"] = ((creditTsall) and{"aggregate_credits"}or{"credits"})[1]..",external_ids,translations,images",
+            ["include_image_language"] = string.sub(settings["metadata_lang"],1,2)..","..
+            (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1]..",en,null", -- collections
         },anime_data.media_type.."/"..anime_data.media_id .. "/season/" .. anime_data.season_number)
     end
 
@@ -1205,7 +1220,7 @@ function detail(anime)
                     { {} }or{ anime_data.tmdb_art_path[anime_data.media_type.."background"] })[1]
             anime_data.tmdb_art_path[anime_data.media_type.."background"].interf= {
                 ["url"]= objMell.backdrop_path,
-                ["lang"]= "zxx",
+                ["lang"]= "und",
             }
         else ((anime_data.tmdb_art_path or{})[anime_data.media_type.."background"] or{}).interf={}
         end
@@ -1261,6 +1276,8 @@ function detail(anime)
         anime_data["mo_belongs_to_collection"] = table.deepCopy(objMoll["belongs_to_collection"]) or{}
         anime_data["mo_budget"] = tonumber(objMoll["budget"]or"")
         anime_data["mo_revenue"] = tonumber(objMoll["revenue"]or"")
+        anime_data["person_cast"]= {}
+        anime_data["person_crew"]= {}
     elseif anime_data.media_type=="tv" then
         anime_data["tv_first_air_date"] = anime_data["release_date"]
         anime_data["season_count"] = objTvll["number_of_seasons"]
@@ -1275,15 +1292,16 @@ function detail(anime)
         anime_data["runtime"] = table.deepCopy(objTvll["episode_run_time"]) or{}
         
         --? OTHER_INFO tv
+        anime_data["person_cast"]= {}
+        anime_data["person_crew"]= {}
         for _, value in ipairs(objTvll["created_by"] or {}) do
-            anime_data["person_crew"]= {}
             table.insert(anime_data["person_crew"],{
                 -- ["gender"]= (( tonumber(value["gender"])==1 or tonumber(value["gender"])==2 )and{ tonumber(value["gender"]) }or{ nil })[1],
                 ["name"]= (( value["name"]==nil or value["name"]=="" )and{ nil }or{ value["name"] })[1],
                 ["original_name"]= (( value["name"]==nil or value["name"]=="" )and{ nil }or{ value["name"] })[1],
                 ["profile_path"]= (( value["profile_path"]==nil or value["profile_path"]=="" )and{ nil }or{ value["profile_path"] })[1],
                 ["department"]= "Writing",
-                ["job"]="Creator",
+                ["job"]={"Creator"},
             
                 ["id"] = tonumber(value["id"]or""),
                 -- ["credit_id"]= (( value["credit_id"]==nil or value["credit_id"]=="" )and{ nil }or{ value["credit_id"] })[1],
@@ -1331,7 +1349,6 @@ function detail(anime)
     if string.isEmpty(anime_data.overview) or anime_data.overview==anime_data.title or anime_data.overview==anime_data.original_title then
         anime_data.overview=nil
     end
-    local tmpTmdbartImgpath= ((anime_data.tmdb_art_path or{})[anime_data.media_type.."poster"] or{} ).origin
     for _,vtr in ipairs(objMell.translations.translations) do
         -- if vtr.iso_639_1== string.sub(settings["metadata_lang"],1,2) then
         -- end
@@ -1359,7 +1376,7 @@ function detail(anime)
         anime_data.overview_season=nil
     end
     if (anime_data.media_type~="movie") then
-        for _,vtr in ipairs(objMell.translations.translations) do
+        for _,vtr in ipairs(objTsll.translations.translations) do
             if vtr.iso_639_1== (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1] then
                 if not table.isEmpty(vtr.data) then
                     vtr.data.overview= string.gsub(vtr.data.overview or"", "\r?\n\r?\n", "\n")
@@ -1372,37 +1389,39 @@ function detail(anime)
             end
         end
     end
+    local tmpTmdbartImgpath= ((anime_data.tmdb_art_path or{})[anime_data.media_type.."poster"] or{} ).origin
     local imgTypePairTmdb = {{"backdrops","background"}, {"logos","logo"}, {"posters","poster"}}
     local imgLangPriority = {} -- larger===priorer
+    local langOTmp= (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1]
+    langOTmp= ((langOTmp==string.sub(settings["metadata_lang"],1,2)) and{langOTmp.."_"} or{langOTmp})[1]
     if settings["metadata_info_origin_image"] =="2" then
         imgLangPriority= {
-            [""]=4, ["zxx"]=4, ["en"]=2, [string.sub(settings["metadata_lang"],1,2)]=1, [(string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1]]=3,
+            [""]=4, ["und"]=4, ["zxx"]=4, ["xx"]=4, ["en"]=1, [string.sub(settings["metadata_lang"],1,2)]=1, [langOTmp]=3,
         }
     elseif settings["metadata_info_origin_image"] =="0" then
         imgLangPriority= {
-            [""]=3, ["zxx"]=3, ["en"]=3, [string.sub(settings["metadata_lang"],1,2)]=1, [(string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1]]=4,
+            [""]=2, ["und"]=2, ["zxx"]=2, ["xx"]=2, ["en"]=1, [string.sub(settings["metadata_lang"],1,2)]=1, [langOTmp]=4,
         }
     else
         imgLangPriority= {
-            [""]=3, ["zxx"]=3, ["en"]=3, [string.sub(settings["metadata_lang"],1,2)]=1, [(string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1]]=4,
+            [""]=2, ["und"]=2, ["zxx"]=2, ["xx"]=2, ["en"]=2, [string.sub(settings["metadata_lang"],1,2)]=2, [langOTmp]=4,
         }
     end
+    langOTmp=nil
     for _,vitp in ipairs(imgTypePairTmdb) do
         for _,vim in ipairs(objMell.images[vitp[1]] or{}) do
             tmpTmdbartImgpath= ((anime_data.tmdb_art_path or{})[anime_data.media_type..vitp[2]] or{} ).origin
             if (not string.isEmpty(vim.file_path)) and
-                    not( not table.isEmpty(tmpTmdbartImgpath) and (imgLangPriority[tmpTmdbartImgpath.lang] >= (imgLangPriority[(vim.iso_639_1 or"zxx")] or 1))) and
-                    not( vitp[2]=="poster" and vim.iso_639_1==string.sub(settings["metadata_lang"],1,2) and string.sub(settings["metadata_lang"],1,2) ~=
-                    ((string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1])) then
+                    not( not table.isEmpty(tmpTmdbartImgpath) and (imgLangPriority[tmpTmdbartImgpath.lang] >= (imgLangPriority[(vim.iso_639_1 or"und")] or 1))) then
                 anime_data.tmdb_art_path= (table.isEmpty(anime_data.tmdb_art_path) and{ {} }or{ anime_data.tmdb_art_path })[1]
                 anime_data.tmdb_art_path[anime_data.media_type..vitp[2]]= (table.isEmpty(anime_data.tmdb_art_path[anime_data.media_type..vitp[2]]) and
                         { {} }or{ anime_data.tmdb_art_path[anime_data.media_type..vitp[2]] })[1]
                 anime_data.tmdb_art_path[anime_data.media_type..vitp[2]].origin= {
                     ["url"]= vim.file_path,
-                    ["lang"]= ((vitp[2] == "background" or vitp[2] == "logo")and{"zxx"}or{ vim.iso_639_1 or "zxx"})[1],
+                    ["lang"]= (string.isEmpty(vim.iso_639_1)and{"und"}or{ vim.iso_639_1 or "und"})[1],
                 }
                 if settings["metadata_info_origin_image"]=="2" then
-                    if (vim.iso_639_1 == nil) or (vim.iso_639_1 == "zxx") then
+                    if (vim.iso_639_1 == nil) or (vim.iso_639_1 == "und") then
                         break
                     end
                 else
@@ -1412,26 +1431,24 @@ function detail(anime)
                 end
             end
         end
-        if vitp[2] == "logo" and not table.isEmpty(((anime_data.tmdb_art_path or{})[anime_data.media_type..vitp[2]] or{}).origin) then
-            (anime_data.tmdb_art_path or{})[anime_data.media_type..vitp[2]].interf= table.deepCopy(
-                    (anime_data.tmdb_art_path or{})[anime_data.media_type..vitp[2]].origin)
-        end
+        -- if vitp[2] == "logo" and not table.isEmpty(((anime_data.tmdb_art_path or{})[anime_data.media_type..vitp[2]] or{}).origin) then
+        --     (anime_data.tmdb_art_path or{})[anime_data.media_type..vitp[2]].interf= table.deepCopy(
+        --             (anime_data.tmdb_art_path or{})[anime_data.media_type..vitp[2]].origin)
+        -- end
         if anime_data.media_type~="movie" then
             for _,vim in ipairs(objTsll.images[vitp[1]] or{}) do
                 tmpTmdbartImgpath= ((anime_data.tmdb_art_path or{})["season"..vitp[2]] or{} ).origin
                 if (not string.isEmpty(vim.file_path)) and
-                        not( not table.isEmpty(tmpTmdbartImgpath) and (imgLangPriority[tmpTmdbartImgpath.lang] >= (imgLangPriority[(vim.iso_639_1 or"zxx")] or 1))) and
-                        not( vitp[2]=="poster" and vim.iso_639_1==string.sub(settings["metadata_lang"],1,2) and string.sub(settings["metadata_lang"],1,2) ~=
-                        ((string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1])) then
+                        not( not table.isEmpty(tmpTmdbartImgpath) and (imgLangPriority[tmpTmdbartImgpath.lang] >= (imgLangPriority[(vim.iso_639_1 or"und")] or 1))) then
                     anime_data.tmdb_art_path= (table.isEmpty(anime_data.tmdb_art_path) and{ {} }or{ anime_data.tmdb_art_path })[1]
                     anime_data.tmdb_art_path["season"..vitp[2]]= (table.isEmpty(anime_data.tmdb_art_path["season"..vitp[2]]) and
                             { {} }or{ anime_data.tmdb_art_path["season"..vitp[2]] })[1]
                     anime_data.tmdb_art_path["season"..vitp[2]].origin= {
                         ["url"]= vim.file_path,
-                        ["lang"]= ((vitp[2] == "background" or vitp[2] == "logo")and{"zxx"}or{ vim.iso_639_1 or "zxx"})[1],
+                        ["lang"]= (string.isEmpty(vim.iso_639_1)and{"und"}or{ vim.iso_639_1 or "und"})[1],
                     }
                     if settings["metadata_info_origin_image"]=="2" then
-                        if (vim.iso_639_1 == nil) or (vim.iso_639_1 == "zxx") then
+                        if (vim.iso_639_1 == nil) or (vim.iso_639_1 == "und") then
                             break
                         end
                     else
@@ -1444,7 +1461,7 @@ function detail(anime)
         end
     end
 
-    local objCr= table.deepCopy(((anime_data.media_type=="movie")and{ objMoll.credits }or{ objTsll.credits })[1]) or{}
+    local objCr= table.deepCopy(((anime_data.media_type=="movie")and{ objMoll.credits }or{ objTsll[((creditTsall) and{"aggregate_credits"}or{"credits"})[1]] })[1]) or{}
     local tmpAnimeCharacter, tmpMcCast,tmpMcCrew={}, 0,0
     tmpMcCast= math.floor(tonumber( settings["metadata_castcrew_castcount"] ) or Metadata_person_max_cast)
     if tmpMcCast<0 then tmpMcCast=math.maxinteger end
@@ -1456,18 +1473,18 @@ function detail(anime)
     -- anime_data["person_cast"]=anime_data["person_cast"] or {}
     for _, value in ipairs(objCr.cast or {}) do
         if #(anime_data["person_cast"])>=Metadata_person_max_cast then break end
-        for _, crtGpair in ipairs((Translation[settings["metadata_lang"]] or{}).character_gsub or{}) do
-            string.gsub(value.character,crtGpair[1] or"",crtGpair[2] or crtGpair[1] or"")
-        end
+        local crtText = ((creditTsall)and
+                { Array.extendUnique({},value.roles,"character") or{} } or
+                { {( string.isEmpty(value.character) and{ nil }or{ value.character })[1]} })[1]
         table.insert(anime_data["person_cast"],{
             -- ["gender"]= (( tonumber(value.gender)==1 or tonumber(value.gender)==2 )and{ tonumber(value.gender) }or{ nil })[1],
             ["name"]= (( string.isEmpty(value.name) )and{
                 (( string.isEmpty(value.original_name))and{ nil }or{ value.original_name })[1] }or{ value.name })[1],
             ["original_name"]= (( string.isEmpty(value.original_name))and{ nil }or{ value.original_name })[1],
             ["profile_path"]= (( string.isEmpty(value.profile_path))and{ nil }or{ value.profile_path })[1],
-            ["character"]= ( string.isEmpty(value.character) and{ nil }or{ value.character })[1],
+            ["character"]= table.deepCopy(crtText) or"",
             ["department"]= "Actors",
-            ["job"]="Actor",
+            ["job"]={"Actor"},
         
             ["adult"]= (( string.isEmpty(value.adult) )and{ nil }or{ value.adult })[1],
             ["id"] = tonumber(value.id or""),
@@ -1477,17 +1494,24 @@ function detail(anime)
             -- ["credit_id"]= (( string.isEmpty(value.credit_id))and{ nil }or{ value.credit_id })[1],
             ["order"]= tonumber(value.order or""),
         })
+        
+        if #(anime_data["person_cast"])>tmpMcCast then goto continue_detail_ccc_cast end
+        for crtI, crtV in ipairs(crtText) do
+            for _, crtGpair in ipairs((Translation[settings["metadata_lang"]] or{}).character_gsub or{}) do
+                crtText[crtI] = string.gsub(crtText[crtI] or"",crtGpair[1] or"",crtGpair[2] or crtGpair[1] or"")
+            end
+        end
         local tmpAnimeCharacterName=""
         if Metadata_info_origin_title then
-            tmpAnimeCharacterName= ( string.isEmpty(value.original_name) and{ nil }or{ value.original_name})[1]
+            tmpAnimeCharacterName= ( string.isEmpty(value.original_name) and{ (string.isEmpty(value.name) and
+            { nil }or{ value.name })[1] }or{ value.original_name})[1]
         else
             tmpAnimeCharacterName= ( string.isEmpty(value.name) and{ (string.isEmpty(value.original_name) and
                     { nil }or{ value.original_name })[1] }or{ value.name })[1]
         end
-        if #(anime_data["person_cast"])>tmpMcCast then goto continue_detail_ccc_cast end
         table.insert(tmpAnimeCharacter,{
-            ["name"]= ( string.isEmpty(value.character) and{ nil }or{ value.character })[1],
-            ["actor"]=tmpAnimeCharacterName,
+            ["name"]= Array.toStringLine(crtText,"|") or"",
+            ["actor"]=tmpAnimeCharacterName or"",
             ["link"]="https://www.themoviedb.org/person/"..value.id,
             ["imgurl"]= (( string.isEmpty(value.profile_path))and{ nil }or{
                     Image_tmdb.prefix..Image_tmdb.profile[Image_tmdb.max_ix] .. value.profile_path })[1],
@@ -1499,13 +1523,16 @@ function detail(anime)
     local tmpAnimeStaff=""
     for _, value in ipairs(anime_data.person_crew or {}) do
         tmpAnimeStaff=tmpAnimeStaff ..( string.isEmpty(value.name) and{ "" }or{
-                ((((Translation[settings["metadata_lang"]] or{}).department or{})[value.department] or value.department).."-"..(((Translation[settings["metadata_lang"]] or{}).credit_job or{})[value.job] or (" "..value.job))) ..":"..
+                ((((Translation[settings["metadata_lang"]] or{}).department or{})[value.department] or value.department).."-"..(((Translation[settings["metadata_lang"]] or{}).credit_job or{})[value.job[1]] or (" "..value.job[1]))) ..":"..
                 ( string.isEmpty(value.original_name) and{ value.name }or{value.original_name })[1] ..";" })[1]
     end
     anime_data["person_crew"]=anime_data.person_crew or {}
     -- anime_data["person_crew"]=anime_data["person_crew"] or {}
     for _, value in ipairs(objCr.crew or {}) do
         if #(anime_data["person_crew"])>=Metadata_person_max_crew then break end
+        local jobText= ((creditTsall)and
+                    { Array.extendUnique({},value.jobs,"job") or{} } or
+                    { {( string.isEmpty(value.job) and{ nil }or{ value.job })[1]} })[1]
         table.insert(anime_data["person_crew"],{
             -- ["gender"]= (( tonumber(value.gender)==1 or tonumber(value.gender)==2 )and{ tonumber(value.gender) }or{ nil })[1],
             ["name"]= (( string.isEmpty(value.name) )and{
@@ -1513,24 +1540,31 @@ function detail(anime)
             ["original_name"]= (( string.isEmpty(value.original_name))and{ nil }or{ value.original_name })[1],
             ["profile_path"]= (( string.isEmpty(value.profile_path))and{ nil }or{ value.profile_path })[1],
             ["department"]= (( string.isEmpty(value.department))and{ nil }or{ value.department })[1],
-            ["job"]= (( string.isEmpty(value.job) )and{ nil }or{ value.job })[1],
-            
+            ["job"]= table.deepCopy(jobText),
             ["adult"]= (( string.isEmpty(value.adult) )and{ nil }or{ value.adult })[1],
             ["id"] = tonumber(value.id or""),
             -- ["known_for_department"]= (( string.isEmpty(value.known_for_department)) and{ nil }or{ value.known_for_department })[1],
             -- ["popularity"]= tonumber(value.popularity or""),
             -- ["credit_id"]= (( string.isEmpty(value.credit_id))and{ nil }or{ value.credit_id })[1],
         })
+        
         if #(anime_data["person_crew"])>tmpMcCrew then goto continue_detail_ccc_crew end
-        if (not string.isEmpty(value.original_name)) or (not string.isEmpty(value.name)) then
-            if Metadata_info_origin_title then
-                tmpAnimeStaff= tmpAnimeStaff ..((((Translation[settings["metadata_lang"]] or{}).department or{})[value.department] or value.department).."-"..(((Translation[settings["metadata_lang"]] or{}).credit_job or{})[value.job] or (" "..value.job))) ..":"..
-                            ( string.isEmpty(value.original_name) and{ value.name }or{value.original_name })[1] ..";"
-            else
-                tmpAnimeStaff= tmpAnimeStaff ..((((Translation[settings["metadata_lang"]] or{}).department or{})[value.department] or value.department).."-"..(((Translation[settings["metadata_lang"]] or{}).credit_job or{})[value.job] or (" "..value.job))) ..":"..
-                            ( string.isEmpty(value.original_name) and{ value.name }or{value.original_name })[1] ..";"
-            end
+        for jobI, jobV in ipairs(jobText) do
+            -- for jobKw, jobTr in ipairs((Translation[settings["metadata_lang"]] or{}).job or{}) do
+            --     jobJ.character = string.gsub(jobJ.character,jobKw or"",jobTr or jobKw or"",1)
+            -- end
+            jobText[jobI]= ((Translation[settings["metadata_lang"]] or{}).credit_job or{})[jobV] or (""..jobV)
         end
+        local tmpAnimeStaffName=""
+        if Metadata_info_origin_title then
+            tmpAnimeStaffName= ( string.isEmpty(value.original_name) and{ (string.isEmpty(value.name) and
+            { nil }or{ value.name })[1] }or{ value.original_name})[1]
+        else
+            tmpAnimeStaffName= ( string.isEmpty(value.name) and{ (string.isEmpty(value.original_name) and
+                    { nil }or{ value.original_name })[1] }or{ value.name })[1]
+        end
+        tmpAnimeStaff= tmpAnimeStaff ..(((Translation[settings["metadata_lang"]] or{}).department or{})[value.department or""] or value.department or"").."-"..
+                    (Array.toStringLine(jobText,",") or"") ..":".. (tmpAnimeStaffName or"") ..";"
         ::continue_detail_ccc_crew::
     end
     tmpAnimeStaff= tmpAnimeStaff or "" -- anime_data.person_crew.id = objCr.id
@@ -1667,7 +1701,7 @@ function detail(anime)
             ["url"]= ( string.isEmpty(value.url) and{ nil }or{
                 string.sub(value.url,Image_fanart.len_preix_size,-1) })[1],
             ["lang"]= ( string.isEmpty(value.lang) and{ nil }or{
-                    ( (value.lang=="00") and{ "zxx" }or{ value.lang })[1], })[1],
+                    ( (value.lang=="00") and{ "und" }or{ value.lang })[1], })[1],
             -- ["likes"]= ( string.isEmpty(value.likes) and{ nil }or{ value.likes })[1],
             -- ["disc"]= ( string.isEmpty(value.disc) and{ nil }or{ value.disc })[1],
             ["disc_type"]= ( string.isEmpty(value.disc_type) and{ nil }or{ value.disc_type })[1],
@@ -1946,18 +1980,23 @@ function gettags(anime)
             end
         end
     end
+    if #(mediaLang or{})==0 then
+        table.insert(mtag, "语言/".. string.gsub( ((Translation[settings["metadata_lang"]] or{}).language or{})[""] or (Translation["und-XX"] or{}).language[""] ,"[/]","∕"))
+    end
     mediaLang={}
     for index, value in ipairs(mediaRegion or {}) do
         if not string.isEmpty(value) then
-            if index == 1 then
-                table.insert(mtag, "地区/".. string.gsub( ((Translation[settings["metadata_lang"]] or{}).region or{})[value] or value or (Translation["und-XX"] or{}).region[""] ,"[/]","∕"))
-            else
-                table.insert(mtag, "地区/+/".. string.gsub( ((Translation[settings["metadata_lang"]] or{}).region or{})[value] or value or (Translation["und-XX"] or{}).region[""] ,"[/]","∕"))
-            end
+            -- if index == 1 or index == 2 then
+            -- end
+            table.insert(mtag, "地区/".. string.gsub( ((Translation[settings["metadata_lang"]] or{}).region or{})[value] or value or (Translation["und-XX"] or{}).region[""] ,"[/]","∕"))
+            -- table.insert(mtag, "地区/+/".. string.gsub( ((Translation[settings["metadata_lang"]] or{}).region or{})[value] or value or (Translation["und-XX"] or{}).region[""] ,"[/]","∕"))
         end
     end
-    mediaRegion={}
-    
+    if #(mediaRegion or{})==0 then
+        table.insert(mtag, "地区/".. string.gsub( ((Translation[settings["metadata_lang"]] or{}).region or{})[""] or (Translation["und-XX"] or{}).region[""] ,"[/]","∕"))
+    end
+    -- mediaRegion={}
+
     for _, value in ipairs(mediaCRating or {}) do
         if (not string.isEmpty(value.rating)) then
             genre_name_tmp = ( string.isEmpty(value.origin_region) and{ (Translation["und-XX"] or{}).region["Unknown"] }or
@@ -1976,19 +2015,45 @@ function gettags(anime)
     mediaCRating={}
     for _, value in ipairs(mediaCompany or {}) do
         if (not string.isEmpty(value.name)) then
-            genre_name_tmp = ( string.isEmpty(value.origin_region) and{ (Translation["und-XX"] or{}).region[""] }or
+            genre_name_tmp = ( string.isEmpty(value.origin_region) and{ (Translation[settings["metadata_lang"]] or{}).region[""] or (Translation["und-XX"] or{}).region[""] }or
                     { string.gsub(((Translation[settings["metadata_lang"]] or{}).region or{})[value.origin_region] or value.origin_region or (Translation["und-XX"] or{}).region[""],"[/]","∕") })[1] ..
-                            "/".. string.gsub( value.name ,"[/]","∕")
-            table.insert(mtag, "公司/".. genre_name_tmp)
+                    "/".. string.gsub( value.name ,"[/]","∕")
+            local flagInRegion=false
+            if not string.isEmpty(value.origin_region) then
+                for _,v in ipairs(mediaRegion) do
+                    if v==value.origin_region then
+                        flagInRegion=true
+                        break
+                    end
+                end
+            end
+            if flagInRegion or string.isEmpty(value.origin_region) then
+                table.insert(mtag, "公司/".. genre_name_tmp)
+            else
+                table.insert(mtag, "公司/+/".. genre_name_tmp)
+            end
         end
     end
     mediaCompany={}
     for _, value in ipairs(mediaNetwork or {}) do
         if (not string.isEmpty(value.name)) then
-            genre_name_tmp = ( string.isEmpty(value.origin_region) and{ (Translation["und-XX"] or{}).region[""] }or
+            genre_name_tmp = ( string.isEmpty(value.origin_region) and{ (Translation[settings["metadata_lang"]] or{}).region[""] or (Translation["und-XX"] or{}).region[""] }or
                     { string.gsub(((Translation[settings["metadata_lang"]] or{}).region or{})[value.origin_region] or value.origin_region or (Translation["und-XX"] or{}).region[""],"[/]","∕") })[1] ..
-                            "/".. string.gsub( value.name ,"[/]","∕")
-            table.insert(mtag, "平台/".. genre_name_tmp)
+                    "/".. string.gsub( value.name ,"[/]","∕")
+            local flagInRegion=false
+            if not string.isEmpty(value.origin_region) then
+                for _,v in ipairs(mediaRegion) do
+                    if v==value.origin_region then
+                        flagInRegion=true
+                        break
+                    end
+                end
+            end
+            if flagInRegion or string.isEmpty(value.origin_region) then
+                table.insert(mtag, "平台/".. genre_name_tmp)
+            else
+                table.insert(mtag, "平台/+/".. genre_name_tmp)
+            end
         end
     end
     mediaNetwork={}
@@ -2416,7 +2481,7 @@ function match(path)
                                         ["name"]= tmpElem or"",
                                         ["original_name"]= tmpElem or"",
                                         ["department"]= "Directing",
-                                        ["job"]= "Director",
+                                        ["job"]= {"Director"},
                                     })
                                 end
                             elseif xml_v_nfo:name() == "rating" then
@@ -2650,7 +2715,7 @@ function match(path)
                                         ["name"]= tmpElem or"",
                                         ["original_name"]= tmpElem or"",
                                         ["department"]= "Directing",
-                                        ["job"]= "Director",
+                                        ["job"]= {"Director"},
                                     })
                                 end
                             elseif xml_v_nfo:name() == "actor" then
@@ -2700,7 +2765,7 @@ function match(path)
                                     ["original_name"] = cname, -- 人物名称
                                     ["character"] = cactor, -- 演员名称
                                     ["department"]= "Actors",
-                                    ["job"]="Actor",
+                                    ["job"]={"Actor"},
                                     ["id"] = tonumber(clink or""),
                                 })
                                 -- kiko.log(table.toStringLine(mdata["person_cast"]))
@@ -2818,7 +2883,7 @@ function match(path)
                                     ["original_name"] = cname, -- 人物名称
                                     ["character"] = cactor, -- 演员名称
                                     ["department"]= "Actors",
-                                    ["job"]="Actor",
+                                    ["job"]={"Actor"},
                                     ["id"] = tonumber(clink or""),
                                 })
                                 -- kiko.log(table.toStringLine(mdata["person_cast"]))
@@ -2924,7 +2989,7 @@ function match(path)
                                         ["name"]= tmpElem or"",
                                         ["original_name"]= tmpElem or"",
                                         ["department"]= "Directing",
-                                        ["job"]= "Director",
+                                        ["job"]= {"Director"},
                                     })
                                 end
                             mdata["person_staff"] = mdata["person_staff"] .. "Director:" .. tmpElem .. ';' -- Director-zh
@@ -2957,7 +3022,7 @@ function match(path)
                                 ["original_name"] = cname, -- 人物名称
                                 ["character"] = cactor, -- 演员名称
                                 ["department"]= "Actors",
-                                ["job"]="Actor",
+                                ["job"]={"Actor"},
                             })
                         end
                         -- kiko.log('[INFO]  Reading tag <' .. xml_tv_nfo:name() .. '>' .. tmpElem)
@@ -3358,25 +3423,47 @@ function menuclick(menuid, anime)
         tipString = tipString .. "\n"..((anime_data.media_type~="movie")and{"剧集"}or{"电影"})[1] .."介绍：\t" ..
                 (anime_data.overview or anime_data.overview_origin or "")
         
+        for _, castT in ipairs(anime_data.person_cast or{}) do
+            if type(castT.character)~="table" then
+                for _, crtGpair in ipairs((Translation[settings["metadata_lang"]] or{}).character_gsub or{}) do
+                    castT.character = string.gsub(castT.character or"",crtGpair[1] or"",crtGpair[2] or crtGpair[1] or"")
+                end
+            else
+                for crtI, crtV in ipairs(castT.character or{}) do
+                    for _, crtGpair in ipairs((Translation[settings["metadata_lang"]] or{}).character_gsub or{}) do
+                        castT.character[crtI] = string.gsub(castT.character[crtI] or"",crtGpair[1] or"",crtGpair[2] or crtGpair[1] or"")
+                    end
+                end
+            end
+        end
+        for _, crewT in ipairs(anime_data.person_crew or{}) do
+            if type(crewT.job)~="table" then
+                crewT.job= ((Translation[settings["metadata_lang"]] or{}).credit_job or{})[crewT.job] or (""..crewT.job) or""
+            else
+                for jobI, jobV in ipairs(crewT.job or{}) do
+                    crewT.job[jobI]= ((Translation[settings["metadata_lang"]] or{}).credit_job or{})[jobV] or (""..jobV) or""
+                end
+            end
+        end
         tipString = tipString .. "\n\n演员表：\t\t\n"
         if table.isEmpty(anime_data.person_cast) then
             for _, value in ipairs(anime.crt or {}) do
-                tipString = tipString ..""..string.format("%s",value.actor or"").."\t\t\t"..(value.name or"").."\n"
+                tipString = tipString ..""..string.format("%-17s",value.actor or"").."\t\t\t"..(value.name or"").."\n"
             end
         else
             for _, value in ipairs(anime_data.person_cast or {}) do
-                tipString = tipString ..""..string.format("%s",value.original_name or"").."\t\t\t"..(value.character or"").."\n"
+                tipString = tipString ..""..string.format("%-17s",value.original_name or value.name or"").."\t\t\t"..(Array.toStringLine(value.character or"") or"").."\n"
             end
         end
         tipString = tipString .. "\n职员表：\t\t\n"
         if table.isEmpty(anime_data.person_crew) then
             for djobstr, value in ipairs(anime.staff or {}) do
-                tipString = tipString..""..string.format("%s",djobstr or "").."\t\t\t"..(value or"").."\n"
+                tipString = tipString..""..string.format("%-17s",djobstr or "").."\t\t\t"..(value or"").."\n"
             end
         else
             for _, value in ipairs(anime_data.person_crew or {}) do
-                tipString = tipString..""..string.format("%s",((((Translation[settings["metadata_lang"]] or{}).department or{})[value.department] or value.department)..
-                        "-"..(((Translation[settings["metadata_lang"]] or{}).credit_job or{})[value.job] or (" "..value.job))) ) .."\t\t\t"..value.original_name.."\n"
+                tipString = tipString..""..string.format("%-17s",(((Translation[settings["metadata_lang"]] or{}).department or{})[value.department] or value.department or"")..
+                        "-".. (Array.toStringLine(value.job or"") or"") ) .."\t\t\t"..(value.original_name or value.name or"").."\n"
             end
         end
 
@@ -4018,19 +4105,22 @@ end
 
 -- array 转 string - 把表转为字符串  （单向的转换，用于打印输出）
 -- <array>table0 -> <string>:"v, [(k)v, (k)v], "
-function Array.toStringLine(table0)
-    if type(table0) ~= "table" then
+function Array.toStringLine(table0,separator)
+    if type(table0) ~= "table" and type(table0) == "string" then
+        return tostring(table0)
+    elseif type(table0) ~= "table" then
         -- 排除非<table>类型
         return ""
     end
     local str = "" -- 要return的字符串
+    separator= (string.isEmpty(separator) and{ "," }or{ separator })[1]
     for k, v in pairs(table0) do
         if type(v) ~= "table" then
             -- 普通变量，直接扩展字符串
-            str = str .. (string.isEmpty(str) and{ "" }or{ ", " })[1] .. tostring(v or"")
+            str = str .. (string.isEmpty(str) and{ "" }or{ separator.." " })[1] .. tostring(v or"")
         else
             -- <table>变量，递归
-            str = str .. (string.isEmpty(str) and{ "[ " }or{ ", [ " })[1] .. table.toStringLine(v) .. " ]"
+            str = str .. (string.isEmpty(str) and{ "[ " }or{ separator.." [ " })[1] .. table.toStringLine(v) .. " ]"
         end
     end
     return str
@@ -4044,6 +4134,7 @@ function Array.extend(ta,tb)
     for index, value in ipairs(tb) do
         table.insert(ta,value)
     end
+    return table.deepCopy(ta)
 end
 -- From: 数组tb各 table:元素 键为string:tbField的 值，To: 这些值中所有未出现在数组ta内的. 乱序接续到ta的尾部。
 function Array.extendUnique(ta,tb,tbField)
@@ -4085,6 +4176,7 @@ function Array.extendUnique(ta,tb,tbField)
         end
         ::continue_Array_EU_f::
     end
+    return table.deepCopy(ta)
 end
 -- 相当于 tbField 存储了多个字段名的 Array.extendUnique(,,)
 -- From: table，以array:tbField中所有出现的string:值 为键，以(非nil)来自数组tb中各table:元素内对应的值 为值。
@@ -4147,4 +4239,5 @@ function Array.extendUniqueFields(ta,tb,tbField,isExistUnequal,isOnlyGiven)
         end
         ::continue_Array_EUF_s::
     end
+    return table.deepCopy(ta)
 end
