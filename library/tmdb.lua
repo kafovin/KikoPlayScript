@@ -1,4 +1,4 @@
--- DbScrape
+-- TMDb Scraping
 ----------------
 -- 公共部分
 -- 脚本信息
@@ -8,7 +8,7 @@ info = {
     ["desc"] = "The Movie Database (TMDb) 脚本 （测试中，不稳定） Edited by: kafovin \n"..
                 "从 themoviedb.org 刮削影剧元数据，也可设置选择刮削fanart的媒体图片、Emby的本地元数据。",
     --            "▲与前一版本不兼容▲ 建议搜索旧关联用`本地数据库`，仅刮削详旧资料细信息时设置`搜索-关键词作标题`为`1`。",
-    ["version"] = "0.2.2" -- 0.2.1.220502_build
+    ["version"] = "0.2.2" -- 0.2.1.220505_fix
 }
 -- 设置项
 -- `key`为设置项的`key`，`value`是一个`table`。设置项值`value`的类型都是字符串。
@@ -106,8 +106,8 @@ settings = {
         ["title"] = "元数据 - 图片优先原语言",
         ["default"] = "0",
         ["desc"] = "媒体的图片 是否优先使用媒体原语言。\n"..
-                    "0：优先使用刮削时`元数据 - 语言`所设定的语言 (默认)。 1：优先使用原语言。",
-        ["choices"] = "0,1",
+                    "0：优先使用刮削时`元数据 - 语言`所设定的语言 (默认)。 1：优先使用原语言。 2：优先使用无语言。",
+        ["choices"] = "0,1,2",
     },
     ["metadata_image_priority"]={
         ["title"] = "元数据 - 图片主要来源",
@@ -269,9 +269,9 @@ Translation["zh-CN"] = {
         [""]="其他", ["Unknown"]= "未知",
     },
     ["media_type"] = {
-        ["movie"]= "电影", ["tv"]= "剧集", ["Movie Video"]= "影像",
-        ["Scripted"]= "剧本类", ["Miniseries"]= "迷你剧", ["Video"]= "影像集",
-        ["Reality"]= "真人节目", ["Talk Show"]="访谈", ["News"]= "新闻", ["Documentary"]= "纪录",
+        ["movie"]= "电影", ["tv"]= "剧集", ["Movie Video"]= "影像单篇",
+        ["Scripted"]= "剧本类", ["Miniseries"]= "迷你剧类", ["Video"]= "影像合集",
+        ["Reality"]= "真人节目", ["Talk Show"]="访谈节目", ["News"]= "新闻节目", ["Documentary"]= "纪录类",
         [""]= "其他", ["Unknown"]= "未知",
     },
     ["character_gsub"] = {
@@ -663,11 +663,16 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
             end
             for index, value in ipairs(objMo["spoken_languages"] or {}) do
                 data["spoken_language"]=data["spoken_language"]or {}
-                table.insert(data["spoken_language"],{
-                    ["iso_639_1"]= (( value["iso_639_1"]==nil or value["iso_639_1"]=="" )and{ nil }or{ value["iso_639_1"] })[1],
-                    -- ["name"]= (( value["name"]==nil or value["name"]=="" )and{ nil }or{ value["name"] })[1],
-                    -- ["english_name"]= (( value["english_name"]==nil or value["english_name"]=="" )and{ nil }or{ value["english_name"] })[1],
-                })
+                if not string.isEmpty(value.iso_639_1) then
+                    table.insert(data["spoken_language"],{
+                        ["iso_639_1"]= (( value["iso_639_1"]==nil or value["iso_639_1"]=="" )and{ nil }or{ value["iso_639_1"] })[1],
+                        -- ["name"]= (( value["name"]==nil or value["name"]=="" )and{ nil }or{ value["name"] })[1],
+                        -- ["english_name"]= (( value["english_name"]==nil or value["english_name"]=="" )and{ nil }or{ value["english_name"] })[1],
+                    })
+                end
+            end
+            if string.isEmpty(data.original_language) then
+                data.original_language = ((data.spoken_language or{})[1] or{}).iso_639_1
             end
             data.status= ( string.isEmpty(objMo.status) and{ "Unknown" }or{ objMo.status })[1]
             --? OTHER_INFO mo
@@ -1142,7 +1147,7 @@ function detail(anime)
             ["language"] = settings["metadata_lang"],
             ["append_to_response"] = "credits,release_dates,keywords,external_ids,translations,images", -- collections
             ["include_image_language"] = -- string.sub(settings["metadata_lang"],1,2)..","..
-                    (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1]..",null", -- collections
+                    (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1]..",null,en", -- collections
         },anime_data.media_type.."/"..anime_data.media_id)
         objMell= objMoll
     elseif anime_data.media_type=="tv" then
@@ -1151,7 +1156,7 @@ function detail(anime)
             ["language"] = settings["metadata_lang"],
             ["append_to_response"] = "content_ratings,keywords,external_ids,translations,images",
             ["include_image_language"] = -- string.sub(settings["metadata_lang"],1,2)..","..
-            (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1]..",null", -- collections
+            (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1]..",null,en", -- collections
         },anime_data.media_type.."/"..anime_data.media_id)
         objMell=objTvll
         objTsll=Kikoplus.httpgetMediaId({
@@ -1159,7 +1164,7 @@ function detail(anime)
             ["language"] = settings["metadata_lang"],
             ["append_to_response"] = "credits,external_ids,translations,images",
             ["include_image_language"] = -- string.sub(settings["metadata_lang"],1,2)..","..
-            (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1]..",null", -- collections
+            (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1]..",null,en", -- collections
         },anime_data.media_type.."/"..anime_data.media_id .. "/season/" .. anime_data.season_number)
     end
 
@@ -1234,11 +1239,16 @@ function detail(anime)
             })
         end
         for index, value in ipairs(objMell["spoken_languages"] or {}) do
-            table.insert(anime_data["spoken_language"],{
-                ["iso_639_1"]= (( value["iso_639_1"]==nil or value["iso_639_1"]=="" )and{ nil }or{ value["iso_639_1"] })[1],
-                -- ["name"]= (( value["name"]==nil or value["name"]=="" )and{ nil }or{ value["name"] })[1],
-                -- ["english_name"]= (( value["english_name"]==nil or value["english_name"]=="" )and{ nil }or{ value["english_name"] })[1],
-            })
+            if not string.isEmpty(value.iso_639_1) then
+                table.insert(anime_data["spoken_language"],{
+                    ["iso_639_1"]= (( value["iso_639_1"]==nil or value["iso_639_1"]=="" )and{ nil }or{ value["iso_639_1"] })[1],
+                    -- ["name"]= (( value["name"]==nil or value["name"]=="" )and{ nil }or{ value["name"] })[1],
+                    -- ["english_name"]= (( value["english_name"]==nil or value["english_name"]=="" )and{ nil }or{ value["english_name"] })[1],
+                })
+            end
+        end
+        if string.isEmpty(anime_data.original_language) then
+            anime_data.original_language = ((anime_data.spoken_language or{})[1] or{}).iso_639_1
         end
     end
     if anime_data.media_type=="movie" then
@@ -1352,20 +1362,6 @@ function detail(anime)
         for _,vtr in ipairs(objMell.translations.translations) do
             if vtr.iso_639_1== (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1] then
                 if not table.isEmpty(vtr.data) then
-                    if (not string.isEmpty(vtr.data.tagline)) and string.isEmpty(anime_data.tagline_origin) and
-                            vtr.data.tagline~=anime_data.title and vtr.data.tagline~=anime_data.original_title then
-                        anime_data.tagline_origin= string.gsub(vtr.data.tagline or"", "\r?\n\r?\n", "\n")
-                    else anime_data.tagline_origin= nil
-                    end
-                    if (not string.isEmpty(vtr.data.overview)) and string.isEmpty(anime_data.overview_origin) and
-                            vtr.data.overview~=anime_data.title and vtr.data.overview~=anime_data.original_title then
-                        anime_data.overview_origin= string.gsub(vtr.data.overview or"", "\r?\n\r?\n", "\n")
-                    else anime_data.overview_origin= nil
-                    end
-                    if (not string.isEmpty(vtr.data.homepage)) and string.isEmpty(anime_data.homepage_origin) then
-                        anime_data.homepage_origin= vtr.data.homepage
-                    else anime_data.homepage_origin= nil
-                    end
                     vtr.data.overview= string.gsub(vtr.data.overview or"", "\r?\n\r?\n", "\n")
                     if (not string.isEmpty(vtr.data.overview)) and vtr.data.overview~=(anime_data.overview or"") and
                             vtr.data.overview~=anime_data.title and vtr.data.overview~=anime_data.original_title then
@@ -1377,19 +1373,43 @@ function detail(anime)
         end
     end
     local imgTypePairTmdb = {{"backdrops","background"}, {"logos","logo"}, {"posters","poster"}}
+    local imgLangPriority = {} -- larger===priorer
+    if settings["metadata_info_origin_image"] =="2" then
+        imgLangPriority= {
+            [""]=4, ["zxx"]=4, ["en"]=2, [string.sub(settings["metadata_lang"],1,2)]=1, [(string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1]]=3,
+        }
+    elseif settings["metadata_info_origin_image"] =="0" then
+        imgLangPriority= {
+            [""]=3, ["zxx"]=3, ["en"]=3, [string.sub(settings["metadata_lang"],1,2)]=1, [(string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1]]=4,
+        }
+    else
+        imgLangPriority= {
+            [""]=3, ["zxx"]=3, ["en"]=3, [string.sub(settings["metadata_lang"],1,2)]=1, [(string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1]]=4,
+        }
+    end
     for _,vitp in ipairs(imgTypePairTmdb) do
         for _,vim in ipairs(objMell.images[vitp[1]] or{}) do
             tmpTmdbartImgpath= ((anime_data.tmdb_art_path or{})[anime_data.media_type..vitp[2]] or{} ).origin
-            if (not string.isEmpty(vim.file_path)) and table.isEmpty(tmpTmdbartImgpath) and not(
-                    vitp[2]=="poster" and vim.iso_639_1==string.sub(settings["metadata_lang"],1,2) and string.sub(settings["metadata_lang"],1,2) ~=
+            if (not string.isEmpty(vim.file_path)) and
+                    not( not table.isEmpty(tmpTmdbartImgpath) and (imgLangPriority[tmpTmdbartImgpath.lang] >= (imgLangPriority[(vim.iso_639_1 or"zxx")] or 1))) and
+                    not( vitp[2]=="poster" and vim.iso_639_1==string.sub(settings["metadata_lang"],1,2) and string.sub(settings["metadata_lang"],1,2) ~=
                     ((string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1])) then
                 anime_data.tmdb_art_path= (table.isEmpty(anime_data.tmdb_art_path) and{ {} }or{ anime_data.tmdb_art_path })[1]
                 anime_data.tmdb_art_path[anime_data.media_type..vitp[2]]= (table.isEmpty(anime_data.tmdb_art_path[anime_data.media_type..vitp[2]]) and
                         { {} }or{ anime_data.tmdb_art_path[anime_data.media_type..vitp[2]] })[1]
                 anime_data.tmdb_art_path[anime_data.media_type..vitp[2]].origin= {
                     ["url"]= vim.file_path,
-                    ["lang"]= ((vitp[2] == "background")and{"zxx"}or{vim.iso_639_1})[1],
+                    ["lang"]= ((vitp[2] == "background" or vitp[2] == "logo")and{"zxx"}or{ vim.iso_639_1 or "zxx"})[1],
                 }
+                if settings["metadata_info_origin_image"]=="2" then
+                    if (vim.iso_639_1 == nil) or (vim.iso_639_1 == "zxx") then
+                        break
+                    end
+                else
+                    if vim.iso_639_1 == (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1] then
+                        break
+                    end
+                end
             end
         end
         if vitp[2] == "logo" and not table.isEmpty(((anime_data.tmdb_art_path or{})[anime_data.media_type..vitp[2]] or{}).origin) then
@@ -1399,16 +1419,26 @@ function detail(anime)
         if anime_data.media_type~="movie" then
             for _,vim in ipairs(objTsll.images[vitp[1]] or{}) do
                 tmpTmdbartImgpath= ((anime_data.tmdb_art_path or{})["season"..vitp[2]] or{} ).origin
-                if (not string.isEmpty(vim.file_path)) and table.isEmpty(tmpTmdbartImgpath) and not(
-                        vitp[2]=="poster" and vim.iso_639_1==string.sub(settings["metadata_lang"],1,2) and string.sub(settings["metadata_lang"],1,2) ~=
+                if (not string.isEmpty(vim.file_path)) and
+                        not( not table.isEmpty(tmpTmdbartImgpath) and (imgLangPriority[tmpTmdbartImgpath.lang] >= (imgLangPriority[(vim.iso_639_1 or"zxx")] or 1))) and
+                        not( vitp[2]=="poster" and vim.iso_639_1==string.sub(settings["metadata_lang"],1,2) and string.sub(settings["metadata_lang"],1,2) ~=
                         ((string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1])) then
                     anime_data.tmdb_art_path= (table.isEmpty(anime_data.tmdb_art_path) and{ {} }or{ anime_data.tmdb_art_path })[1]
                     anime_data.tmdb_art_path["season"..vitp[2]]= (table.isEmpty(anime_data.tmdb_art_path["season"..vitp[2]]) and
                             { {} }or{ anime_data.tmdb_art_path["season"..vitp[2]] })[1]
                     anime_data.tmdb_art_path["season"..vitp[2]].origin= {
                         ["url"]= vim.file_path,
-                        ["lang"]= ((vitp[2] == "background")and{"zxx"}or{ vim.iso_639_1})[1],
+                        ["lang"]= ((vitp[2] == "background" or vitp[2] == "logo")and{"zxx"}or{ vim.iso_639_1 or "zxx"})[1],
                     }
+                    if settings["metadata_info_origin_image"]=="2" then
+                        if (vim.iso_639_1 == nil) or (vim.iso_639_1 == "zxx") then
+                            break
+                        end
+                    else
+                        if vim.iso_639_1 == (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1] then
+                            break
+                        end
+                    end
                 end
             end
         end
@@ -1647,7 +1677,7 @@ function detail(anime)
         local mioiTmp = settings['metadata_info_origin_image']
         if (mioiTmp == '0') then
             Metadata_info_origin_image = false
-        elseif (mioiTmp == '1') then
+        elseif (mioiTmp == '1' or mioiTmp == '2') then
             Metadata_info_origin_image = true
         end
         for _,fti in ipairs(Image_fanart[anime_data.media_type]) do
@@ -1676,11 +1706,16 @@ function detail(anime)
             (anime_data.fanart_path or{})[fti]={}
             (anime_data.fanart_path or{})[fti]["origin"]=imgPathVoine.origin or imgPathVoine.noLang
             if Metadata_info_origin_image==true then
-                (anime_data.fanart_path or{})[fti]["interf"]= imgPathVoine.origin or
-                        imgPathVoine.noLang or imgPathVoine.interf or imgPathVoine.en
+                if settings["metadata_info_origin_image"]=="2" then
+                    (anime_data.fanart_path or{})[fti]["interf"]= imgPathVoine.noLang or
+                            imgPathVoine.origin or imgPathVoine.interf or imgPathVoine.en
+                else
+                    (anime_data.fanart_path or{})[fti]["interf"]= imgPathVoine.origin or
+                            imgPathVoine.noLang or imgPathVoine.interf or imgPathVoine.en
+                end
             else
                 (anime_data.fanart_path or{})[fti]["interf"]= imgPathVoine.interf or
-                        imgPathVoine.noLang or imgPathVoine.origin or imgPathVoine.en
+                        imgPathVoine.origin or imgPathVoine.noLang or imgPathVoine.en
             end
         end
         local imgPathSoine={}
@@ -1726,7 +1761,7 @@ function detail(anime)
     end
     ::jumpover_fanart_scraping::
     local imgLangPri={"origin","interf"}
-    if settings["metadata_info_origin_image"]=="1" then
+    if settings["metadata_info_origin_image"]=="1" or settings["metadata_info_origin_image"]=="2" then
         imgLangPri={"origin","interf"}
     elseif settings["metadata_info_origin_image"]=="0" then
         imgLangPri={"interf","origin"}
@@ -1792,7 +1827,9 @@ function detail(anime)
                         or{ anime_data.tagline_origin .."\n\n" })[1] }or { anime_data.tagline .."\n\n" })[1] ..
                     (( string.isEmpty(anime_data.overview_season) )and{ (string.isEmpty(anime_data.overview_season_origin)and{ "" }
                         or{ anime_data.overview_season_origin .."\n\n" })[1] }or { anime_data.overview_season .."\n\n" })[1] ..
-                    (anime_data.overview or anime_data.overview_origin) .."\n\n".. titleTmp, -- 描述
+                    (( string.isEmpty(anime_data.overview) )and{ (string.isEmpty(anime_data.overview_origin)and{ "" }
+                        or{ anime_data.overview_origin .."\n\n" })[1] }or { anime_data.overview .."\n\n" })[1] ..
+                    titleTmp, -- 描述
         ["airdate"] = ((anime_data["release_date"]) and {
                  anime_data["release_date"]} or {anime_data["tv_first_air_date"]})[1] or "", -- 发行日期，格式为yyyy-mm-dd 
         ["epcount"] = anime_data["episode_count"], -- 分集数
@@ -3414,7 +3451,7 @@ function menuclick(menuid, anime)
             mImgPTmp= settings["metadata_image_priority"]
         end
         local imgLangPri={"origin","interf"}
-        if settings["metadata_info_origin_image"]=="1" then
+        if settings["metadata_info_origin_image"]=="1" or settings["metadata_info_origin_image"]=="2" then
             imgLangPri={"origin","interf"}
         elseif settings["metadata_info_origin_image"]=="0" then
             imgLangPri={"interf","origin"}
