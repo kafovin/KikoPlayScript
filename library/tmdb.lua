@@ -8,7 +8,7 @@ info = {
     ["desc"] = "The Movie Database (TMDb) 脚本 （测试中，不稳定） Edited by: kafovin \n"..
                 "从 themoviedb.org 刮削影剧元数据，也可设置选择刮削fanart的媒体图片、Emby的本地元数据。",
     --            "▲与前一版本不兼容▲ 建议搜索旧关联用`本地数据库`，仅刮削详旧资料细信息时设置`搜索-关键词作标题`为`1`。",
-    ["version"] = "0.2.2" -- 0.2.1.220428_build
+    ["version"] = "0.2.2" -- 0.2.1.220502_build
 }
 -- 设置项
 -- `key`为设置项的`key`，`value`是一个`table`。设置项值`value`的类型都是字符串。
@@ -74,7 +74,7 @@ settings = {
     ["metadata_lang"] = {
         ["title"] = "元数据 - 语言",
         ["default"] = "zh-CN",
-        ["desc"] = "搜索何种语言的资料作元数据，选择你需要的`语言编码-地区编码`。看着有很多语言，其实大部分都缺乏资料。\n" ..
+        ["desc"] = "按此`语言编码-地区编码`搜索元数据资料，主要指简介、海报、搜索的标题。看着有很多语言，其实大部分都缺乏资料。\n" ..
                     "注意：再次关联导致标题改变时，弹幕仍然按照旧标题识别，请在`管理弹幕池`中手动复制弹幕到新标题。\n" ..
                     "zh-CN：中文(中国)，(默认)。zh-HK：中文(香港特區,中國)。zh-TW：中文(台灣省，中國)。\n" ..
                     "en-US：English(US)。es-ES：español(España)。fr-FR：Français(France)。ja-JP：日本語(日本)。ru-RU：Русский(Россия)。",
@@ -87,34 +87,27 @@ settings = {
         -- ["choices"] = "ar-SA,de-DE,en-US,es-ES,fr-FR,it-IT,ja-JP,ko-KR,pt-PT,ru-RU,zh-CN,zh-HK,zh-TW",
         -- ["choices"] = "en-US,fr-FR,ja-JP,ru-RU,zh-CN,zh-HK,zh-TW",
     },
-    ["metadata_info_origin_title"] = {
-        ["title"] = "元数据 - 标题使用原语言",
+    ["metadata_info_update_keep"] = {
+        ["title"] = "元数据 - 更新时维持更改",
         ["default"] = "0",
-        ["desc"] = "元数据的标题是否使用媒体的原语言。\n" ..
+        ["desc"] = "更新资料夹元数据时，对于之前的编辑的更改(例如描述、演职员表等)，是否保留。\n" ..
+                    "0：不保留 (默认)。 1：保留(当前不支持此功能)。",
+        ["choices"] = "0",
+    },
+    ["metadata_info_origin_title"] = {
+        ["title"] = "元数据 - 标题优先原语言",
+        ["default"] = "0",
+        ["desc"] = "媒体的标题 是否优先使用媒体原语言。(更新详细信息时，会始终维持已有的标题。)\n" ..
                     "注意：再次关联导致标题改变时，弹幕仍然按照旧标题识别，请在`管理弹幕池`中手动复制弹幕到新标题。\n"..
-                    "0-不使用 (默认)。1-使用。",
+                    "0：优先使用刮削时`元数据 - 语言`所设定的语言 (默认)。 1：优先使用原语言。",
         ["choices"] = "0,1",
     },
     ["metadata_info_origin_image"] = {
-        ["title"] = "元数据 - 图片使用原语言",
-        ["default"] = "1",
-        ["desc"] = "元数据中fanart的图片是否使用媒体原语言，仅适用于fanart的图片。TMDb仍参照`元数据 - 语言`中的设置。\n"..
-                    "不适用于 `元数据 - 图片主要来源` 设置为`TMDb_only`时，该选项仍参照以`元数据 - 语言`。\n" ..
-                    "仅当 `元数据 - 图片主要来源` 设置为`fanart_prior`或`TMDb_prior`时 对fanart的图片有效。\n" ..
-                    "0-不使用。1-使用 (默认)。",
+        ["title"] = "元数据 - 图片优先原语言",
+        ["default"] = "0",
+        ["desc"] = "媒体的图片 是否优先使用媒体原语言。\n"..
+                    "0：优先使用刮削时`元数据 - 语言`所设定的语言 (默认)。 1：优先使用原语言。",
         ["choices"] = "0,1",
-    },
-    ["metadata_display_imgtype"] = {
-        ["title"] = "元数据 - 显示的图片种类",
-        ["default"] = "background",
-        ["desc"] = "仅限资料夹的右键菜单里`显示媒体元数据`弹出窗口中 所显示的那一张图片的种类。\n"..
-                    "当 `元数据 - 图片主要来源` 设置为`TMDb_only`时，仅海报、背景可用。\n"..
-                    "当 `元数据 - 图片主要来源` 设置为`fanart_prior`或`TMDb_prior`时，以下均有效（除非图片未刮削到）。\n" ..
-                    "poster: 海报。banner: 横幅。thumb: 缩略图。background: 背景 (默认)。\n"..
-                    "logo: 标志。art: 艺术图。otherart: 其他艺术图。",
-                    -- "logo: 标志。logoL: 标志*。art: 艺术图。artL: 艺术图*。otherart: 其他艺术图。",
-        ["choices"] = "poster,banner,thumb,background,logo,art,otherart",
-        -- ["choices"] = "poster,banner,thumb,background,logo,logoL,art,artL,otherart",
     },
     ["metadata_image_priority"]={
         ["title"] = "元数据 - 图片主要来源",
@@ -125,6 +118,18 @@ settings = {
                     "TMDb_only：图片仅TMDb，(不会从fanart刮削图片，仅此项不需要 fanart的API密钥) (默认)。\n"..
                     "TMDb_prior：图片优先TMDb，TMDb提供海报、背景，其他的由fanart提供。",
         ["choices"] = "fanart_prior,TMDb_only,TMDb_prior",
+    },
+    ["metadata_show_imgtype"] = {
+        ["title"] = "元数据 - 显示的图片种类",
+        ["default"] = "background",
+        ["desc"] = "仅限资料夹的右键菜单里`显示媒体元数据`弹出窗口中 所显示的那一张图片的种类。\n"..
+                    "当 `元数据 - 图片主要来源` 设置为`TMDb_only`时，仅海报、背景、标志可用。\n"..
+                    "当 `元数据 - 图片主要来源` 设置为`fanart_prior`或`TMDb_prior`时，以下均有效（除非图片未刮削到）。\n" ..
+                    "poster: 海报。banner: 横幅。thumb: 缩略图。background: 背景 (默认)。\n"..
+                    "logo: 标志。art: 艺术图。otherart: 其他艺术图。",
+                    -- "logo: 标志。logoL: 标志*。art: 艺术图。artL: 艺术图*。otherart: 其他艺术图。",
+        ["choices"] = "poster,banner,thumb,background,logo,art,otherart",
+        -- ["choices"] = "poster,banner,thumb,background,logo,logoL,art,artL,otherart",
     },
     ["metadata_castcrew_castcount"]={
         ["title"] = "元数据 - 演员总数至多为",
@@ -148,7 +153,7 @@ Metadata_info_origin_title = true -- 是否使用源语言标题
 Metadata_info_origin_image = true -- 是否使用源语言图片 --仅fanart图片
 Metadata_person_max_cast = 15 -- 演员表最多保留
 Metadata_person_max_crew = 15 -- 职员表最多保留
-Metadata_display_imgtype="background" -- 图片类型使用背景
+Metadata_show_imgtype="background" -- 图片类型使用背景
 Tag_rating_on_region = {"FR", "GB", "HK", "RU","US",}
 
 NM_HIDE = 1 -- 一段时间后自动隐藏
@@ -170,7 +175,7 @@ Image_tmdb = {
     ["min_ix"]= 2, -- 尺寸索引
     ["mid_ix"]= 5,
     ["max_ix"]= 7,
-    ["backdrop"]= {"w300","w300","w780","w780","w1280","w1280","original"}, -- 影/剧剧照
+    ["background"]= {"w300","w300","w780","w780","w1280","w1280","original"}, -- 影/剧剧照
     ["logo"]= {"w45","w92","w154","w185","w300","w500","original"}, -- /company/id - /network/id - 出品公司/电视网标志
     ["poster"]= {"w92","w154","w185","w342","w500","w780","original"}, -- 影/剧海报
     ["profile"]= {"w45","w45","w185","w185","h632","h632","original"}, -- /person/id 演员肖像
@@ -192,13 +197,24 @@ Image_fanart = {
     ["type_zh"]={
         ["movieposter"]="电影海报",["moviebanner"]="电影横幅",["moviethumb"]="电影缩略图",["moviebackground"]="电影背景",
         ["hdmovielogo"]="电影标志",["movielogo"]="电影标志*",["hdmovieclearart"]="电影艺术图",["movieart"]="电影艺术图*",["moviedisc"]="电影光盘",
-        ["tvposter"]="剧集海报",["tvbanner"]="剧集横幅",["tvthumb"]="剧集缩略图",["showbackground"]="剧/季背景",
+        ["tvposter"]="剧集海报",["tvbanner"]="剧集横幅",["tvthumb"]="剧集缩略图",["showbackground"]="剧/季背景",["tvbackground"]="剧/季背景",["tvlogo"]="剧集标志",
         ["hdtvlogo"]="剧集标志",["clearlogo"]="剧集标志*",["hdclearart"]="剧集艺术图",["clearart"]="剧集艺术图*",["characterart"]="剧集角色图",
-        ["seasonposter"]="本季海报",["seasonbanner"]="本季横幅",["seasonthumb"]="本季缩略图",
+        ["seasonposter"]="本季海报",["seasonbanner"]="本季横幅",["seasonthumb"]="本季缩略图",["seasonbackground"]="本季背景",["seasonlogo"]="本季标志",
     },
 }
-
 Translation = {
+    ["und-XX"] = {
+        ["language"]={ [""]= "Others", ["Unknown"]= "Unknown", ["cmn"]="Mandarin", ["mis"]="", ["mul"]="Multi Languages", ["und"]="Undetermined", ["zxx"]="No Language", },
+        ["region"]={ [""]= "Others", ["Unknown"]= "Unknown", ["XX"]="Undetermined", ["XZ"]="International Water", ["ZZ"]="未识别", ["International"]="International", },
+        ["media_genre"] = {[""]= "Others", ["Unknown"]= "Unknown", },
+        ["media_status"] = { [""]= "Others", ["Unknown"]= "Unknown", },
+        ["media_type"] = { [""]= "Others", ["Unknown"]= "Unknown", },
+        ["character_gsub"] = { {"^Self - ","自己 - "}, {" (voice)$"," (配音)"}, {" (cameo)$"," (客串)"}, {" (special guest)$"," (特邀嘉宾)"}, {" - Guest$"," (嘉宾)"}, {" - Host$"," (主持)"}, },
+        ["department"] = { [""]= "Others", ["Unknown"]= "Unknown", },
+        ["credit_job"] = { [""]= "Others", ["Unknown"]= "Unknown", },
+    },
+}
+Translation["zh-CN"] = {
     ["language"]={
         ["aa"]= "阿法尔语", ["ab"]= "阿布哈兹语", ["af"]= "南非荷兰语", ["ak"]= "阿坎语", ["sq"]= "阿尔巴尼亚语", ["am"]= "阿姆哈拉语", ["ar"]= "阿拉伯语", ["an"]= "阿拉贡语", ["hy"]= "亚美尼亚语", ["as"]= "阿萨姆语", ["av"]= "阿瓦尔语", ["ae"]= "阿维斯陀语", ["ay"]= "艾马拉语", ["az"]= "阿塞拜疆语", ["ba"]= "巴什基尔语",
         ["bm"]= "班巴拉语", ["eu"]= "巴斯克语", ["be"]= "白俄罗斯语", ["bn"]= "孟加拉语", ["bh"]= "比哈尔语", ["bi"]= "比斯拉玛语", ["bs"]= "波斯尼亚语", ["br"]= "布里多尼语", ["bg"]= "保加利亚语", ["my"]= "缅甸语", ["ca"]= "加泰罗尼亚语", ["ch"]= "查莫罗语", ["ce"]= "车臣语", ["zh"]= "汉语", ["cu"]= "教会斯拉夫语",
@@ -342,6 +358,7 @@ Translation = {
 -- 媒体信息<table>
 Anime_data = {
     ["media_title"] = (mediai["media_title"]) or (mediai["media_name"]),		-- 标题
+    ["interf_title"],
     ["original_title"] = (mediai["original_title"]) or (mediai["original_name"]),-- 原始语言标题
     ["media_id"] = tostring(mediai["id"]),			-- 媒体的 tmdb id
     ["media_imdbid"]            -- str:  ^tt[0-9]{7}$
@@ -400,10 +417,8 @@ Anime_data = {
     ["tv_type"]                 -- str
 
     -- Image_tmdb.prefix..Image_tmdb.poster[Image_tmdb.max_ix] .. data["image_path"]
-    ["poster_path"] = mediai["poster_path"] or tvSeasonsIx["poster_path"],		-- 海报图片 电影/剧集某季 str
-    ["tv_poster_path"] = mediai["poster_path"],  -- 海报图片 剧集 str
-    ["background_path"] = mediai["backdrop_path"],	-- 背景图片 电影/剧集 str
-     ["fanart_path"] ={ [fanart_type] = { [origin]={url,lang,disc_type,season}, [interf]={} }, -- seasonX:"0"/all/others
+    ["tmdb_art_path"]= { [tmdb_type] = { [origin]={url,lang}, [interf]={}, },} -- movieposter tvposter seasonposter moviebackground tvbackground
+    ["fanart_path"] ={ [fanart_type] = { [origin]={url,lang,disc_type,season}, [interf]={}, },} -- seasonX:"0"/all/others
     --
 }]] --
 
@@ -567,6 +582,7 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
             data["media_type"] = mediai["media_type"] -- 媒体类型 movie tv person
         end
         data["media_title"] = string.unescape(mediai["title"]) or string.unescape(mediai["name"]) -- 标题
+        data.interf_title = string.unescape(mediai["title"]) or string.unescape(mediai["name"]) -- 标题
         data["original_title"] = string.unescape(mediai["original_title"]) or string.unescape(mediai["original_name"]) -- 原始语言标题
         data["media_id"] = string.format("%d", mediai["id"]) -- 媒体的 tmdb id
         data["release_date"] = mediai["release_date"] or mediai["first_air_date"] -- 首映/首播/发行日期
@@ -577,16 +593,24 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
         end
         data["vote_average"] = mediai["vote_average"] -- 平均tmdb评分
         -- 图片链接
-        if (mediai["poster_path"] ~= nil and mediai["poster_path"] ~= "") then
-            data["poster_path"] = mediai["poster_path"]
-        else
-            data["poster_path"] = ""
+        local tmpTmdbartImgpath= nil
+        if not string.isEmpty(mediai.poster_path) then
+            tmpTmdbartImgpath=(table.isEmpty(tmpTmdbartImgpath) and{ {} }or{ tmpTmdbartImgpath })[1]
+            tmpTmdbartImgpath[data.media_type.."poster"]={}
+            tmpTmdbartImgpath[data.media_type.."poster"].interf= {
+                ["url"]= mediai.poster_path,
+                ["lang"]= "und", --string.sub(settings["metadata_lang"],1,2),
+            }
         end
-        if (mediai["backdrop_path"] ~= nil and mediai["backdrop_path"] ~= "") then
-            data["background_path"] = mediai["backdrop_path"]
-        else
-            data["background_path"] = ""
+        if not string.isEmpty(mediai.backdrop_path) then
+            tmpTmdbartImgpath=(table.isEmpty(tmpTmdbartImgpath) and{ {} }or{ tmpTmdbartImgpath })[1]
+            tmpTmdbartImgpath[data.media_type.."background"]={}
+            tmpTmdbartImgpath[data.media_type.."background"].interf= {
+                ["url"]= mediai.backdrop_path,
+                ["lang"]= "zxx",
+            }
         end
+        data.tmdb_art_path = (table.isEmpty(tmpTmdbartImgpath) and{ nil }or{ tmpTmdbartImgpath })[1]
         --? OTHER_INFO
         -- data["vote_count"] = tonumber(mediai["vote_count"]or"")
         -- data["popularity_num"] = tonumber(mediai["popularity"]or"")
@@ -616,7 +640,7 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
             -- 流派类型 id ->名称
             for key, value in pairs(mediai["genres"] or {}) do -- key-index value-id
                 if not string.isEmpty(value.name) then
-                    table.insert(data["genre_names"],Translation.media_genre[value.id] or value.name)
+                    table.insert(data["genre_names"],((Translation[settings["metadata_lang"]] or{}).media_genre or{})[value.id] or value.name)
                 end
             end
             data["runtime"] = ( objMo["runtime"]==nil or objMo["runtime"]=="" )and{ nil }or{ tostring(objMo["runtime"]) }
@@ -679,20 +703,20 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
             mediaLang={mediaLang[1] or nil}
             mediaRegion={mediaRegion[1] or nil}
             for index, value in ipairs(mediaLang) do
-                mediaLang[index]= Translation.language[value] or value
+                mediaLang[index]= ((Translation[settings["metadata_lang"]] or{}).language or{})[value] or value
             end
             for index, value in ipairs(mediaRegion) do
-                mediaRegion[index]= Translation.region[value] or value
+                mediaRegion[index]= ((Translation[settings["metadata_lang"]] or{}).region or{})[value] or value
             end
 
             table.insert(mediais, {
                 ["name"] = (( string.isEmpty(old_title) )and{ mediaName }or{ old_title })[1],
                 ["data"] = media_data_json,
-                ["extra"] = "类型：" .. (Translation.media_type[data.media_type] or data.media_type or Translation.media_type["Unknown"] or"") ..
-                        ((data.mo_is_video==true or data.mo_is_video=="true") and{ ", ".. (Translation.media_type["Movie Video"] or"Video Movie") }or{ "" })[1] ..
+                ["extra"] = "类型：" .. (((Translation[settings["metadata_lang"]] or{}).media_type or{})[data.media_type] or data.media_type or (Translation["und-XX"]).media_type["Unknown"] or"") ..
+                        ((data.mo_is_video==true or data.mo_is_video=="true") and{ ", ".. (((Translation[settings["metadata_lang"]] or{}).media_type or{})["Movie Video"] or"Video Movie") }or{ "" })[1] ..
                     "  |  首映：" .. ((data["release_date"] or "") .. " " .. (data["first_air_date"] or "")) ..
                         "  |  语言：" .. Array.toStringLine(mediaLang) .. "; " .. Array.toStringLine(mediaRegion) ..
-                    "  |  状态：" .. (Translation.media_status[data.status] or data.status or Translation.media_status["Unknown"] or "") ..
+                    "  |  状态：" .. (((Translation[settings["metadata_lang"]] or{}).media_status or{})[data.status] or data.status or (Translation["und-XX"] or{}).media_status["Unknown"] or "") ..
                     "\r\n简介：" .. string.gsub(data.overview or"", "\r?\n", " ")..
                     (( string.isEmpty(old_title) )and{ "" }or{ "\r\n弃用的标题：" ..mediaName })[1],
                 ["scriptId"] = "Kikyou.l.TMDb",
@@ -708,7 +732,6 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
             -- info
             
             data["tv_first_air_date"] = data["release_date"]
-            data["tv_poster_path"] = data["poster_path"]
             data["season_count"] = objTv["number_of_seasons"]
             data["episode_total"] = objTv["number_of_episodes"]
             if tonumber(data.season_count) then
@@ -724,7 +747,7 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
             -- 流派类型 id ->名称
             for key, value in pairs(mediai["genres"] or {}) do -- key-index value-id
                 if not string.isEmpty(value.name) then
-                    table.insert(data["genre_names"],Translation.media_genre[value.id] or value.name)
+                    table.insert(data["genre_names"],((Translation[settings["metadata_lang"]] or{}).media_genre or{})[value.id] or value.name)
                 end
             end
             data["runtime"] = table.deepCopy(objTv["episode_run_time"]) or{}
@@ -804,12 +827,17 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
                         tvSeasonsIx.overview~=mediai.title and tvSeasonsIx.overview~=mediai.original_title then
                     data.overview_season = string.gsub(tvSeasonsIx.overview, "\r?\n\r?\n", "\n")
                 end
-                if (tvSeasonsIx["poster_path"] ~= nil and tvSeasonsIx["poster_path"] ~= "") then
-                    data["poster_path"] = tvSeasonsIx["poster_path"]
-                elseif (data["tv_poster_path"] ~= nil and data["tv_poster_path"] ~= "") then
-                    data["poster_path"] = data["tv_poster_path"]
-                else
-                    data["poster_path"] = ""
+                tmpTmdbartImgpath= nil
+                if not string.isEmpty(tvSeasonsIx.poster_path) then
+                    tmpTmdbartImgpath= {}
+                    tmpTmdbartImgpath.seasonposter={}
+                    tmpTmdbartImgpath.seasonposter.interf= {
+                        ["url"]= tvSeasonsIx.poster_path,
+                        ["lang"]= "und", --string.sub(settings["metadata_lang"],1,2),
+                    }
+                end
+                if not table.isEmpty(tmpTmdbartImgpath) then
+                    Array.extend(data.tmdb_art_path,tmpTmdbartImgpath)
                 end
 
                 data["season_number"] = math.floor(tvSeasonsIx["season_number"])
@@ -830,11 +858,10 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
                                        (data["season_title"] == (string.format('S%02d', data["season_number"]))) or
                                        seasonNameNormal
                 if seasonNameNormal then
-                    if not (Metadata_info_origin_title) then
+                    if not (Metadata_info_origin_title) and settings["metadata_lang"]=="zh-CN" then
                         if tonumber(data["season_number"]) ~= 0 then
-                            data.season_title= string.format('第%d季', data["season_number"])
-                        else
-                            data.season_title= '特别篇'
+                                data.season_title= string.format('第%d季', data["season_number"])
+                        else data.season_title= '特别篇'
                         end
                     else
                         if tonumber(data["season_number"]) ~= 0 then
@@ -871,24 +898,24 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
                 mediaLang={mediaLang[1] or nil}
                 mediaRegion={mediaRegion[1] or nil}
                 for index, value in ipairs(mediaLang) do
-                    mediaLang[index]= Translation.language[value] or value
+                    mediaLang[index]= ((Translation[settings["metadata_lang"]] or{}).language or{})[value] or value
                 end
                 for index, value in ipairs(mediaRegion) do
-                    mediaRegion[index]= Translation.region[value] or value
+                    mediaRegion[index]= ((Translation[settings["metadata_lang"]] or{}).region or{})[value] or value
                 end
 
                 table.insert(mediais, {
                     ["name"] = (( string.isEmpty(old_title) )and{ mediaNameSeason }or{ old_title })[1] ,
                     ["data"] = media_data_json,
-                    ["extra"] = "类型：" .. (Translation.media_type[data.media_type] or data.media_type or Translation.media_type["Unknown"] or"") ..
-                            (string.isEmpty(data.tv_type) and{ "" }or{ ", ".. (Translation.media_type[data.tv_type] or data.tv_type or Translation.media_type[""] or"") })[1] ..
+                    ["extra"] = "类型：" .. (((Translation[settings["metadata_lang"]] or{}).media_type or{})[data.media_type] or data.media_type or (Translation["und-XX"] or{}).media_type["Unknown"] or"") ..
+                            (string.isEmpty(data.tv_type) and{ "" }or{ ", ".. (((Translation[settings["metadata_lang"]] or{}).media_type or{})[data.tv_type] or data.tv_type or (Translation["und-XX"] or{}).media_type[""] or"") })[1] ..
                         "  |  首播：" .. ((data["release_date"] or "") .. " " .. (data["first_air_date"] or "")) ..
                         "  |  语言：" .. Array.toStringLine(mediaLang) .. "; " .. Array.toStringLine(mediaRegion) ..
                         "  |  " .. seasonTextNormal .. string.format(" (共%2d季) ", data["season_count"] or "") ..
                         "  |  集数：" .. string.format("%d", data["episode_count"] or "") ..
-                        "  |  状态：" .. (Translation.media_status[data.status] or data.status or Translation.media_status["Unknown"] or"") ..
+                        "  |  状态：" .. (((Translation[settings["metadata_lang"]] or{}).media_status or{})[data.status] or data.status or (Translation["und-XX"] or{}).media_status["Unknown"] or"") ..
                                 (( data.tv_in_production==true or data.tv_in_production=="true")and
-                                        { ", "..(Translation.media_status["TV In Production"] or"In Production TV")}or{ "" })[1] ..
+                                        { ", "..(((Translation[settings["metadata_lang"]] or{}).media_status or{})["TV In Production"] or"In Production TV")}or{ "" })[1] ..
                         "\r\n简介：" .. ( string.isEmpty(data.overview_season) and{ "" }or
                                 { string.gsub(data.overview_season or"", "\r?\n", " ") .."\r\n" })[1] ..
                             (string.gsub(data.overview or"", "\r?\n", " ") or "")..
@@ -1097,17 +1124,6 @@ function detail(anime)
         Metadata_info_origin_title = true
     end
 
-    local titleTmp = "" -- 形如 "media_title (original_title)"
-    if anime_data["media_title"] then
-        titleTmp = titleTmp .. anime_data["media_title"]
-        if anime_data["original_title"] then
-            titleTmp = titleTmp .. " (" .. anime_data["original_title"] .. ")"
-        end
-    else
-        if anime_data["original_title"] then
-            titleTmp = titleTmp .. anime_data["original_title"]
-        end
-    end
     if tonumber(anime_data.season_number) then
         anime_data.season_number= math.floor(tonumber(anime_data.season_number))
     end
@@ -1120,53 +1136,73 @@ function detail(anime)
     end
     --
     local objMoll,objTvll,objTsll,objMell= {},{},{},{}
-    local objMolo,objTvlo,objTslo,objMelo= {},{},{},{}
     if anime_data.media_type=="movie" then
         objMoll=Kikoplus.httpgetMediaId({
             ["api_key"] = settings["api_key"],
             ["language"] = settings["metadata_lang"],
-            ["append_to_response"] = "credits,release_dates,keywords,external_ids", -- collections
+            ["append_to_response"] = "credits,release_dates,keywords,external_ids,translations,images", -- collections
+            ["include_image_language"] = -- string.sub(settings["metadata_lang"],1,2)..","..
+                    (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1]..",null", -- collections
         },anime_data.media_type.."/"..anime_data.media_id)
         objMell= objMoll
     elseif anime_data.media_type=="tv" then
         objTvll=Kikoplus.httpgetMediaId({
             ["api_key"] = settings["api_key"],
             ["language"] = settings["metadata_lang"],
-            ["append_to_response"] = "content_ratings,keywords,external_ids",
+            ["append_to_response"] = "content_ratings,keywords,external_ids,translations,images",
+            ["include_image_language"] = -- string.sub(settings["metadata_lang"],1,2)..","..
+            (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1]..",null", -- collections
         },anime_data.media_type.."/"..anime_data.media_id)
         objMell=objTvll
         objTsll=Kikoplus.httpgetMediaId({
             ["api_key"] = settings["api_key"],
             ["language"] = settings["metadata_lang"],
-            ["append_to_response"] = "credits,external_ids",
+            ["append_to_response"] = "credits,external_ids,translations,images",
+            ["include_image_language"] = -- string.sub(settings["metadata_lang"],1,2)..","..
+            (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1]..",null", -- collections
         },anime_data.media_type.."/"..anime_data.media_id .. "/season/" .. anime_data.season_number)
     end
 
     if anime_data.media_type=="movie" or anime_data.media_type=="tv" then
         -- anime_data["media_id"] = string.format("%d", objMell["id"])
+        anime_data.interf_title = string.unescape(objMell["title"]) or string.unescape(objMell["name"]) -- 标题
         anime_data["release_date"] = objMell["release_date"] or objMell["first_air_date"]
         anime_data["original_language"] = objMell["original_language"]
         anime_data["origin_country"]= nil
         anime_data["origin_region"] = table.deepCopy(objMell["origin_country"] or {}) or{}
         if not string.isEmpty(objMell.overview) and objMell.overview~=objMell.title and objMell.overview~=objMell.original_title then
             anime_data["overview"] = (string.isEmpty(objMell.overview) and{""} or{ string.gsub(objMell["overview"], "\r?\n\r?\n", "\n") })[1]
+        else anime_data.overview =nil
         end
         anime_data["vote_average"] = objMell["vote_average"]
         anime_data["genre_names"] = {}
         for key, value in pairs(objMell["genres"] or {}) do
             if not string.isEmpty(value.name) then
-                table.insert(anime_data["genre_names"],Translation.media_genre[value.id] or value.name)
+                table.insert(anime_data["genre_names"],((Translation[settings["metadata_lang"]] or{}).media_genre or{})[value.id] or value.name)
             end
         end
-        if (objMell["poster_path"] ~= nil and objMell["poster_path"] ~= "") then
-            anime_data["poster_path"] = objMell["poster_path"]
-        else
-            anime_data["poster_path"] = ""
+        anime_data.tmdb_art_path={}
+        local tmpTmdbartImgpath= ((anime_data.tmdb_art_path or{})[anime_data.media_type.."poster"] or{} ).interf
+        if (not string.isEmpty(objMell.poster_path)) then
+            anime_data.tmdb_art_path= (table.isEmpty(anime_data.tmdb_art_path) and{ {} }or{ anime_data.tmdb_art_path })[1]
+            anime_data.tmdb_art_path[anime_data.media_type.."poster"]= (table.isEmpty(anime_data.tmdb_art_path[anime_data.media_type.."poster"]) and
+                    { {} }or{ anime_data.tmdb_art_path[anime_data.media_type.."poster"] })[1]
+            anime_data.tmdb_art_path[anime_data.media_type.."poster"].interf= {
+                ["url"]= objMell.poster_path,
+                ["lang"]= "und", --string.sub(settings["metadata_lang"],1,2),
+            }
+        else ((anime_data.tmdb_art_path or{})[anime_data.media_type.."poster"] or{}).interf={}
         end
-        if (objMell["backdrop_path"] ~= nil and objMell["backdrop_path"] ~= "") then
-            anime_data["background_path"] = objMell["backdrop_path"]
-        else
-            anime_data["background_path"] = ""
+        tmpTmdbartImgpath= ((anime_data.tmdb_art_path or{})[anime_data.media_type.."background"] or{} ).interf
+        if (not string.isEmpty(objMell.backdrop_path)) then
+            anime_data.tmdb_art_path= (table.isEmpty(anime_data.tmdb_art_path) and{ {} }or{ anime_data.tmdb_art_path })[1]
+            anime_data.tmdb_art_path[anime_data.media_type.."background"]= (table.isEmpty(anime_data.tmdb_art_path[anime_data.media_type.."background"]) and
+                    { {} }or{ anime_data.tmdb_art_path[anime_data.media_type.."background"] })[1]
+            anime_data.tmdb_art_path[anime_data.media_type.."background"].interf= {
+                ["url"]= objMell.backdrop_path,
+                ["lang"]= "zxx",
+            }
+        else ((anime_data.tmdb_art_path or{})[anime_data.media_type.."background"] or{}).interf={}
         end
         -- anime_data["vote_count"] = tonumber(objMell["vote_count"]or"")
         -- anime_data["popularity_num"] = tonumber(objMell["popularity"]or"")
@@ -1217,7 +1253,6 @@ function detail(anime)
         anime_data["mo_revenue"] = tonumber(objMoll["revenue"]or"")
     elseif anime_data.media_type=="tv" then
         anime_data["tv_first_air_date"] = anime_data["release_date"]
-        anime_data["tv_poster_path"] = anime_data["poster_path"]
         anime_data["season_count"] = objTvll["number_of_seasons"]
         anime_data["episode_total"] = objTvll["number_of_episodes"]
         if tonumber(anime_data.season_count) then
@@ -1264,13 +1299,19 @@ function detail(anime)
         if not string.isEmpty(objTsll.overview) and objTsll.overview~=anime_data.overview and
                 objTsll.overview~=anime_data.title and objTsll.overview~=anime_data.original_title then
             anime_data.overview_season = string.gsub(objTsll.overview, "\r?\n\r?\n", "\n")
+        else anime_data.overview_season = nil
         end
-        if (objTsll["poster_path"] ~= nil and objTsll["poster_path"] ~= "") then
-            anime_data["poster_path"] = objTsll["poster_path"]
-        elseif (anime_data["tv_poster_path"] ~= nil and anime_data["tv_poster_path"] ~= "") then
-            anime_data["poster_path"] = anime_data["tv_poster_path"]
-        else
-            anime_data["poster_path"] = ""
+        
+        local tmpTmdbartImgpath= ((anime_data.tmdb_art_path or{})["seasonposter"] or{} ).interf
+        if (not string.isEmpty(objTsll.poster_path)) then
+            anime_data.tmdb_art_path= (table.isEmpty(anime_data.tmdb_art_path) and{ {} }or{ anime_data.tmdb_art_path })[1]
+            anime_data.tmdb_art_path["seasonposter"]= (table.isEmpty(anime_data.tmdb_art_path["seasonposter"]) and
+                    { {} }or{ anime_data.tmdb_art_path["seasonposter"] })[1]
+            anime_data.tmdb_art_path["seasonposter"].interf= {
+                ["url"]= objTsll.poster_path,
+                ["lang"]= "und", --string.sub(settings["metadata_lang"],1,2),
+            }
+        else ((anime_data.tmdb_art_path or{})["seasonposter"] or{}).interf={}
         end
     end
 
@@ -1280,48 +1321,98 @@ function detail(anime)
     if string.isEmpty(anime_data.overview) or anime_data.overview==anime_data.title or anime_data.overview==anime_data.original_title then
         anime_data.overview=nil
     end
-    if string.isEmpty(anime_data.tagline) or string.isEmpty(anime_data.overview) then
-        if anime_data.media_type=="movie" then
-            objMolo=Kikoplus.httpgetMediaId({
-                ["api_key"] = settings["api_key"],
-                ["language"] = (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1],
-                -- ["append_to_response"] = "",
-            },anime_data.media_type.."/"..anime_data.media_id)
-            objMelo=objMolo
-        elseif anime_data.media_type=="tv" then
-            objTvlo=Kikoplus.httpgetMediaId({
-                ["api_key"] = settings["api_key"],
-                ["language"] = (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1],
-                -- ["append_to_response"] = "",
-            },anime_data.media_type.."/"..anime_data.media_id)
-            objMelo=objTvlo
-        end
-        if (not string.isEmpty(objMelo.tagline)) and string.isEmpty(anime_data.tagline) and
-                objMelo.tagline~=anime_data.title and objMelo.tagline~=anime_data.original_title then
-            anime_data.tagline= string.gsub(objMelo.tagline or"", "\r?\n\r?\n", "\n")
-        end
-        if (not string.isEmpty(objMelo.overview)) and string.isEmpty(anime_data.overview) and
-                objMelo.overview~=anime_data.title and objMelo.overview~=anime_data.original_title then
-            anime_data.overview= string.gsub(objMelo.overview or"", "\r?\n\r?\n", "\n")
+    local tmpTmdbartImgpath= ((anime_data.tmdb_art_path or{})[anime_data.media_type.."poster"] or{} ).origin
+    for _,vtr in ipairs(objMell.translations.translations) do
+        -- if vtr.iso_639_1== string.sub(settings["metadata_lang"],1,2) then
+        -- end
+        if vtr.iso_639_1== (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1] then
+            if not table.isEmpty(vtr.data) then
+                if (not string.isEmpty(vtr.data.tagline)) and string.isEmpty(anime_data.tagline_origin) and
+                        vtr.data.tagline~=anime_data.title and vtr.data.tagline~=anime_data.original_title then
+                    anime_data.tagline_origin= string.gsub(vtr.data.tagline or"", "\r?\n\r?\n", "\n")
+                else anime_data.tagline_origin= nil
+                end
+                if (not string.isEmpty(vtr.data.overview)) and string.isEmpty(anime_data.overview_origin) and
+                        vtr.data.overview~=anime_data.title and vtr.data.overview~=anime_data.original_title then
+                    anime_data.overview_origin= string.gsub(vtr.data.overview or"", "\r?\n\r?\n", "\n")
+                else anime_data.overview_origin= nil
+                end
+                if (not string.isEmpty(vtr.data.homepage)) and string.isEmpty(anime_data.homepage_origin) then
+                    anime_data.homepage_origin= vtr.data.homepage
+                else anime_data.homepage_origin= nil
+                end
+            end
         end
     end
     if string.isEmpty(anime_data.overview_season) or anime_data.overview_season==anime_data.overview or
             anime_data.overview_season==anime_data.title or anime_data.overview_season==anime_data.original_title then
         anime_data.overview_season=nil
     end
-    if string.isEmpty(anime_data.overview_season) and anime_data.media_type=="tv" then
-        objTslo=Kikoplus.httpgetMediaId({
-                ["api_key"] = settings["api_key"],
-                ["language"] = (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1],
-                -- ["append_to_response"] = "",
-            },anime_data.media_type.."/"..anime_data.media_id .. "/season/" .. anime_data.season_number)
-        objTslo.overview= string.gsub(objTslo.overview or"", "\r?\n\r?\n", "\n")
-        if (not string.isEmpty(objTslo.overview)) and string.isEmpty(anime_data.overview_season) and objTslo.overview~=(anime_data.overview or"") and
-                objTslo.overview~=anime_data.title and objTslo.overview~=anime_data.original_title then
-            anime_data.overview_season= objTslo.overview
+    if (anime_data.media_type~="movie") then
+        for _,vtr in ipairs(objMell.translations.translations) do
+            if vtr.iso_639_1== (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1] then
+                if not table.isEmpty(vtr.data) then
+                    if (not string.isEmpty(vtr.data.tagline)) and string.isEmpty(anime_data.tagline_origin) and
+                            vtr.data.tagline~=anime_data.title and vtr.data.tagline~=anime_data.original_title then
+                        anime_data.tagline_origin= string.gsub(vtr.data.tagline or"", "\r?\n\r?\n", "\n")
+                    else anime_data.tagline_origin= nil
+                    end
+                    if (not string.isEmpty(vtr.data.overview)) and string.isEmpty(anime_data.overview_origin) and
+                            vtr.data.overview~=anime_data.title and vtr.data.overview~=anime_data.original_title then
+                        anime_data.overview_origin= string.gsub(vtr.data.overview or"", "\r?\n\r?\n", "\n")
+                    else anime_data.overview_origin= nil
+                    end
+                    if (not string.isEmpty(vtr.data.homepage)) and string.isEmpty(anime_data.homepage_origin) then
+                        anime_data.homepage_origin= vtr.data.homepage
+                    else anime_data.homepage_origin= nil
+                    end
+                    vtr.data.overview= string.gsub(vtr.data.overview or"", "\r?\n\r?\n", "\n")
+                    if (not string.isEmpty(vtr.data.overview)) and vtr.data.overview~=(anime_data.overview or"") and
+                            vtr.data.overview~=anime_data.title and vtr.data.overview~=anime_data.original_title then
+                        anime_data.overview_season_origin= vtr.data.overview
+                    else anime_data.overview_season_origin= nil
+                    end
+                end
+            end
         end
     end
-    -- string.gsub(anime_data.tagline or"", "\r?\n\r?\n", "\n")
+    local imgTypePairTmdb = {{"backdrops","background"}, {"logos","logo"}, {"posters","poster"}}
+    for _,vitp in ipairs(imgTypePairTmdb) do
+        for _,vim in ipairs(objMell.images[vitp[1]] or{}) do
+            tmpTmdbartImgpath= ((anime_data.tmdb_art_path or{})[anime_data.media_type..vitp[2]] or{} ).origin
+            if (not string.isEmpty(vim.file_path)) and table.isEmpty(tmpTmdbartImgpath) and not(
+                    vitp[2]=="poster" and vim.iso_639_1==string.sub(settings["metadata_lang"],1,2) and string.sub(settings["metadata_lang"],1,2) ~=
+                    ((string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1])) then
+                anime_data.tmdb_art_path= (table.isEmpty(anime_data.tmdb_art_path) and{ {} }or{ anime_data.tmdb_art_path })[1]
+                anime_data.tmdb_art_path[anime_data.media_type..vitp[2]]= (table.isEmpty(anime_data.tmdb_art_path[anime_data.media_type..vitp[2]]) and
+                        { {} }or{ anime_data.tmdb_art_path[anime_data.media_type..vitp[2]] })[1]
+                anime_data.tmdb_art_path[anime_data.media_type..vitp[2]].origin= {
+                    ["url"]= vim.file_path,
+                    ["lang"]= ((vitp[2] == "background")and{"zxx"}or{vim.iso_639_1})[1],
+                }
+            end
+        end
+        if vitp[2] == "logo" and not table.isEmpty(((anime_data.tmdb_art_path or{})[anime_data.media_type..vitp[2]] or{}).origin) then
+            (anime_data.tmdb_art_path or{})[anime_data.media_type..vitp[2]].interf= table.deepCopy(
+                    (anime_data.tmdb_art_path or{})[anime_data.media_type..vitp[2]].origin)
+        end
+        if anime_data.media_type~="movie" then
+            for _,vim in ipairs(objTsll.images[vitp[1]] or{}) do
+                tmpTmdbartImgpath= ((anime_data.tmdb_art_path or{})["season"..vitp[2]] or{} ).origin
+                if (not string.isEmpty(vim.file_path)) and table.isEmpty(tmpTmdbartImgpath) and not(
+                        vitp[2]=="poster" and vim.iso_639_1==string.sub(settings["metadata_lang"],1,2) and string.sub(settings["metadata_lang"],1,2) ~=
+                        ((string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1])) then
+                    anime_data.tmdb_art_path= (table.isEmpty(anime_data.tmdb_art_path) and{ {} }or{ anime_data.tmdb_art_path })[1]
+                    anime_data.tmdb_art_path["season"..vitp[2]]= (table.isEmpty(anime_data.tmdb_art_path["season"..vitp[2]]) and
+                            { {} }or{ anime_data.tmdb_art_path["season"..vitp[2]] })[1]
+                    anime_data.tmdb_art_path["season"..vitp[2]].origin= {
+                        ["url"]= vim.file_path,
+                        ["lang"]= ((vitp[2] == "background")and{"zxx"}or{ vim.iso_639_1})[1],
+                    }
+                end
+            end
+        end
+    end
 
     local objCr= table.deepCopy(((anime_data.media_type=="movie")and{ objMoll.credits }or{ objTsll.credits })[1]) or{}
     local tmpAnimeCharacter, tmpMcCast,tmpMcCrew={}, 0,0
@@ -1335,7 +1426,7 @@ function detail(anime)
     -- anime_data["person_cast"]=anime_data["person_cast"] or {}
     for _, value in ipairs(objCr.cast or {}) do
         if #(anime_data["person_cast"])>=Metadata_person_max_cast then break end
-        for _, crtGpair in ipairs(Translation.character_gsub or{}) do
+        for _, crtGpair in ipairs((Translation[settings["metadata_lang"]] or{}).character_gsub or{}) do
             string.gsub(value.character,crtGpair[1] or"",crtGpair[2] or crtGpair[1] or"")
         end
         table.insert(anime_data["person_cast"],{
@@ -1378,7 +1469,7 @@ function detail(anime)
     local tmpAnimeStaff=""
     for _, value in ipairs(anime_data.person_crew or {}) do
         tmpAnimeStaff=tmpAnimeStaff ..( string.isEmpty(value.name) and{ "" }or{
-                ((Translation.department[value.department] or value.department).."-"..(Translation.credit_job[value.job] or (" "..value.job))) ..":"..
+                ((((Translation[settings["metadata_lang"]] or{}).department or{})[value.department] or value.department).."-"..(((Translation[settings["metadata_lang"]] or{}).credit_job or{})[value.job] or (" "..value.job))) ..":"..
                 ( string.isEmpty(value.original_name) and{ value.name }or{value.original_name })[1] ..";" })[1]
     end
     anime_data["person_crew"]=anime_data.person_crew or {}
@@ -1403,10 +1494,10 @@ function detail(anime)
         if #(anime_data["person_crew"])>tmpMcCrew then goto continue_detail_ccc_crew end
         if (not string.isEmpty(value.original_name)) or (not string.isEmpty(value.name)) then
             if Metadata_info_origin_title then
-                tmpAnimeStaff= tmpAnimeStaff ..((Translation.department[value.department] or value.department).."-"..(Translation.credit_job[value.job] or (" "..value.job))) ..":"..
+                tmpAnimeStaff= tmpAnimeStaff ..((((Translation[settings["metadata_lang"]] or{}).department or{})[value.department] or value.department).."-"..(((Translation[settings["metadata_lang"]] or{}).credit_job or{})[value.job] or (" "..value.job))) ..":"..
                             ( string.isEmpty(value.original_name) and{ value.name }or{value.original_name })[1] ..";"
             else
-                tmpAnimeStaff= tmpAnimeStaff ..((Translation.department[value.department] or value.department).."-"..(Translation.credit_job[value.job] or (" "..value.job))) ..":"..
+                tmpAnimeStaff= tmpAnimeStaff ..((((Translation[settings["metadata_lang"]] or{}).department or{})[value.department] or value.department).."-"..(((Translation[settings["metadata_lang"]] or{}).credit_job or{})[value.job] or (" "..value.job))) ..":"..
                             ( string.isEmpty(value.original_name) and{ value.name }or{value.original_name })[1] ..";"
             end
         end
@@ -1477,7 +1568,7 @@ function detail(anime)
     end
     objEi={}
 
-    local mImgPTmp = "TMDb_prior"
+    local mImgPTmp = "TMDb_only"
     if settings["metadata_image_priority"]=="fanart_prior"
         or settings["metadata_image_priority"]=="TMDb_only"
         or settings["metadata_image_priority"]=="TMDb_prior" then
@@ -1545,17 +1636,18 @@ function detail(anime)
             -- ["id"]= ( string.isEmpty(value.id) and{ nil }or{ value.id })[1],
             ["url"]= ( string.isEmpty(value.url) and{ nil }or{
                 string.sub(value.url,Image_fanart.len_preix_size,-1) })[1],
-            ["lang"]= ( string.isEmpty(value.lang) and{ nil }or{ value.lang })[1],
+            ["lang"]= ( string.isEmpty(value.lang) and{ nil }or{
+                    ( (value.lang=="00") and{ "zxx" }or{ value.lang })[1], })[1],
             -- ["likes"]= ( string.isEmpty(value.likes) and{ nil }or{ value.likes })[1],
             -- ["disc"]= ( string.isEmpty(value.disc) and{ nil }or{ value.disc })[1],
             ["disc_type"]= ( string.isEmpty(value.disc_type) and{ nil }or{ value.disc_type })[1],
             ["season"]= ( string.isEmpty(value.season) and{ nil }or{ value.season })[1],
         } end
         -- origin-origin  interf-interface  noLang-no.lang  en-en
-        local miotTmp = settings['metadata_info_origin_title']
-        if (miotTmp == '0') then
+        local mioiTmp = settings['metadata_info_origin_image']
+        if (mioiTmp == '0') then
             Metadata_info_origin_image = false
-        elseif (miotTmp == '1') then
+        elseif (mioiTmp == '1') then
             Metadata_info_origin_image = true
         end
         for _,fti in ipairs(Image_fanart[anime_data.media_type]) do
@@ -1587,8 +1679,8 @@ function detail(anime)
                 (anime_data.fanart_path or{})[fti]["interf"]= imgPathVoine.origin or
                         imgPathVoine.noLang or imgPathVoine.interf or imgPathVoine.en
             else
-                (anime_data.fanart_path or{})[fti]["interf"]=
-                        imgPathVoine.interf or imgPathVoine.noLang or imgPathVoine.en
+                (anime_data.fanart_path or{})[fti]["interf"]= imgPathVoine.interf or
+                        imgPathVoine.noLang or imgPathVoine.origin or imgPathVoine.en
             end
         end
         local imgPathSoine={}
@@ -1633,40 +1725,58 @@ function detail(anime)
         end
     end
     ::jumpover_fanart_scraping::
-    local posterUrlTmp = ""
-    if mImgPTmp=="TMDb_prior" or mImgPTmp=="TMDb_only" then
-        posterUrlTmp = anime_data["poster_path"]
-        if not string.isEmpty(posterUrlTmp) then
-            posterUrlTmp = Image_tmdb.prefix..Image_tmdb.poster[Image_tmdb.max_ix] .. posterUrlTmp
+    local imgLangPri={"origin","interf"}
+    if settings["metadata_info_origin_image"]=="1" then
+        imgLangPri={"origin","interf"}
+    elseif settings["metadata_info_origin_image"]=="0" then
+        imgLangPri={"interf","origin"}
+    end
+    local posterUrlTmp,posterUrlT,posterUrlF = nil,nil,nil
+    local posterUrlTmpT= (anime_data.tmdb_art_path or{})[anime_data.media_type.."poster"]
+    if not table.isEmpty(posterUrlTmpT) then
+        if anime_data.media_type=="movie" then
+            posterUrlTmpT = posterUrlTmpT[imgLangPri[1]] or posterUrlTmpT[imgLangPri[2]]
+        elseif anime_data.media_type=="tv" then
+            posterUrlTmpT = posterUrlTmpT[imgLangPri[1]] or posterUrlTmpT[imgLangPri[2]]
+            local posterUrlTmpS=(anime_data.tmdb_art_path or{}).seasonposter
+            if not table.isEmpty(posterUrlTmpS) then
+                posterUrlTmpT = posterUrlTmpS[imgLangPri[1]] or posterUrlTmpS[imgLangPri[1]] or posterUrlTmpT
+            end
+        end
+        if not table.isEmpty(posterUrlTmpT) and not string.isEmpty(posterUrlTmpT.url) then
+            posterUrlT = Image_tmdb.prefix..Image_tmdb.poster[Image_tmdb.max_ix] .. posterUrlTmpT.url
         end
     end
-    if mImgPTmp=="fanart_prior" or (string.isEmpty(posterUrlTmp) and mImgPTmp=="TMDb_prior") then
+    if mImgPTmp=="fanart_prior" or (string.isEmpty(posterUrlT) and mImgPTmp=="TMDb_prior") then
         if anime_data.media_type=="tv" then
-            if Metadata_info_origin_image==true then
-                posterUrlTmp = ((((anime_data.fanart_path or{})[Image_fanart["season"][1]] or{}).origin or{}).url or"")
-            else
-                posterUrlTmp = ((((anime_data.fanart_path or{})[Image_fanart["season"][1]] or{}).interf or{}).url or"")
-            end
+            posterUrlTmp = ((((anime_data.fanart_path or{})[Image_fanart["season"][1]] or{})[imgLangPri[1]] or{}).url or"")
         end
         if not string.isEmpty(posterUrlTmp) then
-            posterUrlTmp = Image_fanart.prefix..Image_fanart.size[2]..posterUrlTmp
+            posterUrlF = Image_fanart.prefix..Image_fanart.size[2]..posterUrlTmp
         else
-            if Metadata_info_origin_image==true then
-                posterUrlTmp = ((((anime_data.fanart_path or{})[Image_fanart[anime_data.media_type][1]] or{}).origin or{}).url or"")
-            else
-                posterUrlTmp = ((((anime_data.fanart_path or{})[Image_fanart[anime_data.media_type][1]] or{}).interf or{}).url or"")
-            end
+            posterUrlTmp = ((((anime_data.fanart_path or{})[Image_fanart[anime_data.media_type][1]] or{})[imgLangPri[1]] or{}).url or"")
             if not string.isEmpty(posterUrlTmp) then
-                posterUrlTmp = Image_fanart.prefix..Image_fanart.size[2]..posterUrlTmp
+                posterUrlF = Image_fanart.prefix..Image_fanart.size[2]..posterUrlTmp
             elseif mImgPTmp=="fanart_prior" then
-                posterUrlTmp = anime_data["poster_path"]
-                if not string.isEmpty(posterUrlTmp) then
-                    posterUrlTmp = Image_tmdb.prefix..Image_tmdb.poster[Image_tmdb.max_ix] .. posterUrlTmp
+                if not string.isEmpty(posterUrlT) then
+                    posterUrlF = posterUrlT
                 end
             end
         end
     end
+    posterUrlF= posterUrlF or posterUrlT
 
+    local titleTmp = "" -- 形如 "media_title (original_title)"
+    if not string.isEmpty(anime_data.interf_title) or not string.isEmpty(anime_data.media_title) then
+        titleTmp = titleTmp .. (anime_data.interf_title or anime_data.media_title)
+        if anime_data["original_title"] then
+            titleTmp = titleTmp .. " (" .. anime_data.original_title .. ")"
+        end
+    else
+        if not string.isEmpty(anime_data.original_title) then
+            titleTmp = titleTmp .. anime_data.original_title
+        end
+    end
     -- kiko.log(table.toStringBlock(anime_data))
     local err, media_data_json = kiko.table2json(table.deepCopy(anime_data) or{})
     if err ~= nil then
@@ -1678,13 +1788,15 @@ function detail(anime)
         ["data"] = media_data_json,
         ["url"] = ((not string.isEmpty(anime_data["media_type"])) and {"https://www.themoviedb.org/" ..
                  anime_data["media_type"] .. "/" .. anime_data["media_id"]} or {""})[1], -- 条目页面URL
-        ["desc"] = (( string.isEmpty(anime_data.tagline) )and{ "" }or { anime_data.tagline .."\n\n" })[1] ..
-                    (( string.isEmpty(anime_data.overview_season) )and{ "" }or { anime_data.overview_season .."\n\n" })[1] ..
-                    anime_data["overview"] .."\n\n".. titleTmp, -- 描述
+        ["desc"] = (( string.isEmpty(anime_data.tagline) )and{ (string.isEmpty(anime_data.tagline_origin)and{ "" }
+                        or{ anime_data.tagline_origin .."\n\n" })[1] }or { anime_data.tagline .."\n\n" })[1] ..
+                    (( string.isEmpty(anime_data.overview_season) )and{ (string.isEmpty(anime_data.overview_season_origin)and{ "" }
+                        or{ anime_data.overview_season_origin .."\n\n" })[1] }or { anime_data.overview_season .."\n\n" })[1] ..
+                    (anime_data.overview or anime_data.overview_origin) .."\n\n".. titleTmp, -- 描述
         ["airdate"] = ((anime_data["release_date"]) and {
                  anime_data["release_date"]} or {anime_data["tv_first_air_date"]})[1] or "", -- 发行日期，格式为yyyy-mm-dd 
         ["epcount"] = anime_data["episode_count"], -- 分集数
-        ["coverurl"] = posterUrlTmp,
+        ["coverurl"] = posterUrlF,
         ["staff"] = tmpAnimeStaff, -- staff - "job1:staff1;job2:staff2;..."
         ["crt"] = tmpAnimeCharacter, -- 人物
         ["scriptId"] = "Kikyou.l.TMDb"
@@ -1756,24 +1868,24 @@ function gettags(anime)
     end
 
     if anime_data["media_type"] == "movie" or anime_data["media_type"] == "tv" then
-        table.insert(mtag, "类型/".. Translation.media_type[anime_data.media_type])
+        table.insert(mtag, "类型/".. (((Translation[settings["metadata_lang"]] or{}).media_type or{})[anime_data.media_type] or anime_data.media_type))
     else
-        table.insert(mtag, "类型/".. (anime_data.media_type or Translation.media_type["Unknown"]))
+        table.insert(mtag, "类型/".. (anime_data.media_type or (Translation["und-XX"] or{}).media_type["Unknown"]))
     end
     if anime_data["tv_type"]~=nil and anime_data["tv_type"]~="" then
         table.insert(mtag, "类型/" .. string.gsub(
-                (Translation.media_type[anime_data.tv_type] or anime_data.tv_type or Translation.media_type[""]) ,"[/]","∕"))
+                (((Translation[settings["metadata_lang"]] or{}).media_type or{})[anime_data.tv_type] or anime_data.tv_type or (Translation["und-XX"] or{}).media_type[""]) ,"[/]","∕"))
     end
     if anime_data.mo_is_video==true or anime_data.mo_is_video=="true" then
         table.insert(mtag, "类型/" .. string.gsub(
-                (Translation.media_type["Movie Video"] or"Video Movie") ,"[/]","∕"))
+                (((Translation[settings["metadata_lang"]] or{}).media_type or{})["Movie Video"] or"Video Movie") ,"[/]","∕"))
     end
     if not string.isEmpty(anime_data.status) then
-        table.insert(mtag, "状态/" ..  string.gsub( Translation.media_status[anime_data.status] or
-                anime_data.status or Translation.media_status["Unknown"],"[/]","∕"))
+        table.insert(mtag, "状态/" ..  string.gsub( ((Translation[settings["metadata_lang"]] or{}).media_status or{})[anime_data.status] or
+                anime_data.status or (Translation["und-XX"] or{}).media_status["Unknown"],"[/]","∕"))
     end
     if anime_data["tv_in_production"]==true or anime_data["tv_in_production"]=="true" then
-        table.insert(mtag, "状态/".. (Translation.media_status["TV In Production"] or"In Production TV"))
+        table.insert(mtag, "状态/".. (((Translation[settings["metadata_lang"]] or{}).media_status or{})["TV In Production"] or"In Production TV"))
     end
     local mediaLang= {anime_data["original_language"]}
     Array.extendUnique(mediaLang,anime_data["spoken_language"],"iso_639_1")
@@ -1791,9 +1903,9 @@ function gettags(anime)
     for index, value in ipairs(mediaLang or {}) do
         if not string.isEmpty(value) then
             if index == 1 then
-                table.insert(mtag, "语言/".. string.gsub( Translation.language[value] or value or Translation.language[""] ,"[/]","∕"))
+                table.insert(mtag, "语言/".. string.gsub( ((Translation[settings["metadata_lang"]] or{}).language or{})[value] or value or (Translation["und-XX"] or{}).language[""] ,"[/]","∕"))
             else
-                table.insert(mtag, "语言/+/".. string.gsub( Translation.language[value] or value or Translation.language[""] ,"[/]","∕"))
+                table.insert(mtag, "语言/+/".. string.gsub( ((Translation[settings["metadata_lang"]] or{}).language or{})[value] or value or (Translation["und-XX"] or{}).language[""] ,"[/]","∕"))
             end
         end
     end
@@ -1801,9 +1913,9 @@ function gettags(anime)
     for index, value in ipairs(mediaRegion or {}) do
         if not string.isEmpty(value) then
             if index == 1 then
-                table.insert(mtag, "地区/".. string.gsub( Translation.region[value] or value or Translation.region[""] ,"[/]","∕"))
+                table.insert(mtag, "地区/".. string.gsub( ((Translation[settings["metadata_lang"]] or{}).region or{})[value] or value or (Translation["und-XX"] or{}).region[""] ,"[/]","∕"))
             else
-                table.insert(mtag, "地区/+/".. string.gsub( Translation.region[value] or value or Translation.region[""] ,"[/]","∕"))
+                table.insert(mtag, "地区/+/".. string.gsub( ((Translation[settings["metadata_lang"]] or{}).region or{})[value] or value or (Translation["und-XX"] or{}).region[""] ,"[/]","∕"))
             end
         end
     end
@@ -1811,8 +1923,8 @@ function gettags(anime)
     
     for _, value in ipairs(mediaCRating or {}) do
         if (not string.isEmpty(value.rating)) then
-            genre_name_tmp = ( string.isEmpty(value.origin_region) and{ Translation.region["Unknown"] }or
-                    { string.gsub(Translation.region[value.origin_region] or value.origin_region or Translation.region["Unknown"] ,"[/]","∕") })[1] ..
+            genre_name_tmp = ( string.isEmpty(value.origin_region) and{ (Translation["und-XX"] or{}).region["Unknown"] }or
+                    { string.gsub(((Translation[settings["metadata_lang"]] or{}).region or{})[value.origin_region] or value.origin_region or (Translation["und-XX"] or{}).region["Unknown"] ,"[/]","∕") })[1] ..
                             "/".. string.gsub( value.rating ,"[/]","∕")
             local isRon= false
             for _, ron in ipairs(Tag_rating_on_region) do
@@ -1827,8 +1939,8 @@ function gettags(anime)
     mediaCRating={}
     for _, value in ipairs(mediaCompany or {}) do
         if (not string.isEmpty(value.name)) then
-            genre_name_tmp = ( string.isEmpty(value.origin_region) and{ Translation.region[""] }or
-                    { string.gsub(Translation.region[value.origin_region] or value.origin_region or Translation.region[""],"[/]","∕") })[1] ..
+            genre_name_tmp = ( string.isEmpty(value.origin_region) and{ (Translation["und-XX"] or{}).region[""] }or
+                    { string.gsub(((Translation[settings["metadata_lang"]] or{}).region or{})[value.origin_region] or value.origin_region or (Translation["und-XX"] or{}).region[""],"[/]","∕") })[1] ..
                             "/".. string.gsub( value.name ,"[/]","∕")
             table.insert(mtag, "公司/".. genre_name_tmp)
         end
@@ -1836,8 +1948,8 @@ function gettags(anime)
     mediaCompany={}
     for _, value in ipairs(mediaNetwork or {}) do
         if (not string.isEmpty(value.name)) then
-            genre_name_tmp = ( string.isEmpty(value.origin_region) and{ Translation.region[""] }or
-                    { string.gsub(Translation.region[value.origin_region] or value.origin_region or Translation.region[""],"[/]","∕") })[1] ..
+            genre_name_tmp = ( string.isEmpty(value.origin_region) and{ (Translation["und-XX"] or{}).region[""] }or
+                    { string.gsub(((Translation[settings["metadata_lang"]] or{}).region or{})[value.origin_region] or value.origin_region or (Translation["und-XX"] or{}).region[""],"[/]","∕") })[1] ..
                             "/".. string.gsub( value.name ,"[/]","∕")
             table.insert(mtag, "平台/".. genre_name_tmp)
         end
@@ -2222,8 +2334,8 @@ function match(path)
                     -- 是电影
                     kiko.log('[INFO]  \t Reading movie nfo')
                     mdata["media_type"] = "movie" -- 媒体类型
-                    mdata["poster_path"] = "" .. path_folder_l .. "poster.jpg" -- Emby存储的电影 海报路径
-                    mdata["background_path"] = "" .. path_folder_l .. "fanart.jpg" -- Emby存储的电影 背景路径
+                    -- mdata["poster_path"] = "" .. path_folder_l .. "poster.jpg" -- Emby存储的电影 海报路径
+                    -- mdata["background_path"] = "" .. path_folder_l .. "fanart.jpg" -- Emby存储的电影 背景路径
                     kiko.log('[INFO]  Reading movie nfo')
 
                     -- 读取下一个标签
@@ -2819,6 +2931,7 @@ function match(path)
 
                 -- 添加本地海报/背景图片
                 -- TODO 此处功能无效：传入的是 "D:/.../poster.jpg"
+                --[[
                 local file_exist_test, file_exist_test_err, path_file_image_tmp
                     if mdata["season_number"] ~= nil then
                         if mdata["season_number"] ~= "0" then
@@ -2841,6 +2954,7 @@ function match(path)
                         mdata["background_path"] = path_folder_lf .. "fanart.jpg"
                     end
                     -- kiko.log("match - poster_path > ".. mdata["poster_path"])
+                    ]]--
                     -- 把媒体信息<table>转为json的字符串
                 local err, ts_data_json = kiko.table2json(table.deepCopy(mdata) or{})
                     if err ~= nil then
@@ -3064,7 +3178,7 @@ function menuclick(menuid, anime)
         -- 格式化输出字符串
         tmpString = anime["name"]
         tipString = tipString .. "媒体标题：\t" .. (tmpString or "")
-        tipString = tipString .. "\n标题：\t\t" .. (anime_data.media_title or "")
+        tipString = tipString .. "\n标题：\t\t" .. (anime_data.interf_title or anime_data.media_title or "")
         tipString = tipString .. "\n原标题：\t\t" .. (anime_data["original_title"] or "")
         if anime_data["media_type"]=="movie" then
             tipString = tipString .. "\n首映：\t\t"
@@ -3075,26 +3189,26 @@ function menuclick(menuid, anime)
         end
         tmpString = anime["airdate"]
         tipString = tipString .. (tmpString or anime_data["release_date"] or "")
-        if not string.isEmpty(anime_data["tagline"]) then
-            tipString = tipString .. "\n标语：\t\t".. (anime_data["tagline"] or "")
+        if not string.isEmpty(anime_data["tagline"] or anime_data.tagline_origin) then
+            tipString = tipString .. "\n标语：\t\t".. (anime_data.tagline or anime_data.tagline_origin or "")
         end
         
         tipString = tipString .. "\n\n类型：\t\t"
         if anime_data.media_type == "movie" or anime_data.media_type == "tv" then
-            tipString = tipString .. Translation.media_type[anime_data.media_type]
-        else tipString = tipString .. (anime_data.media_type or Translation.media_type["Unknown"])
+            tipString = tipString .. (((Translation[settings["metadata_lang"]] or{}).media_type or{})[anime_data.media_type] or anime_data.media_type or"")
+        else tipString = tipString .. (anime_data.media_type or (Translation["und-XX"] or{}).media_type["Unknown"])
         end
         if not string.isEmpty(anime_data.tv_type) then
-            tipString = tipString .. ", " .. (Translation.media_type[anime_data.tv_type] or anime_data.tv_type or Translation.media_type[""])
+            tipString = tipString .. ", " .. (((Translation[settings["metadata_lang"]] or{}).media_type or{})[anime_data.tv_type] or anime_data.tv_type or (Translation["und-XX"] or{}).media_type[""])
         end
         if anime_data.mo_is_video==true or anime_data.mo_is_video=="true" then
-            tipString = tipString .. ", " .. (Translation.media_type["Movie Video"] or"Video Movie")
+            tipString = tipString .. ", " .. (((Translation[settings["metadata_lang"]] or{}).media_type or{})["Movie Video"] or"Video Movie")
         end
         if not string.isEmpty(anime_data.status) then
-            tipString = tipString .. "\n状态：\t\t".. (Translation.media_status[anime_data.status] or
-                    anime_data.status or Translation.media_status["Unknown"])
+            tipString = tipString .. "\n状态：\t\t".. (((Translation[settings["metadata_lang"]] or{}).media_status or{})[anime_data.status] or
+                    anime_data.status or (Translation["und-XX"] or{}).media_status["Unknown"])
             if anime_data["tv_in_production"]==true or anime_data["tv_in_production"]=="true" then
-                tipString = tipString ..", ".. (Translation.media_status["TV In Production"] or"In Production TV")
+                tipString = tipString ..", ".. (((Translation[settings["metadata_lang"]] or{}).media_status or{})["TV In Production"] or"In Production TV")
             end
         end
         if not table.isEmpty(anime_data.mo_belongs_to_collection) and not string.isEmpty(anime_data.mo_belongs_to_collection.name) then
@@ -3115,14 +3229,14 @@ function menuclick(menuid, anime)
         Array.extendUnique(mediaRegion,anime_data["production_region"],"iso_3166_1")
         if not table.isEmpty(mediaLang) then
             for index, value in ipairs(mediaLang) do
-                mediaLang[index]= Translation.language[value] or value
+                mediaLang[index]= ((Translation[settings["metadata_lang"]] or{}).language or{})[value] or value
             end
             tipString = tipString .. "\n语言：\t\t" .. (Array.toStringLine(mediaLang) or "")
         end
         mediaLang= {}
         if not table.isEmpty(mediaRegion) then
             for index, value in ipairs(mediaRegion) do
-                mediaRegion[index]= Translation.region[value] or value
+                mediaRegion[index]= ((Translation[settings["metadata_lang"]] or{}).region or{})[value] or value
             end
             tipString = tipString .. "\n地区：\t\t" .. (Array.toStringLine(mediaRegion) or "")
         end
@@ -3168,7 +3282,7 @@ function menuclick(menuid, anime)
             for _, value in ipairs(mediaCRating or {}) do
                 if (not string.isEmpty(value.rating)) then
                     table.insert(tmpString,value.rating ..(string.isEmpty(value.origin_region) and{ "" }or
-                            { " (".. (Translation.region[value.origin_region] or value.origin_region) ..")" })[1])
+                            { " (".. (((Translation[settings["metadata_lang"]] or{}).region or{})[value.origin_region] or value.origin_region) ..")" })[1])
                 end
             end
             tipString = tipString .. "\n分级：\t\t" .. (Array.toStringLine(tmpString) or "")
@@ -3183,7 +3297,7 @@ function menuclick(menuid, anime)
             for _, value in ipairs(mediaNetwork or {}) do
                 if (not string.isEmpty(value.name)) then
                     table.insert(tmpString,value.name ..(string.isEmpty(value.origin_region) and{ "" }or
-                            { " (".. (Translation.region[value.origin_region] or value.origin_region) ..")" })[1])
+                            { " (".. (((Translation[settings["metadata_lang"]] or{}).region or{})[value.origin_region] or value.origin_region) ..")" })[1])
                 end
             end
             tipString = tipString .. "\n平台：\t\t" .. (Array.toStringLine(tmpString) or "")
@@ -3194,7 +3308,7 @@ function menuclick(menuid, anime)
             for _, value in ipairs(mediaCompany or {}) do
                 if (not string.isEmpty(value.name)) then
                     table.insert(tmpString,value.name ..(string.isEmpty(value.origin_region) and{ "" }or
-                            { " (".. (Translation.region[value.origin_region] or value.origin_region) ..")" })[1])
+                            { " (".. (((Translation[settings["metadata_lang"]] or{}).region or{})[value.origin_region] or value.origin_region) ..")" })[1])
                 end
             end
             tipString = tipString .. "\n公司：\t\t" .. (Array.toStringLine(tmpString) or "")
@@ -3202,8 +3316,10 @@ function menuclick(menuid, anime)
         mediaCompany= {}
         
         tipString = tipString .. "\n"
-        tipString = tipString .. (string.isEmpty(anime_data.overview_season) and{""}or{ "\n本季剧情：\t" .. (anime_data.overview_season or "") })[1]
-        tipString = tipString .. "\n"..((anime_data.media_type~="movie")and{"剧集"}or{"电影"})[1] .."介绍：\t" .. (anime_data.overview or "")
+        tipString = tipString .. (string.isEmpty(anime_data.overview_season or anime_data.overview_season_origin) and{""}or
+                { "\n本季剧情：\t" .. (anime_data.overview_season or anime_data.overview_season_origin or "") })[1]
+        tipString = tipString .. "\n"..((anime_data.media_type~="movie")and{"剧集"}or{"电影"})[1] .."介绍：\t" ..
+                (anime_data.overview or anime_data.overview_origin or "")
         
         tipString = tipString .. "\n\n演员表：\t\t\n"
         if table.isEmpty(anime_data.person_cast) then
@@ -3222,8 +3338,8 @@ function menuclick(menuid, anime)
             end
         else
             for _, value in ipairs(anime_data.person_crew or {}) do
-                tipString = tipString..""..string.format("%s",((Translation.department[value.department] or value.department)..
-                        "-"..(Translation.credit_job[value.job] or (" "..value.job))) ) .."\t\t\t"..value.original_name.."\n"
+                tipString = tipString..""..string.format("%s",((((Translation[settings["metadata_lang"]] or{}).department or{})[value.department] or value.department)..
+                        "-"..(((Translation[settings["metadata_lang"]] or{}).credit_job or{})[value.job] or (" "..value.job))) ) .."\t\t\t"..value.original_name.."\n"
             end
         end
 
@@ -3237,11 +3353,11 @@ function menuclick(menuid, anime)
         tmpString = anime["url"]
         tipString = tipString .. "\nTMDb链接：\t" .. (tmpString or "")
         tmpString = anime["coverurl"]
-        tipString = tipString .. "\n封面链接：\t" .. Image_tmdb.prefix..Image_tmdb.poster[Image_tmdb.max_ix] ..  (tmpString or anime_data["poster_path"] or "")
-        tipString = tipString .. "\n背景链接：\t" .. Image_tmdb.prefix..Image_tmdb.backdrop[Image_tmdb.max_ix] ..  (tmpString or anime_data["background_path"] or "")
-        local function getStrFanartImage(value, fiType)
+        tipString = tipString .. "\n海报链接：\t" .. (tmpString or "")
+        
+        local function getStrArtImage(value, fiType, prefix_size)
             local tmpLine="\n"
-            tmpLine= tmpLine..string.format("%4s",fiType or "").."("..string.format("%2s",value.lang or"")
+            tmpLine= tmpLine..string.format("%4s",fiType or "").."("..string.format("%4s",((Translation[settings["metadata_lang"]] or{}).language or{})[value.lang] or (Translation["und-XX"] or{}).language[""])
             if not string.isEmpty(value.disc_type) then
                 tmpLine= tmpLine..","..string.format("%6s",value.disc_type or"")
             end
@@ -3250,16 +3366,25 @@ function menuclick(menuid, anime)
             end
             tmpLine= tmpLine.. ")\t"
             if not string.isEmpty(value.url) then
-                tmpLine= tmpLine..Image_fanart.prefix..Image_fanart.size[2]..(value.url or"")
+                tmpLine= tmpLine..prefix_size..(value.url or"")
             end
             return tmpLine
+        end
+        for fTypei, value in pairs(anime_data.tmdb_art_path or {}) do
+            for oisField, oisPath in pairs(value) do
+                if oisField=="origin" then
+                    tipString = tipString .. getStrArtImage(oisPath,(Image_fanart.type_zh[fTypei] or fTypei).." ",Image_tmdb.prefix..((Image_tmdb[fTypei] or{})[Image_tmdb.max_ix] or "original"))
+                elseif oisField=="interf" then
+                    tipString = tipString .. getStrArtImage(oisPath,(Image_fanart.type_zh[fTypei] or fTypei).." ",Image_tmdb.prefix..((Image_tmdb[fTypei] or{})[Image_tmdb.max_ix] or "original"))
+                end
+            end
         end
         for fTypei, value in pairs(anime_data.fanart_path or {}) do
             for oisField, oisPath in pairs(value) do
                 if oisField=="origin" then
-                    tipString = tipString .. getStrFanartImage(oisPath,Image_fanart.type_zh[fTypei].." ")
+                    tipString = tipString .. getStrArtImage(oisPath,(Image_fanart.type_zh[fTypei] or fTypei).." ",Image_fanart.prefix..Image_fanart.size[2])
                 elseif oisField=="interf" then
-                    tipString = tipString .. getStrFanartImage(oisPath,Image_fanart.type_zh[fTypei].."+")
+                    tipString = tipString .. getStrArtImage(oisPath,(Image_fanart.type_zh[fTypei] or fTypei).." ",Image_fanart.prefix..Image_fanart.size[2])
                 end
             end
         end
@@ -3282,23 +3407,23 @@ function menuclick(menuid, anime)
         
         -- 获取 背景图 的二进制数据
         -- local sizeOfFanart,sizeOfTMDb = 2,5
-        local mImgPTmp = "TMDb_prior"
+        local mImgPTmp = "TMDb_only"
         if settings["metadata_image_priority"]=="fanart_only"
             or settings["metadata_image_priority"]=="TMDb_only"
             or settings["metadata_image_priority"]=="TMDb_prior" then
             mImgPTmp= settings["metadata_image_priority"]
         end
-        local miotTmp = settings['metadata_info_origin_title']
-        if (miotTmp == '0') then
-            Metadata_info_origin_image = false
-        elseif (miotTmp == '1') then
-            Metadata_info_origin_image = true
+        local imgLangPri={"origin","interf"}
+        if settings["metadata_info_origin_image"]=="1" then
+            imgLangPri={"origin","interf"}
+        elseif settings["metadata_info_origin_image"]=="0" then
+            imgLangPri={"interf","origin"}
         end
         local function getImgPath(sign)
-            local paramImgFth={ ["poster"]= {["img_fx"]=1,["tmdb_path"]="poster_path",["header_suffix"]="jpeg",},
+            local paramImgFth={ ["poster"]= {["img_fx"]=1,["header_suffix"]="jpeg",},
                             ["banner"]= {["img_fx"]=2,["header_suffix"]="jpeg",},
                             ["thumb"]= {["img_fx"]=3,["header_suffix"]="jpeg",},
-                            ["background"]= {["img_fx"]=4,["tmdb_path"]="background_path",["header_suffix"]="jpeg",},
+                            ["background"]= {["img_fx"]=4,["header_suffix"]="jpeg",},
                             ["logo"]= {["img_fx"]=5,["header_suffix"]="png",},
                             ["logoL"]= {["img_fx"]=6,["header_suffix"]="png",},
                             ["art"]= {["img_fx"]=7,["header_suffix"]="png",},
@@ -3307,48 +3432,54 @@ function menuclick(menuid, anime)
                         }
             local paramImgPath= paramImgFth[sign]
             if paramImgPath==nil then return "" end
-            local backgUrlTmp ,backgUrlTmpP = "",""
-            if mImgPTmp=="TMDb_prior" or mImgPTmp=="TMDb_only" then
-                backgUrlTmp = anime_data[paramImgPath["tmdb_path"] or""]
-                if not string.isEmpty(backgUrlTmp) then
-                    backgUrlTmpP = Image_tmdb.prefix..Image_tmdb.backdrop[Image_tmdb.min_ix] .. backgUrlTmp
-                    backgUrlTmp = Image_tmdb.prefix..Image_tmdb.backdrop[Image_tmdb.max_ix] .. backgUrlTmp
+
+            local backgUrlTmp,backgUrlT,backgUrlF,backgUrlTp,backgUrlFp = nil,nil,nil,nil,nil
+            local backgUrlTmpT= (anime_data.tmdb_art_path or{})[anime_data.media_type..sign]
+            if not table.isEmpty(backgUrlTmpT) then
+                if anime_data.media_type=="movie" then
+                    backgUrlTmpT = backgUrlTmpT[imgLangPri[1]] or backgUrlTmpT[imgLangPri[2]]
+                elseif anime_data.media_type=="tv" then
+                    backgUrlTmpT = backgUrlTmpT[imgLangPri[1]] or backgUrlTmpT[imgLangPri[2]]
+                    local backgUrlTmpS=(anime_data.tmdb_art_path or{})["season"..sign]
+                    if not table.isEmpty(backgUrlTmpS) then
+                        backgUrlTmpT = backgUrlTmpS[imgLangPri[1]] or backgUrlTmpS[imgLangPri[2]] or backgUrlTmpT
+                    end
+                end
+                if not table.isEmpty(backgUrlTmpT) and not string.isEmpty(backgUrlTmpT.url) then
+                    backgUrlT = Image_tmdb.prefix..Image_tmdb.background[Image_tmdb.max_ix] .. backgUrlTmpT.url
+                    backgUrlTp = Image_tmdb.prefix..Image_tmdb.background[Image_tmdb.min_ix] .. backgUrlTmpT.url
                 end
             end
-            if mImgPTmp=="fanart_only" or (string.isEmpty(backgUrlTmp) and mImgPTmp=="TMDb_prior") then
+            if mImgPTmp=="fanart_prior" or (string.isEmpty(backgUrlT) and mImgPTmp=="TMDb_prior") then
                 if anime_data.media_type=="tv" then
-                    if Metadata_info_origin_image==true then
-                        backgUrlTmp = ((((anime_data.fanart_path or{})[Image_fanart["season"][paramImgPath.img_fx or 4]] or{}).origin or{}).url or"")
-                    else
-                        backgUrlTmp = ((((anime_data.fanart_path or{})[Image_fanart["season"][paramImgPath.img_fx or 4]] or{}).interf or{}).url or"")
-                    end
+                    backgUrlTmp = ((((anime_data.fanart_path or{})[Image_fanart["season"][paramImgPath.img_fx]] or{})[imgLangPri[1]] or{}).url or
+                    (((anime_data.fanart_path or{})[Image_fanart["season"][paramImgPath.img_fx]] or{})[imgLangPri[2]] or{}).url or"")
                 end
                 if not string.isEmpty(backgUrlTmp) then
-                    backgUrlTmp = backgUrlTmp
+                    backgUrlF = Image_fanart.prefix..Image_fanart.size[Image_fanart.max_ix]..backgUrlTmp
+                    backgUrlFp = Image_fanart.prefix..Image_fanart.size[Image_fanart.min_ix]..backgUrlTmp
                 else
-                    if Metadata_info_origin_image==true then
-                        backgUrlTmp = ((((anime_data.fanart_path or{})[Image_fanart[anime_data.media_type] [paramImgPath.img_fx or 4]] or{}).origin or{}).url or"")
-                    else
-                        backgUrlTmp = ((((anime_data.fanart_path or{})[Image_fanart[anime_data.media_type] [paramImgPath.img_fx or 4]] or{}).interf or{}).url or"")
-                    end
-                end
-                if not string.isEmpty(backgUrlTmp) then
-                    backgUrlTmpP = Image_fanart.prefix..Image_fanart.size[Image_fanart.min_ix]..backgUrlTmp
-                    backgUrlTmp = Image_fanart.prefix..Image_fanart.size[Image_fanart.max_ix]..backgUrlTmp
-                elseif mImgPTmp=="fanart_prior" then
-                    backgUrlTmp = anime_data["poster_path"]
+                    backgUrlTmp = ((((anime_data.fanart_path or{})[Image_fanart[anime_data.media_type][paramImgPath.img_fx]] or{})[imgLangPri[1]] or{}).url or
+                            (((anime_data.fanart_path or{})[Image_fanart[anime_data.media_type][paramImgPath.img_fx]] or{})[imgLangPri[2]] or{}).url or"")
                     if not string.isEmpty(backgUrlTmp) then
-                        backgUrlTmpP = Image_tmdb.prefix..Image_tmdb.poster[Image_tmdb.min_ix] .. backgUrlTmp
-                        backgUrlTmp = Image_tmdb.prefix..Image_tmdb.poster[Image_tmdb.max_ix] .. backgUrlTmp
+                        backgUrlF = Image_fanart.prefix..Image_fanart.size[Image_fanart.max_ix]..backgUrlTmp
+                        backgUrlFp = Image_fanart.prefix..Image_fanart.size[Image_fanart.min_ix]..backgUrlTmp
+                    elseif mImgPTmp=="fanart_prior" then
+                        if not string.isEmpty(backgUrlT) then
+                            backgUrlF = backgUrlT
+                            backgUrlFp = backgUrlTp
+                        end
                     end
                 end
             end
-            return {["path"]=backgUrlTmp,["path_preview"]=backgUrlTmpP,["header_suffix"]=paramImgPath.header_suffix or"jpeg"}
+            backgUrlF= backgUrlF or backgUrlT
+            backgUrlFp= backgUrlFp or backgUrlTp
+
+            return {["path"]=backgUrlF,["path_preview"]=backgUrlFp,["header_suffix"]=paramImgPath.header_suffix or"jpeg"}
         end
 
-
         local img_back_data=nil
-        local tmpImgPath=getImgPath(settings["metadata_display_imgtype"] or Metadata_display_imgtype)
+        local tmpImgPath=getImgPath(settings["metadata_show_imgtype"] or Metadata_show_imgtype)
         if not table.isEmpty(tmpImgPath) then
             local header = {["Accept"] = "image/"..tmpImgPath.header_suffix}
             local err, reply = kiko.httpget(tmpImgPath.path, {} , header)
