@@ -97,7 +97,7 @@
 
 ## 使用
 
-> 适用版本：TMDb 0.2.1.220424_build  |  TVmazeList 0.1.1.220503_build
+> 适用版本：TMDb 0.2.1.220506_fix  |  TVmazeList 0.1.1.220503_build
 
 刮削来自TMDb的数据，你可以：
 
@@ -115,22 +115,25 @@
 + 依据媒体文件名，匹配刮削数据，以自动关联。
   把播放列表中 未关联的媒体文件，自动关联到弹幕池。
 
-  1. 选中播放列表的需要关联的 文件名 任一项或多项 -> 右键 -> 选中 `TMDb`。
+  + 选中播放列表的需要关联的 文件名 任一项或多项 -> 右键 -> 选中 `TMDb`。
 
   （具体方法见下：[如何匹配媒体文件？](#如何匹配媒体文件)）
 
-+ 在资料库刮削媒体的详细信息。
++ 在资料库刮削媒体的详细信息、标签。
 
-  1. 打开资料标签页，在资料库找到在你要刮削的媒体资料夹，右键 -> 更新。
-   <!-- 2. 在弹出窗口的“番剧搜索”下方的选项卡选择 TMDb，输入电影/剧集名称，就能看到搜索到的结果了。
-   （与前一条类似，只输入标题就好。）-->
-   <!-- 3. 确认无误后点击右上的 √ 。-->
+  + 打开资料标签页，在资料库找到在你要刮削的媒体资料夹，右键 -> 更新，即可更新资料的详细信息。
+    <!-- 2. 在弹出窗口的“番剧搜索”下方的选项卡选择 TMDb，输入电影/剧集名称，就能看到搜索到的结果了。
+    （与前一条类似，只输入标题就好。）-->
+    <!-- 3. 确认无误后点击右上的 √ 。-->
+
+  + 对于多个，打开资料标签页，在资料库任意处 右键 -> 批量操作。
+    在弹出的对话框选取你要刮削的媒体，根据需要点击`更新资料`或`更新标签`。
 
   （具体方法见下：[如何获取资料夹详细信息？](#如何获取资料夹详细信息)）
 
 + \* 通过读取Emby的元数据文件，匹配本地媒体文件。
 
-   如果你使用Emby、并按照Emby组织媒体文件夹，那你可以发现Emby在本地媒体文件同文件夹保存的`.nfo`媒体元数据文件（内含.xml格式文本），获取的详细信息就是来自这个文件。
+  如果你使用Emby、并按照Emby组织媒体文件夹，那你可以发现Emby在本地媒体文件同文件夹保存的`.nfo`媒体元数据文件（内含.xml格式文本），获取的详细信息就是来自这个文件。
   + 需要更改脚本设置的`匹配 - 数据来源`为`local_Emby_nfo`。
   + 从播放列表选中你的媒体文件（此时显示为文件名），右键 -> 选择`关联` -> 选中最后一行的`TMDb`。
 
@@ -152,9 +155,15 @@
 
   右键某行的弹出菜单中，点击TVmaze或季序号集序号，弹出节目或某集的TVmaze页面；点击播放平台及节目类型，弹出媒体主页；点击字幕网站名，弹出搜索节目名称的页面。
 
+<br/>
+
+其他更多设置项见下：[脚本 TMDb 的设置](#脚本-tmdb-的设置)、[脚本 TVmaze 的设置](#脚本-tvmaze-的设置)
+
+<br/>
+
 ## Q & A
 
-> 适用版本：TMDb 0.2.1.220424_build  |  TVmazeList 0.1.1.220503_build
+> 适用版本：TMDb 0.2.2.220506_fix  |  TVmazeList 0.1.1.220503_build
 
 ### 如何申请TMDb的API密钥?
 
@@ -238,19 +247,19 @@
 
 ### 如何设置脚本?
 
-如何设置脚本 tmdb.lua
-
 1. 点击 KikoPlay 左上图标 -> 点击设置；
 
    ![image-Configuring.Script.TMDb-1.1](manual.assets/image-Configuring.Script.TMDb-1.1.1.png)
 <br/>
 
-2. 点击脚本设置 -> 在TMDb一行右键 -> 点击设置；
+2. 点击脚本设置 -> 在 TMDb或TVmazeList 一行右键 -> 点击设置；
 
    ![image-Configuring.Script.TMDb-2.1](manual.assets/image-Configuring.Script.TMDb-2.1.1.png)
 <br/>
 
-3. 在弹出窗口`TMDb API 密钥`那一行的`<<API_Key_Here>>` 处双击 -> 粘贴 上面第7步得到的密钥。其他设置 请根据你的需要选择。
+如何设置脚本 TMDb
+
++ 上一步操作TMDb后，在弹出窗口`TMDb API 密钥`那一行的`<<API_Key_Here>>` 处双击 -> 粘贴 上面第7步得到的密钥。其他设置 请根据你的需要选择。
 
    ![image-Configuring.Script.TMDb-3.1](manual.assets/image-Configuring.Script.TMDb-3.1.1.png)
 <br/>
@@ -286,7 +295,7 @@
 
 对于播放列表中 未关联的媒体文件 时：
 
-   1. 选中播放列表的需要关联的 文件名 任一项或多项 -> 右键 -> 选中 TMDb。
+   1. 选中播放列表的需要关联的 文件名任一项或多项 -> 右键 -> 选中 TMDb。
 
 对于 拖拽媒体文件 到播放列表时：
 
@@ -303,7 +312,10 @@
 
 1. 打开资料标签页，在资料库找到在你要刮削的媒体资料夹，右键->更新。
    （也可以在资料库任意处 右键 -> 添加动画，以添加新的媒体资料。）
-    *注：资料库与弹幕池无关，请尽量不改动媒体标题*
+
+    *注：*资料库与弹幕池无关，请尽量不改动媒体标题。
+
+    *注：*更新后不会保留详细信息中编辑过的更改，会将其覆盖。
 
    ![image-Scraping.by.TMDb-4.1](manual.assets/image-Scraping.by.TMDb-4.1.1.png)
 
@@ -313,7 +325,7 @@
 
    <br/>
 
-2. 刮削完成后，点击媒体资料夹，你可以看到媒体的资料夹显示 海报图片、剧情简介、类型标签等。
+2. 刮削完成后，点击媒体资料夹，你可以看到媒体的资料夹显示 海报图片、剧情简介、演职员表、各种标签等。
 
    ![image-Scraping.by.TMDb-6.1](manual.assets/image-Scraping.by.TMDb-6.1.1.png)
    ![image-Scraping.by.TMDb-6.2](manual.assets/image-Scraping.by.TMDb-6.2.1.png) ![image-Scraping.by.TMDb-6.3](manual.assets/image-Scraping.by.TMDb-6.3.1.png) ![image-Scraping.by.TMDb-6.2](manual.assets/image-Scraping.by.TMDb-6.4.1.png)
@@ -334,7 +346,7 @@
      + 媒体主页，IMDb、TMDb，fanart 的媒体页面；
      + 豆瓣、贴吧、字幕网站 搜索媒体标题的页面；
 
-   + 可以弹出对话框，显示媒体的 图片以及详细信息。
+   + 可以弹出对话框，显示媒体的 图片、详细信息等元数据。
 
     ![image-Scraping.by.TMDb-7.2](manual.assets/image-Scraping.by.TMDb-7.2.1.png)
 
@@ -374,7 +386,9 @@
 
 #### 脚本 TMDb 的设置
 
-> 适用版本：0.2.1.220423_build
+> 适用版本：0.2.1.220506_fix
+
+<br/>
 
 API
 
@@ -448,23 +462,46 @@ API
 
 元数据
 
-+ 元数据 - 刮削媒体元数据
++ 元数据 - 刮削元数据
+
+  + 元数据 - 更新时维持更改
+
+    更新资料夹元数据时，对于之前的编辑的更改(例如描述、演职员表等)，是否保留(当前不支持此功能)。
+
+    + 0：不保留 (默认设置)。
+    + ~~1：保留~~(当前不支持设定为此项)。
+
+  <br/>
+
+  元数据 - 刮削元数据 - 语言相关
 
   + 元数据 - 语言
 
-     搜索何种语言的资料作元数据，选择你需要的`语言编码-地区编码`。看着有很多语言，其实大部分都缺乏资料。
-     *注意*：再次关联导致标题改变时，弹幕仍然按照旧标题识别，请在`管理弹幕池`中手动复制弹幕池到新标题。
+    "按此`语言编码-地区编码`搜索元数据资料，主要指简介、海报、搜索的标题等。看着有很多语言，其实大部分都缺乏资料。
+    *注意*：再次关联导致标题改变时，弹幕仍然按照旧标题识别，请在`管理弹幕池`中手动复制弹幕池到新标题。
 
     + `zh-CN`：中文(中国)。（默认设置）
     + `en-US`：English(US)。`es-ES`：español(España)。`fr-FR`：Français(France)。`ja-JP`：日本語(日本)。`ru-RU`：Русский(Россия)。`zh-HK`：中文(香港特區,中國)。`zh-TW`：中文(台灣省，中國)。
 
-  + 元数据 - 标题使用原语言
+  + 元数据 - 标题优先原语言
 
-     元数据的标题是否使用媒体的原语言。
-     *注意*：再次关联导致标题改变时，弹幕仍然按照旧标题识别，请在`管理弹幕池`中手动复制弹幕到新标题。
+    媒体的标题 是否优先使用媒体原语言。不论此项的设置，更新详细信息时 始终维持已有的标题 (区别于搜索详细信息)。
+    *注意*：再次关联导致标题改变时，弹幕仍然按照旧标题识别，请使用`搜索 - 关键词作标题`的功能重新搜索详细信息。
 
-    + `0`：不使用。（默认设置）
-    + `1`：使用。
+    + 0：优先使用刮削时`元数据 - 语言`所设定的语言 (默认设置)。
+    + 1：优先使用原语言。
+
+  + 元数据 - 图片优先原语言
+
+    媒体的图片 是否优先使用媒体原语言。
+
+    + 0：优先使用刮削时`元数据 - 语言`所设定的语言 (默认设置)。
+    + 1：优先使用原语言。
+    + 2：优先使用无语言。
+
+  <br/>
+
+  元数据 - 刮削元数据 - 演职员相关
 
   + 元数据 - 演员总数至多为
 
@@ -472,7 +509,7 @@ API
      数目为 0 时，不保留；数目 <0 时，保留所有；
      数目为小数时，则向负无穷方向取整。
 
-    + 默认设置 `10`
+    + 默认设置 `12`
 
   + 元数据 - 职员总数至多为
 
@@ -480,7 +517,14 @@ API
      数目为 0 时，不保留；数目 <0 时，保留所有；
      数目为小数时，则向负无穷方向取整。
 
-    + 默认设置 `7`
+    + 默认设置 `12`
+
+  + 元数据 - 本季所有演职员
+
+    元数据对于剧集某季的演职员表，是否也包括所有单集的演职员。
+
+    + 0：仅包括出现于或负责本季整季的演职员 (默认设置)。
+    + 1：包含前者，以及出现于或负责各集的演职员(按默认顺序排列取前几个)。
 
   <br/>
 
@@ -495,16 +539,7 @@ API
 
     + `fanart_prior`：图片优先fanart，(由于fanart的图片种类较多，因此TMDb的图片通常会被忽略)。
     + `TMDb_only`：图片仅TMDb，(不会从fanart刮削图片，仅此项不需要 fanart的API密钥)。（默认设置）
-    + `TMDb_prior`：图片优先TMDb，TMDb提供海报、背景，其他的由fanart提供。
-
-  + 元数据 - 图片使用原语言
-
-     元数据中fanart的图片是否使用媒体原语言，仅适用于fanart的图片。TMDb仍参照`元数据 - 语言`中的设置。
-     不适用于 `元数据 - 图片主要来源` 设置为`TMDb_only`时，该情况下图片仍优先参照`元数据 - 语言`的语言。
-     仅当 `元数据 - 图片主要来源` 设置为`fanart_prior`或`TMDb_prior`时 对fanart的图片有效。
-
-    + `0`：不使用。
-    + `1`：使用。（默认设置）
+    + `TMDb_prior`：图片优先TMDb，TMDb提供海报、背景、标志，其他的由fanart提供。
 
   + 元数据 - 显示的图片种类
 
@@ -587,7 +622,13 @@ API
 
    ~~\* 偶然发现 TMDb里剧集的默认演员表是全季共用的，且更贴合最后一季，而非全剧主要角色；职员表主要为导演/单集导演，少见其他职员。~~
 
-+ [ ]  资料库右键菜单添加 显示媒体元数据 的功能；
++ [x]  资料库右键菜单添加 显示媒体元数据 的功能；
+
++ [ ] 添加对 剧集组、列表 的支持；
+
++ [ ] 添加 推荐、相似 的功能；
+
++ [ ] 添加 弹出播映视频的网站 的功能；
 
 + [ ] ~~不记得是什么了，但是感觉好像少了什么；~~
 
@@ -627,6 +668,7 @@ Every piece of data has been added by our amazing community dating back to 2008.
 Say hi to your new TVguide. Never miss a show again!
 
 Find episode information for any show on any device. anytime, anywhere!
+<br/>
 
 ![TVmaze-logo](manual.assets/tvm-header-logo.png)
 <br/>
@@ -638,6 +680,7 @@ Find episode information for any show on any device. anytime, anywhere!
 > 本节内容来自 [fanart](https://fanart.tv/)
 
 Logos, Backgrounds, Posters and more for your TV, Movie and Music collections.
+<br/>
 
 ![fanart-logo](manual.assets/Fanart-logo-new.png)
 <br/>
@@ -651,6 +694,7 @@ Logos, Backgrounds, Posters and more for your TV, Movie and Music collections.
 [Emby](https://emby.media/) - Your personal media on any device
 
 Bringing all of your home videos, music, and photos together into one place has never been easier. Your personal Emby Server automatically converts and streams your media on-the-fly to play on any device.
+<br/>
 
 ![Emby-logo](manual.assets/Emby-logo-white_1881.png)
 <br/>
@@ -660,6 +704,7 @@ Bringing all of your home videos, music, and photos together into one place has 
 > 本脚本是用于弹幕视频播放器 [KikoPlay](https://github.com/KikoPlayProject/KikoPlay) 的资料脚本。
 
 [KikoPlay](https://github.com/KikoPlayProject/KikoPlay) - 不仅仅是全功能弹幕播放器
+<br/>
 
 ![KikoPlay-logo](manual.assets/kikoplay.png)
 <br/>
@@ -687,4 +732,3 @@ KikoPlay支持Lua脚本，有三种类型：
 有新脚本可直接向 [`/KikoPlayProject/KikoPlayScript`](https://github.com/KikoPlayProject/KikoPlayScript) 提交PR。
 
 如果有`/KikoPlayProject/KikoPlayScript`的相关问题，创建issue、或者到QQ群874761809反馈。
-s
