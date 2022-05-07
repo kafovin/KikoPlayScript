@@ -11,13 +11,13 @@
 
 使用 脚本`TMDb`，你可以得到：
 
-  ![image-Scraping.by.TMDb-2.1](tmdb.lua-manual.assets/image-Scraping.by.TMDb-2.1.1.png)
+  ![image-Scraping.by.TMDb-2.1](manual.assets/image-Scraping.by.TMDb-2.1.1.png)
 
 <br/>
 
 使用 脚本`TVmazeList`，你可以得到：
 
-  ![image-TVmazeList-1.1](tmdb.lua-manual.assets/image-TVmazeList-1.1.1.png)
+  ![image-TVmazeList-1.1](manual.assets/image-TVmazeList-1.1.1.png)
 
 <br/>
 
@@ -45,6 +45,8 @@
   + [KikoPlay](#kikoplay)
     + [KikoPlay脚本仓库](#kikoplay脚本仓库)
 + [反馈](#反馈)
+
+<br/>
 
 ## 安装
 
@@ -76,9 +78,9 @@
 
 <br/>
 
-查看来自TVmaze的剧集节目单，你需要：*（功能不全，暂定）*
+查看来自TVmaze的剧集节目单，你需要：
 
-  *注*：目前(20220305) 番组日历脚本支持且仅支持一个脚本执行，使用 TVmazeList 脚本便不能再使用原本的 bangumi 脚本。
+  <!-- *注*：目前(20220305) 番组日历脚本支持且仅支持一个脚本执行，使用 TVmazeList 脚本便不能再使用原本的 bangumi 脚本。-->
 
 1. 下载脚本文件。
 
@@ -88,24 +90,23 @@
 
    （假设目录 `.\KikoPlay`为KikoPlay.exe 所在的文件夹）
 
-2. 移动 `.\KikoPlay\script\bgm_calendar\`文件夹下的其他脚本到别的文件夹下，例如`.\KikoPlay\script\bgm_calendar\backup\`。
+    <!-- 2. 移动 `.\KikoPlay\script\bgm_calendar\`文件夹下的其他脚本到别的文件夹下，例如`.\KikoPlay\script\bgm_calendar\backup\`。
+    因为目前(20220305) 番组日历脚本支持且仅支持一个脚本执行。要使用原本的 bangumi 脚本，请移除 TVmazeList 脚本，再将原本的脚本放回`.\KikoPlay\script\bgm_calendar\`。-->
 
-   因为目前(20220305) 番组日历脚本支持且仅支持一个脚本执行。要使用原本的 bangumi 脚本，请移除 TVmazeList 脚本，再将原本的脚本放回`.\KikoPlay\script\bgm_calendar\`。
-
-3. 你可以开始使用啦。
+2. 你可以开始使用啦。
 
 ## 使用
 
-> 适用版本：TMDb 0.2.2.220424_build  |  TVmazeList 0.1.1.20220303_build
+> 适用版本：TMDb 0.2.1.220424_build  |  TVmazeList 0.1.1.220503_build
 
 刮削来自TMDb的数据，你可以：
 
 + 把播放列表中的媒体文件关联到弹幕池时，使用 TMDb 搜索媒体的标题，选择你想要的并确认。
 
-   1. 打开播放标签页（首页），你在播放列表找到你要搜索的媒体文件，右键->关联->关联弹幕池。
-   2. 在弹出窗口的“搜索”下方的选项卡选择 TMDb，输入电影/剧集名称，就能看到搜索到的结果了。
-   3. 选中你需要的条目，会进入集数选择的页面，把你的媒体文件与集数信息对应，
-   4. 确认无误后点击右上的 √ 。
+  1. 打开播放标签页（首页），你在播放列表找到你要搜索的媒体文件，右键->关联->关联弹幕池。
+  2. 在弹出窗口的“搜索”下方的选项卡选择 TMDb，输入电影/剧集名称，就能看到搜索到的结果了。
+  3. 选中你需要的条目，会进入集数选择的页面，把你的媒体文件与集数信息对应，
+  4. 确认无误后点击右上的 √ 。
 
   （具体方法见下：[如何搜索媒体数据？](#如何搜索媒体数据)）
 
@@ -114,13 +115,13 @@
 + 依据媒体文件名，匹配刮削数据，以自动关联。
   把播放列表中 未关联的媒体文件，自动关联到弹幕池。
 
-   1. 选中播放列表的需要关联的 文件名 任一项或多项 -> 右键 -> 选中 `TMDb`。
+  1. 选中播放列表的需要关联的 文件名 任一项或多项 -> 右键 -> 选中 `TMDb`。
 
   （具体方法见下：[如何匹配媒体文件？](#如何匹配媒体文件)）
 
 + 在资料库刮削媒体的详细信息。
 
-   1. 打开资料标签页，在资料库找到在你要刮削的媒体资料夹，右键 -> 更新。
+  1. 打开资料标签页，在资料库找到在你要刮削的媒体资料夹，右键 -> 更新。
    <!-- 2. 在弹出窗口的“番剧搜索”下方的选项卡选择 TMDb，输入电影/剧集名称，就能看到搜索到的结果了。
    （与前一条类似，只输入标题就好。）-->
    <!-- 3. 确认无误后点击右上的 √ 。-->
@@ -135,71 +136,77 @@
 
 <br/>
 
-查看来自TVmaze的剧集节目单，你可以：*（功能不全，暂定）*
+查看来自TVmaze的剧集节目单，你可以：
 
-+ 打开下载标签页，点击左侧侧边栏中番组日历的一项(日历形状的图标)，即可查看某一周的节目单(目前仅限GB、US地区)。第一次打开时默认为本周。
++ 打开下载标签页，点击左侧侧边栏中番组日历的一项(日历形状的图标)，即可查看某一周的节目单(目前仅限GB、US、JP地区)。软件打开时日历时间表为本周。
 
-   未加载成功时，请等待约10~30秒后刷新。
+   未加载成功时，请约10~30秒后再刷新。
 
 + 在右上方可以选择并查看某一周的节目单。
 
+  最后一行为本周、倒数第二行为下一周，往过去出现几周可以在脚本设置中设定。
+
   （具体方法见下：[如何查看某一周的节目单？](#如何查看某一周的节目单)）
+
++ `放送站点`一列，标记了该周播出的某季某集、播出平台及节目类型。显示的节目类型可以在脚本设置中设定。
+
+  右键某行的弹出菜单中，点击TVmaze或季序号集序号，弹出节目或某集的TVmaze页面；点击播放平台及节目类型，弹出媒体主页；点击字幕网站名，弹出搜索节目名称的页面。
 
 ## Q & A
 
-> 适用版本：TMDb 0.2.2.220424_build  |  TVmazeList 0.1.1.20220303_build
+> 适用版本：TMDb 0.2.1.220424_build  |  TVmazeList 0.1.1.220503_build
 
 ### 如何申请TMDb的API密钥?
 
 1. 打开 [The Movie Database (TMDB) 首页](https://www.themoviedb.org/)，这是一个类似IMDb、豆瓣的媒体数据信息网站，涵盖电影、剧集、演员等。
 
-   ![image-Getting.TMDb.API-1.1](tmdb.lua-manual.assets/image-Getting.TMDb.API-1.1.1.png)
+   ![image-Getting.TMDb.API-1.1](manual.assets/image-Getting.TMDb.API-1.1.1.png)
    <br/>
 
 2. 点击页面顶端右侧的 `EN` 修改语言为 `zh-CN`，这样你就可以看到中文页面了。
 
-   ![image-Getting.TMDb.API-2.1](tmdb.lua-manual.assets/image-Getting.TMDb.API-2.1.1.png)
+   ![image-Getting.TMDb.API-2.1](manual.assets/image-Getting.TMDb.API-2.1.1.png)
    <br/>
 
-   ![image-Getting.TMDb.API-2.2](tmdb.lua-manual.assets/image-Getting.TMDb.API-2.2.1.png)
+   ![image-Getting.TMDb.API-2.2](manual.assets/image-Getting.TMDb.API-2.2.1.png)
    <br/>
 
 3. 你需要一个账户来登录。
    + 没有账户则点击 `注册`，需要一个用户名、一个密码，以及用来验证的电子邮件。
    注册后，登录你刚刚使用的邮箱，查看TMDb发送的验证邮件，确认无误之后验证即可。然后打开登录页面登录。
-   ![image-Getting.TMDb.API-3.1](tmdb.lua-manual.assets/image-Getting.TMDb.API-3.1.1.png)
+   ![image-Getting.TMDb.API-3.1](manual.assets/image-Getting.TMDb.API-3.1.1.png)
    <br/>
    + 如果你已有账户点击右上的`登录`，需要用户名和密码；
 
-    ![image-Getting.TMDb.API-3.2](tmdb.lua-manual.assets/image-Getting.TMDb.API-3.2.1.png)
+    ![image-Getting.TMDb.API-3.2](manual.assets/image-Getting.TMDb.API-3.2.1.png)
        <br/>
 
 4. 登录后，点击在同样位置的你的头像，在弹出菜单点击账户设置。
 
-   ![image-Getting.TMDb.API-4.1](tmdb.lua-manual.assets/image-Getting.TMDb.API-4.1.1.png)
+   ![image-Getting.TMDb.API-4.1](manual.assets/image-Getting.TMDb.API-4.1.1.png)
 <br/>
 
 5. 点击默认语言 (default language)，输入/选择 `zh-CN`，界面就是简体中文的了。
 
-   ![image-Getting.TMDb.API-5.1](tmdb.lua-manual.assets/image-Getting.TMDb.API-5.1.1.png)
+   ![image-Getting.TMDb.API-5.1](manual.assets/image-Getting.TMDb.API-5.1.1.png)
    <br/>
 
 6. 点击左侧边栏的 [API](https://www.themoviedb.org/settings/api)，在新的页面点击申请一个api。 *本图图源自：@ 伪宅中的死宅*
 
-   ![image-Getting.TMDb.API-6.1](tmdb.lua-manual.assets/image-Getting.TMDb.API-6.1.1.png)
+   ![image-Getting.TMDb.API-6.1](manual.assets/image-Getting.TMDb.API-6.1.1.png)
    <br/>
 
 7. 然后把 `API 密钥 (v3 auth)`下的 一串字母数字复制下来，你就得到了你的TMDb的 **API密钥**。
    <br/>
 
-   ![image-Getting.TMDb.API-7.1](tmdb.lua-manual.assets/image-Getting.TMDb.API-7.1.1.png)
+   ![image-Getting.TMDb.API-7.1](manual.assets/image-Getting.TMDb.API-7.1.1.png)
 <br/>
 
 8. 选中下方`范例 API 请求`下的链接，并在新标签页打开，会出现了一些奇怪的东西，说明网络能够连接上，否则说明你的网络无法连接到。
 
-   ![image-Getting.TMDb.API-8.1](tmdb.lua-manual.assets/image-Getting.TMDb.API-8.1.1.png)
+   ![image-Getting.TMDb.API-8.1](manual.assets/image-Getting.TMDb.API-8.1.1.png)
 
-   ![image-Getting.TMDb.API-8.2](tmdb.lua-manual.assets/image-Getting.TMDb.API-8.2.1.png)  ![image-Getting.TMDb.API-8.3](tmdb.lua-manual.assets/image-Getting.TMDb.API-8.3.1.png)
+   ![image-Getting.TMDb.API-8.2](manual.assets/image-Getting.TMDb.API-8.2.1.png)  ![image-Getting.TMDb.API-8.3](manual.assets/image-Getting.TMDb.API-8.3.1.png)
    <br/>
 
    + 若无法连接到，那么你可能需要修改`hosts`文件，请搜索`Windows 修改 hosts`来了解相关教程。
@@ -235,17 +242,17 @@
 
 1. 点击 KikoPlay 左上图标 -> 点击设置；
 
-   ![image-Configuring.Script.TMDb-1.1](tmdb.lua-manual.assets/image-Configuring.Script.TMDb-1.1.1.png)
+   ![image-Configuring.Script.TMDb-1.1](manual.assets/image-Configuring.Script.TMDb-1.1.1.png)
 <br/>
 
 2. 点击脚本设置 -> 在TMDb一行右键 -> 点击设置；
 
-   ![image-Configuring.Script.TMDb-2.1](tmdb.lua-manual.assets/image-Configuring.Script.TMDb-2.1.1.png)
+   ![image-Configuring.Script.TMDb-2.1](manual.assets/image-Configuring.Script.TMDb-2.1.1.png)
 <br/>
 
 3. 在弹出窗口`TMDb API 密钥`那一行的`<<API_Key_Here>>` 处双击 -> 粘贴 上面第7步得到的密钥。其他设置 请根据你的需要选择。
 
-   ![image-Configuring.Script.TMDb-3.1](tmdb.lua-manual.assets/image-Configuring.Script.TMDb-3.1.1.png)
+   ![image-Configuring.Script.TMDb-3.1](manual.assets/image-Configuring.Script.TMDb-3.1.1.png)
 <br/>
 
 其他更多设置项见下：[脚本 TMDb 的设置](#脚本-tmdb-的设置)、[脚本 TVmaze 的设置](#脚本-tvmaze-的设置)
@@ -256,15 +263,15 @@
 
 1. 你在播放列表选一个媒体文件，右键->关联->关联弹幕池。
 
-   ![image-Scraping.by.TMDb-1.1](tmdb.lua-manual.assets/image-Scraping.by.TMDb-1.1.1.png)
+   ![image-Scraping.by.TMDb-1.1](manual.assets/image-Scraping.by.TMDb-1.1.1.png)
 <br/>
 
 2. 在弹出窗口的“搜索”下方的选项卡 选 TMDb，输入电影/剧集名称，就能看到搜索到的结果了。
 
    （输入标题就好，默认设置部分支持形如"S01"、"第1季"等以空格与标题隔开的剧集季序号（，年份等搜索限制条件 这里还不支持）。\(￣▽￣\)  
 
-   ![image-Scraping.by.TMDb-2.1.1](tmdb.lua-manual.assets/image-Scraping.by.TMDb-2.1.1.png)
-   ![image-Scraping.by.TMDb-2.1.2](tmdb.lua-manual.assets/image-Scraping.by.TMDb-2.1.2.png)
+   ![image-Scraping.by.TMDb-2.1.1](manual.assets/image-Scraping.by.TMDb-2.1.1.png)
+   ![image-Scraping.by.TMDb-2.1.2](manual.assets/image-Scraping.by.TMDb-2.1.2.png)
 <br/>
 
 3. 选中你需要的条目，会进入集数选择的页面。在分集那一列的选中的一行，先双击、再单击，会弹出集数的列表，选中你需要的，把你的媒体文件与集数信息对应。
@@ -272,7 +279,7 @@
 
    （电影会显示为一集，剧集为多集。）
 
-   ![image-Scraping.by.TMDb-3.1](tmdb.lua-manual.assets/image-Scraping.by.TMDb-3.1.1.png)
+   ![image-Scraping.by.TMDb-3.1](manual.assets/image-Scraping.by.TMDb-3.1.1.png)
 <br/>
 
 ### 如何匹配媒体文件?
@@ -289,7 +296,7 @@
 
    3. 现在拖拽媒体文件到播放列表中时会自动关联了。
 
-![image-Scraping.by.TMDb-8.1](tmdb.lua-manual.assets/image-Scraping.by.TMDb-8.1.1.png)
+![image-Scraping.by.TMDb-8.1](manual.assets/image-Scraping.by.TMDb-8.1.1.png)
 <br/>
 
 ### 如何获取资料夹详细信息?
@@ -298,29 +305,29 @@
    （也可以在资料库任意处 右键 -> 添加动画，以添加新的媒体资料。）
     *注：资料库与弹幕池无关，请尽量不改动媒体标题*
 
-   ![image-Scraping.by.TMDb-4.1](tmdb.lua-manual.assets/image-Scraping.by.TMDb-4.1.1.png)
+   ![image-Scraping.by.TMDb-4.1](manual.assets/image-Scraping.by.TMDb-4.1.1.png)
 
    <!-- <br/>-->
    <!-- 2. 在弹出窗口的“番剧搜索”下方的选项卡选择 TMDb，输入电影/剧集名称，就能看到搜索到的结果了。确认无误后点击右上的 √ 。（输入关键词的方式前者相同）-->
-   <!--- ![image-Scraping.by.TMDb-5.1](tmdb.lua-manual.assets/image-Scraping.by.TMDb-5.1.1.png) -->
+   <!--- ![image-Scraping.by.TMDb-5.1](manual.assets/image-Scraping.by.TMDb-5.1.1.png) -->
 
    <br/>
 
 2. 刮削完成后，点击媒体资料夹，你可以看到媒体的资料夹显示 海报图片、剧情简介、类型标签等。
 
-   ![image-Scraping.by.TMDb-6.1](tmdb.lua-manual.assets/image-Scraping.by.TMDb-6.1.1.png)
-   ![image-Scraping.by.TMDb-6.2](tmdb.lua-manual.assets/image-Scraping.by.TMDb-6.2.1.png) ![image-Scraping.by.TMDb-6.3](tmdb.lua-manual.assets/image-Scraping.by.TMDb-6.3.1.png) ![image-Scraping.by.TMDb-6.2](tmdb.lua-manual.assets/image-Scraping.by.TMDb-6.4.1.png)
+   ![image-Scraping.by.TMDb-6.1](manual.assets/image-Scraping.by.TMDb-6.1.1.png)
+   ![image-Scraping.by.TMDb-6.2](manual.assets/image-Scraping.by.TMDb-6.2.1.png) ![image-Scraping.by.TMDb-6.3](manual.assets/image-Scraping.by.TMDb-6.3.1.png) ![image-Scraping.by.TMDb-6.2](manual.assets/image-Scraping.by.TMDb-6.4.1.png)
 
    如果标签等有格式不同，原因可能是此资料是在旧版本搜索、刮削的 与当前不兼容，导致当前更新详细信息时 有部分元数据无法识别。请
-     1. 在 步骤1 中选择`搜索详细信息`重新搜索。
-     2. 如果 当前资料夹的标题 与 当前TMDb搜索该媒体对应的标题 不符时，退出搜索对话框。在设置 -> 脚本设置 -> TMDb -> 设置 `搜索 - 关键词作标题`为`1`(即使用)，并确认`√`。
-     3. 在`搜索详细信息`弹出的对话框中，使用 当前标题 作关键词，选择对应的媒体，并确认`√`。
-     4. 如果在刚才的 步骤ii 更改了设置，请恢复设置；即 把TMDb脚本设置的 `搜索 - 关键词作标题` 改为默认的`0`(即不使用)，并确认`√`。
+   1. 在 步骤1 中选择`搜索详细信息`重新搜索。
+   2. 如果 当前资料夹的标题 与 当前TMDb搜索该媒体对应的标题 不符时，退出搜索对话框。在设置 -> 脚本设置 -> TMDb -> 设置 `搜索 - 关键词作标题`为`1`(即使用)，并确认`√`。
+   3. 在`搜索详细信息`弹出的对话框中，使用 当前标题 作关键词，选择对应的媒体，并确认`√`。
+   4. 如果在刚才的 步骤2.2 更改了设置，请恢复设置；即 把TMDb脚本设置的 `搜索 - 关键词作标题` 改为默认的`0`(即不使用)，并确认`√`。
 <br/>
 
 3. 另外，在资料标签页，从资料库找到你要打开链接的媒体资料夹并 右键，你可以看到有多种功能。
 
-   ![image-Scraping.by.TMDb-7.1](tmdb.lua-manual.assets/image-Scraping.by.TMDb-7.1.1.png)
+   ![image-Scraping.by.TMDb-7.1](manual.assets/image-Scraping.by.TMDb-7.1.1.png)
 <br/>
 
    + 可以从你的浏览器弹出媒体对应的页面
@@ -329,7 +336,7 @@
 
    + 可以弹出对话框，显示媒体的 图片以及详细信息。
 
-    ![image-Scraping.by.TMDb-7.2](tmdb.lua-manual.assets/image-Scraping.by.TMDb-7.2.1.png)
+    ![image-Scraping.by.TMDb-7.2](manual.assets/image-Scraping.by.TMDb-7.2.1.png)
 
    \* 右键菜单部分功能目前仅限 Windows 系统。
 <br/>
@@ -338,32 +345,36 @@
 
 查看来自TVmaze的剧集节目单：*（功能不全，暂定）*
 
-+ 打开下载标签页，点击左侧侧边栏中番组日历的一项(日历形状的图标)，即可查看某一周的节目单(目前仅限GB、US地区)。
-  第一次打开时默认为本周。
++ 打开下载标签页，点击左侧侧边栏中番组日历的一项(日历形状的图标)，即可查看某一周的节目单(目前仅限GB、US、JP地区)。
+  第一次打开时显示为本周。
 
-   未加载成功时，请等待约10~30秒后刷新。
+   未加载成功时，请约10~30秒后再刷新。
 
-  ![image-TVmazeList-1.1](tmdb.lua-manual.assets/image-TVmazeList-1.1.1.png)
+  ![image-TVmazeList-1.1](manual.assets/image-TVmazeList-1.1.1.png)
 <br/>
 
 + 在右上方可以选择并查看某一周的节目单。
 
   + 以周日为一周的第一天，以周日日期代表这一周，名称为形如`YYYY-mm-dd`的年月日。
-  + 第一次打开时默认为本周，即待选列表里的最后一行。待选列表依次为 自定义某一周、此前第二周、前一周、后一周、本周。
+  + 第一次打开时默认为本周，即待选列表里的最后一行。待选列表依次为 自定义某一周、此前几周、下一周、本周。
   + 点击`自定义星期`，可以指定任意某天的日期来查看其所在周的节目单。
   第一次选择此项或点击`刷新`时，可以在弹出对话框输入形如`YYYY-mm-dd`的年月日，并确认`√`。
   + 未加载成功时，请等待约10\~30秒后刷新。
     更换日历为其他加载过的某一周时，会显示之前得到的该周节目单。
     更换日历为其他未加载过的某一周时，请等待约10~30秒后刷新或操作。
 
-  ![image-TVmazeList-2.1](tmdb.lua-manual.assets/image-TVmazeList-2.1.1.png)
+  ![image-TVmazeList-2.1](manual.assets/image-TVmazeList-2.1.1.png)
+<br/>
+
+  + 分周列表中往过去显示几周，可以在脚本设置中设定，默认近`10`周。
+
 <br/>
 
 ### 更多设置项
 
 #### 脚本 TMDb 的设置
 
-> 适用版本：0.2.2.220423_build
+> 适用版本：0.2.1.220423_build
 
 API
 
@@ -509,16 +520,18 @@ API
 
 #### 脚本 TVmaze 的设置
 
-> 适用版本：0.1.1.20220303_build
+> 适用版本：0.1.1.220503_build
 
 时间表
 
 + 时间表 - 剧集类型
 
-   时间表中出现的剧集类型。
+  时间表中出现的剧集、节目类型。
 
-  + `series_only`：仅剧集。
-  + `series_shows`：包括剧集、节目等。（默认设置）
+  + `scripted`：包含剧本类、动画类、纪录类等剧集 (默认)。
+  + `scripted_variety`：包含前者，以及综艺节目、颁奖节目等。
+  + `scripted_show`：包含前者，以及游戏节目、真人节目、访谈节目、讨论节目等。
+  + `tv_show`：包括前者，以及体育节目、新闻节目等，即所有剧集和节目。
 
 + 时间表 - 排序
 
@@ -527,6 +540,19 @@ API
   + `time`：按时间升序。
   + `timeslot`：按时间档升序。（默认设置）
   + `title`：按名称升序。
+
+分周列表
+
++ 分周列表 - 近几周
+
+  分周的列表中，显示现在及以前几周。列表倒数第2个为 下一周，最后一个为本周，此二者始终显示。改变设定此项后，请保存脚本设置后重启，方可查看新的分周列表。
+
+  近1周为 `1`(即本周)，近2周为 `2`(即本周、上一周)，以此类推。
+
+  + `0`：自1989-12-17所在一周至今。
+  + `10`：近10周 (默认)。",
+
+  *注：* 用 1989-12-17 是因为TVmaze网站日历的默认显示，似乎从这一天开始逐渐有内容，即 The Simpsons S01E01 播出时的那一周。
 
 时间
 
@@ -563,7 +589,7 @@ API
 
 + [ ]  资料库右键菜单添加 显示媒体元数据 的功能；
 
-+ [ ]  不记得是什么了，但是感觉好像少了什么；
++ [ ] ~~不记得是什么了，但是感觉好像少了什么；~~
 
 + [ ]  ...
 
@@ -584,7 +610,7 @@ The Movie Database (TMDB) is a community built movie and TV database.
 
 Every piece of data has been added by our amazing community dating back to 2008. TMDb's strong international focus and breadth of data is largely unmatched and something we're incredibly proud of. Put simply, we live and breathe community and that's precisely what makes us different.
 
-![img-TMDB-logo](tmdb.lua-manual.assets/TMDb-logo-blue_short.svg)
+![img-TMDB-logo](manual.assets/TMDb-logo-blue_short.svg)
 
 + tmdb首页  -   [https://www.themoviedb.org/](https://www.themoviedb.org/)
 + 个人设置 -   [https://www.themoviedb.org/settings/account](https://www.themoviedb.org/settings/account)
@@ -602,7 +628,7 @@ Say hi to your new TVguide. Never miss a show again!
 
 Find episode information for any show on any device. anytime, anywhere!
 
-![TVmaze-logo](tmdb.lua-manual.assets/tvm-header-logo.png)
+![TVmaze-logo](manual.assets/tvm-header-logo.png)
 <br/>
 
 ### fanart
@@ -613,7 +639,7 @@ Find episode information for any show on any device. anytime, anywhere!
 
 Logos, Backgrounds, Posters and more for your TV, Movie and Music collections.
 
-![fanart-logo](tmdb.lua-manual.assets/Fanart-logo-new.png)
+![fanart-logo](manual.assets/Fanart-logo-new.png)
 <br/>
 
 ### Emby
@@ -626,7 +652,7 @@ Logos, Backgrounds, Posters and more for your TV, Movie and Music collections.
 
 Bringing all of your home videos, music, and photos together into one place has never been easier. Your personal Emby Server automatically converts and streams your media on-the-fly to play on any device.
 
-![Emby-logo](tmdb.lua-manual.assets/Emby-logo-white_1881.png)
+![Emby-logo](manual.assets/Emby-logo-white_1881.png)
 <br/>
 
 ### KikoPlay
@@ -635,7 +661,7 @@ Bringing all of your home videos, music, and photos together into one place has 
 
 [KikoPlay](https://github.com/KikoPlayProject/KikoPlay) - 不仅仅是全功能弹幕播放器
 
-![KikoPlay-logo](tmdb.lua-manual.assets/kikoplay.png)
+![KikoPlay-logo](manual.assets/kikoplay.png)
 <br/>
 
 #### KikoPlay脚本仓库
@@ -661,3 +687,4 @@ KikoPlay支持Lua脚本，有三种类型：
 有新脚本可直接向 [`/KikoPlayProject/KikoPlayScript`](https://github.com/KikoPlayProject/KikoPlayScript) 提交PR。
 
 如果有`/KikoPlayProject/KikoPlayScript`的相关问题，创建issue、或者到QQ群874761809反馈。
+s
