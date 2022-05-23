@@ -5,9 +5,9 @@
 info = {
     ["name"] = "TVmazeList",
     ["id"] = "Kikyou.b.TVmazeList",
-	["desc"] = "TVmaze 剧集日历脚本（测试中，不稳定） Edited by: kafovin \n"..
+    ["desc"] = "TVmaze 剧集日历脚本（测试中，不稳定） Edited by: kafovin \n"..
                 "从 tvmaze.com 刮削剧集的日历时间表。",
-	["version"] = "0.1.1", -- 0.1.1.20220503_build
+    ["version"] = "0.1.1", -- 0.1.1.20220522_fix
 }
 
 -- 设置项
@@ -23,7 +23,7 @@ settings = {
     ["schedule_sort"]={
         ["title"]="时间表 - 排序",
         ["default"]="timeslot",
-        ["desc"]="将每日时间表按此顺序排列。\n"..
+        ["desc"]="将每日时间表按此顺序排列，顺序相同的以`标题 季序号 集序号`为序。\n"..
                 "time：按时间升序。timeslot：按时间档升序 (默认)。title：按名称升序。",
                 -- "default：默认。time：按时间升序。",
         ["choices"]="time,timeslot,title",
@@ -69,7 +69,7 @@ _, Site_map = kiko.json2table([[{"acfun":{"title":"AcFun","urlTemplate":"https:/
 
 Array={}
 Datetime={}
-Schedule_info={["country"]= {"GB","US","JP"},}
+Schedule_info={["country"]= {"GB","US","JP","CN"},}
 Calendar_group={
     ["deviance_old"]={-1,1,0},
     ["deviance_older"]=-10,
@@ -260,16 +260,16 @@ function getbgmlist(season)
     local hGetBatchTable={ ["url"]= {}, ["query"]= {}, ["header"]= {}, ["redirect"]= true, }
     local dday0100=sunday0100 -- each day stamp
     local replyCs,contentCs, objCs=nil,nil, {}
-    local urlPrefix={"https://api.tvmaze.com/schedule","https://api.tvmaze.com/schedule/web"}
-    for _, urlPrefixV in ipairs(urlPrefix) do
-        for wday = -1, 7, 1 do
-            dday0100=sunday0100 +86400*wday -- 24*3600=86400
-            local queryCs = {
-                ["date"]=os.date("%Y-%m-%d",dday0100+3600),
-                ["country"]="",
-            }
-            local header = {["Accept"] = "application/json"}
+    local urlPrefix={"https://api.tvmaze.com/schedule"}
+    for wday = -1, 7, 1 do
+        dday0100=sunday0100 +86400*wday -- 24*3600=86400
+        local queryCs = {
+            ["date"]=os.date("%Y-%m-%d",dday0100+3600),
+            ["country"]=nil,
+        }
+        local header = {["Accept"] = "application/json"}
 
+        for _, urlPrefixV in ipairs(urlPrefix) do
             for _, countrySi in ipairs(Schedule_info.country) do
                 queryCs.country = countrySi
                 table.insert(hGetBatchTable.url, urlPrefixV or"")
@@ -277,6 +277,10 @@ function getbgmlist(season)
                 table.insert(hGetBatchTable.header, table.deepCopy(header) or{})
             end
         end
+        queryCs.country= ""
+        table.insert(hGetBatchTable.url, "https://api.tvmaze.com/schedule/web")
+        table.insert(hGetBatchTable.query, table.deepCopy(queryCs) or{})
+        table.insert(hGetBatchTable.header, table.deepCopy(header) or{})
     end
     err,replyCs= kiko.httpgetbatch(hGetBatchTable.url,hGetBatchTable.query,hGetBatchTable.header)
     if err ~= nil then
@@ -301,8 +305,33 @@ function getbgmlist(season)
     end
 
     for _,ep in ipairs(objCs) do
-        if table.isEmpty(ep.show) then goto continue_gbl_wii
-        elseif string.isEmpty((ep.show or{}).name) then goto continue_gbl_wii
+        if table.isEmpty(ep.show) then
+            if table.isEmpty((ep._embedded or{}).show) then
+                goto continue_gbl_wii
+            else
+                ep.show= (ep._embedded or{}).show
+                if table.isEmpty(ep.show) then
+                    goto continue_gbl_wii
+                end
+            end
+        end
+        local isInSiCountry= false
+        local channelNW= {"network","webChannel"}
+        for _,channelNWV in ipairs(channelNW) do
+            local tmpCcode= (((ep.show or{})[channelNWV] or{}).country or {}).code
+            if not string.isEmpty(tmpCcode) then
+                for _, vSic in ipairs(Schedule_info.country) do
+                    if tmpCcode==vSic then
+                        isInSiCountry= true
+                        break
+                    end
+                end
+                if not isInSiCountry then
+                    goto continue_gbl_wii
+                end
+            end
+        end
+        if string.isEmpty((ep.show or{}).name) then goto continue_gbl_wii
         end
         local dtStamp= (Datetime.strToStamp(ep.airstamp))
         if dtStamp<sunday0100 or dtStamp>=(sunday0100 +604800) then-- 7*24*3600=604800
@@ -324,13 +353,14 @@ function getbgmlist(season)
         end
 
         local wSites={}
-        -- if (tonumber(ep.season)~=nil or tonumber(ep.number)~=nil) then
-        if (tonumber(ep.number)~=nil) then
-            table.insert(wSites,{
-                    ["name"]=string.format("%s",((tonumber(ep.season or"")==nil)and{""} or{ string.format("S%02s", math.floor(tonumber(ep.season))) })[1]..
+        local tmpSnameSE= nil
+        if true then
+            tmpSnameSE= string.format("%s",((tonumber(ep.season or"")==nil)and{""} or{ string.format("S%02s", math.floor(tonumber(ep.season))) })[1]..
                             ((tonumber(ep.number or"")==nil) and{""} or{ string.format("E%02s", math.floor(tonumber(ep.number))) })[1]..
-                            ((ep.type=="insignificant_special")and{"SP+"}or{""})[1].. ((ep.type=="significant_special")and{"SP-"}or{""})[1]..""),
-                    ["url"]=ep.url,
+                            ((ep.type=="insignificant_special")and{"SP-"}or{""})[1].. ((ep.type=="significant_special")and{"SP+"}or{""})[1].."")
+            table.insert(wSites,{
+                    ["name"]= (string.isEmpty(tmpSnameSE) and{"-"}or{tmpSnameSE})[1],
+                    ["url"]= ep.url,
                 })
         end
         if not string.isEmpty(((ep.show or{}).network or{}).name) then
@@ -380,22 +410,30 @@ function getbgmlist(season)
             -- ["bgmid"]=nil, --tvmaze id
             ["bgmid"]=((ep.show or{}).externals or{}).thetvdb, --tvdb id
             ["sites"]= wSites, --放送站点列表
+
             ["stamp"]=dtStamp,
-            ["season_number"]= ((tonumber(ep.season or"")==nil)and{nil} or{ math.floor(tonumber(ep.season)) })[1],
-            ["episode_number"]= ((tonumber(ep.number or"")==nil) and{nil} or{ math.floor(tonumber(ep.number)) })[1],
+            -- ["season_number"]= ((tonumber(ep.season or"")==nil)and{nil} or{ math.floor(tonumber(ep.season)) })[1],
+            -- ["episode_number"]= ((tonumber(ep.number or"")==nil) and{nil} or{ math.floor(tonumber(ep.number)) })[1],
+            ["season_ep_format"]= tmpSnameSE or""
         })
         ::continue_gbl_wii::
     end
 
+    local weeksInfoUnique= {}
+    Array.extendUniqueFields(weeksInfoUnique,weeksInfo,{"title","season_ep_format","stamp"},true,false)
+    weeksInfo= weeksInfoUnique
+    weeksInfoUnique= nil
+
     kiko.log("[INFO]  Finished getting " .. #weeksInfo .. " info of < " .. season.title .. ">")
-    table.sort(weeksInfo, function(a,b) return (a.episode_number or 0)<(b.episode_number or 0) end)
-    table.sort(weeksInfo, function(a,b) return (a.season_number or 0)<(b.season_number or 0) end)
+    -- table.stable_sort(weeksInfo, function(a,b) return (a.episode_number or 0)<(b.episode_number or 0) end)
+    -- table.stable_sort(weeksInfo, function(a,b) return (a.season_number or 0)<(b.season_number or 0) end)
+    table.stable_sort(weeksInfo, function(a,b) return a.title.." "..a.season_ep_format < b.title.." "..b.season_ep_format end)
     if settings["schedule_sort"]=="time" then
-        table.sort(weeksInfo, function(a,b) return a.stamp<b.stamp end)
+        table.stable_sort(weeksInfo, function(a,b) return a.stamp<b.stamp end)
     elseif settings["schedule_sort"]=="title" then
-        table.sort(weeksInfo, function(a,b) return a.title<b.title end)
-    elseif settings["schedule_sort"]=="timeslot" then
-        table.sort(weeksInfo, function(a,b) return a.time<b.time end)
+        type(0)
+    elseif true or settings["schedule_sort"]=="timeslot" then
+        table.stable_sort(weeksInfo, function(a,b) return a.time<b.time end)
     end
     return weeksInfo
 end
@@ -505,6 +543,153 @@ function table.deepCopy(tb)
     return copy
 end
 
+-- 排序<table>，依据规则less(a<b => true) as below
+-- copy from & thanks to - https://gist.github.com/1bardesign/62b90260e47ea807864fc3cc8f880f8d
+--[[
+stable sorting routines for lua
+
+	modifies the global table namespace so you don't have
+	to re-require it everywhere.
+
+		table.stable_sort
+			a fast stable sort
+		table.unstable_sort
+			alias for the builtin unstable table.sort
+		table.insertion_sort
+			an insertion sort, should you prefer it
+
+this is based on MIT licensed code from Dirk Laurie and Steve Fisher
+license as follows:
+]]
+--[[
+	Copyright © 2013 Dirk Laurie and Steve Fisher.
+
+	Permission is hereby granted, free of charge, to any person obtaining a
+	copy of this software and associated documentation files (the "Software"),
+	to deal in the Software without restriction, including without limitation
+	the rights to use, copy, modify, merge, publish, distribute, sublicense,
+	and/or sell copies of the Software, and to permit persons to whom the
+	Software is furnished to do so, subject to the following conditions:
+
+	The above copyright notice and this permission notice shall be included in
+	all copies or substantial portions of the Software.
+
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+	FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+	DEALINGS IN THE SOFTWARE.
+]]
+-- (modifications by Max Cahill 2018)
+local _sort_core = {}
+--tunable size for
+_sort_core.max_chunk_size = 24
+function _sort_core.insertion_sort_impl( array, first, last, less )
+	for i = first + 1, last do
+		local k = first
+		local v = array[i]
+		for j = i, first + 1, -1 do
+			if less( v, array[j-1] ) then
+				array[j] = array[j-1]
+			else
+				k = j
+				break
+			end
+		end
+		array[k] = v
+	end
+end
+function _sort_core.merge( array, workspace, low, middle, high, less )
+	local i, j, k
+	i = 1
+	-- copy first half of array to auxiliary array
+	for j = low, middle do
+		workspace[ i ] = array[ j ]
+		i = i + 1
+	end
+	-- sieve through
+	i = 1
+	j = middle + 1
+	k = low
+	while true do
+		if (k >= j) or (j > high) then
+			break
+		end
+		if less( array[ j ], workspace[ i ] )  then
+			array[ k ] = array[ j ]
+			j = j + 1
+		else
+			array[ k ] = workspace[ i ]
+			i = i + 1
+		end
+		k = k + 1
+	end
+	-- copy back any remaining elements of first half
+	for k = k, j-1 do
+		array[ k ] = workspace[ i ]
+		i = i + 1
+	end
+end
+function _sort_core.merge_sort_impl(array, workspace, low, high, less)
+	if high - low <= _sort_core.max_chunk_size then
+		_sort_core.insertion_sort_impl( array, low, high, less )
+	else
+		local middle = math.floor((low + high)/2)
+		_sort_core.merge_sort_impl( array, workspace, low, middle, less )
+		_sort_core.merge_sort_impl( array, workspace, middle + 1, high, less )
+		_sort_core.merge( array, workspace, low, middle, high, less )
+	end
+end
+--inline common setup stuff
+function _sort_core.sort_setup(array, less)
+	local n = #array
+	local trivial = false
+	--trivial cases; empty or 1 element
+	if n <= 1 then
+		trivial = true
+	else
+		--default less
+		less = less or function (a, b)
+			return a < b
+		end
+		--check less
+		if less(array[1], array[1]) then
+		  error("invalid order function for sorting")
+		end
+	end
+	--setup complete
+	return trivial, n, less
+end
+-- alias for the builtin unstable table.sort
+function _sort_core.stable_sort(array, less)
+	--setup
+	local trivial, n, less = _sort_core.sort_setup(array, less)
+	if not trivial then
+		--temp storage
+		local workspace = {}
+		workspace[ math.floor( (n+1)/2 ) ] = array[1]
+		--dive in
+		_sort_core.merge_sort_impl( array, workspace, 1, n, less )
+	end
+	return array
+end
+-- a fast stable sort
+function _sort_core.insertion_sort(array, less)
+	--setup
+	local trivial, n, less = _sort_core.sort_setup(array, less)
+	if not trivial then
+		_sort_core.insertion_sort_impl(array, 1, n, less)
+	end
+	return array
+end
+--export sort core
+table.insertion_sort = _sort_core.insertion_sort
+table.stable_sort = _sort_core.stable_sort
+table.unstable_sort = table.sort
+-- 排序<table> as above
+
 --* 将数组tb的所有的值 接续到数组ta的尾部，忽略tb中的键
 function Array.extend(ta,tb)
     if ta == nil or type(ta) ~= "table" or tb == nil or type(tb) ~= "table" then
@@ -514,6 +699,69 @@ function Array.extend(ta,tb)
     for index, value in ipairs(tb) do
         table.insert(ta,value)
     end
+end
+-- 相当于 tbField 存储了多个字段名的 Array.extendUnique(,,)
+-- From: table，以array:tbField中所有出现的string:值 为键，以(非nil)来自数组tb中各table:元素内对应的值 为值。
+-- To: 这些table中所有未出现在数组ta内的 (与ta的table:元素存在某一相等键的值不相等)，乱序接续到ta的尾部。
+function Array.extendUniqueFields(ta,tb,tbField,isExistUnequal,isOnlyGiven)
+    if ta == nil or type(ta) ~= "table" or tb == nil or type(tb) ~= "table" then
+        -- 排除非<table>的变量
+        return
+    end
+    if type(tbField) ~= "table" or tbField == nil then
+        if type(tbField) ~= "string" and type(tbField) ~= "number" and tbField ~= nil then
+            tbField=nil
+        end
+        return Array.extendUnique(ta,tb,tbField)
+    end
+    local isValueOf=false
+    for _, vb in ipairs(tb or {}) do
+        isValueOf=false
+        if vb == nil then
+            goto continue_Array_EUF_s
+        end
+        if isExistUnequal==false and isExistUnequal~="false" then
+            for _, va in ipairs(ta or {}) do
+                for _, vf in ipairs(tbField or{}) do
+                    if vf~=nil then
+                        if vb[vf] == va[vf] then -- 存在值等，跳出
+                            isValueOf=true
+                            break
+                        end
+                    end
+                end
+                if isValueOf then break end -- 所有值不等，比较下一个va
+            end
+        elseif true then
+            for _, va in ipairs(ta or {}) do
+                for _, vf in ipairs(tbField or{}) do
+                    if vf~=nil then
+                        if vb[vf] ~= va[vf] then -- 存在值不等，比较下一个va
+                            goto continue_Array_EUF_f
+                        end
+                    end
+                end
+                isValueOf= true -- 所有值等，跳出
+                break
+                ::continue_Array_EUF_f::
+            end
+        end
+        if not isValueOf then
+            local vbf={}
+            if isOnlyGiven==false and isOnlyGiven~="false" then
+                vbf= table.deepCopy(vb)
+            elseif true then
+                for _, vf in ipairs(tbField or{}) do
+                    if vf~=nil then
+                        vbf[vf]= vb[vf]
+                    end
+                end
+            end
+            table.insert(ta,vbf)
+        end
+        ::continue_Array_EUF_s::
+    end
+    return table.deepCopy(ta)
 end
 
 --* (string)str :: "2022-02-27" -> (table)date

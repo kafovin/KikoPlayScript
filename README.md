@@ -163,7 +163,7 @@
 
 ## Q & A
 
-> 适用版本：TMDb >= 0.2.2.220506_fix  |  TVmazeList >= 0.1.1.220503_build
+> 适用版本：TMDb >= 0.2.2.220506_fix  |  TVmazeList >= 0.1.1.220522_fix
 
 ### 如何申请TMDb的API密钥?
 
