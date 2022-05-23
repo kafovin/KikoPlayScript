@@ -8,7 +8,7 @@ info = {
     ["desc"] = "The Movie Database (TMDb) 脚本 （测试中，不稳定） Edited by: kafovin \n"..
                 "从 themoviedb.org 刮削影剧元数据，也可设置选择刮削fanart的媒体图片、Emby的本地元数据。",
     --            "▲与前一版本不兼容▲ 建议搜索旧关联用`本地数据库`，仅刮削详旧资料细信息时设置`搜索-关键词作标题`为`1`。",
-    ["version"] = "0.2.2" -- 0.2.2.220508_build
+    ["version"] = "0.2.2" -- 0.2.2.220521_build
 }
 -- 设置项
 -- `key`为设置项的`key`，`value`是一个`table`。设置项值`value`的类型都是字符串。
@@ -50,7 +50,7 @@ settings = {
     ["search_list_season_epgroup"] = {
         ["title"] = "搜索 - 显示剧集其他版本",
         ["default"] = "0",
-        ["desc"] = "搜索操作中 是否搜索并显示 剧集其他版本及其各季。其他版本会把剧集以不同方式分季(如：原播出时间、数字出版等)。\n"..
+        ["desc"] = "搜索操作中 是否搜索并显示 剧集其他版本及其各季。其他版本会把剧集以不同方式分季(如：原播出时间、故事线、数字出版等)。\n"..
                 "0：不显示其他版本的季数 (默认)。 1：显示剧集其他版本及其各季数。", -- 丢弃`person`的演员搜索结果
         ["choices"] = "0,1",
     },
@@ -1191,6 +1191,16 @@ function getep(anime)
         -- kiko.log(string.format("[INFO]  Movie [%s] on Episode %d :[%s] %s", anime_data["original_title"], epIndex,epType, epName))
         -- tv
     elseif (anime_data["media_type"] == "tv") then
+        local function isNormalTitle(seasonEpsI)
+            if table.isEmpty(seasonEpsI) then return true end
+            seasonEpsI.episode_number = math.floor(tonumber(seasonEpsI.episode_number))
+            if (seasonEpsI.name == "第 " .. seasonEpsI.episode_number .. " 集" or
+                seasonEpsI.name == "第" .. seasonEpsI.episode_number .. "集" or seasonEpsI.name == "第" ..
+                seasonEpsI.episode_number .. "話" or seasonEpsI.name == "Episode " .. seasonEpsI.episode_number) then
+                return true
+            else return false
+            end
+        end
 
         if anime_data.tv_is_epgroup == "true" or anime_data.tv_is_epgroup == true then
             local objTgll= Kikoplus.httpgetMediaId({
@@ -1205,48 +1215,41 @@ function getep(anime)
                     break
                 end
             end
-            local normalEpTitle = false
             if (table.isEmpty(objTgllEg) or #objTgllEg == 0) then
                 return eps
             end
-            local seasonEpsI = objTgllEg[#objTgllEg] or{}
-            if not table.isEmpty(seasonEpsI) and tonumber(seasonEpsI.episode_number) then
-                    seasonEpsI.episode_number = math.floor(tonumber(seasonEpsI.episode_number))
-            else seasonEpsI= {}
+            
+            local normalEplTitle = false -- at least one normal
+            for _, seasonEpsI in ipairs(objTgllEg) do
+                normalEplTitle = normalEplTitle or isNormalTitle(seasonEpsI)
             end
-            if (seasonEpsI.name == "第 " .. seasonEpsI.episode_number .. " 集" or seasonEpsI.name == "第" ..
-                seasonEpsI.episode_number .. "話" or seasonEpsI.name == "Episode " .. seasonEpsI.episode_number) then
-                normalEpTitle = true
-            end
-            if normalEpTitle and (settings["metadata_lang"] ~= (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1]) then
+            local objTgolEg = nil
+            if normalEplTitle and (settings["metadata_lang"] ~= (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1]) then
                 local objTgol= Kikoplus.httpgetMediaId({
                     ["api_key"] = settings["api_key"],
                     ["language"] = (string.isEmpty(anime_data.original_language) and{"en"} or{anime_data.original_language})[1],
                 },"tv/episode_group/"..anime_data.tv_epgroup_id)
 
-                local objTgolEg = ((objTgol.groups or{})[anime_data.season_number] or{}).episodes
-                local seasonEpsIO = objTgolEg[#objTgolEg] or{}
-                if not table.isEmpty(seasonEpsIO) and tonumber(seasonEpsIO.episode_number) then
-                    seasonEpsIO.episode_number = math.floor(tonumber(seasonEpsIO.episode_number))
-                else seasonEpsIO= {}
+                objTgolEg = ((objTgol.groups or{})[anime_data.season_number] or{}).episodes
+                local normalEpoTitle = true -- each one is normal
+                for _, seasonEpsI in ipairs(objTgolEg) do
+                    normalEpoTitle = normalEpoTitle and isNormalTitle(seasonEpsI)
                 end
-
-                normalEpTitle = false
-                seasonEpsIO.episode_number = math.floor(tonumber(seasonEpsIO.episode_number))
-                if (seasonEpsIO.name == "第 " .. seasonEpsIO.episode_number .. " 集" or seasonEpsIO.name == "第" ..
-                    seasonEpsIO.episode_number .. "話" or seasonEpsIO.name == "Episode " ..
-                    seasonEpsIO.episode_number) then
-                    normalEpTitle = true
-                end
-                if (normalEpTitle ~= true) then
-                    objTgllEg = objTgolEg
+                if (normalEpoTitle == true) then
+                    objTgolEg= nil
                 end
             end
 
             local orderOffsetTmp= 1- objTgllEg[1].order
             for seasonEpsK, seasonEpsV in pairs(objTgllEg or {}) do
-                epName = seasonEpsV.name
-                epIndex = math.floor(tonumber(seasonEpsV.order)) +orderOffsetTmp
+                if isNormalTitle(seasonEpsV) and not table.isEmpty(objTgolEg) and
+                        not table.isEmpty((objTgolEg or{})[seasonEpsK]) and not isNormalTitle((objTgolEg or{})[seasonEpsK]) then
+                    epName = (objTgolEg or{})[seasonEpsK].name
+                    epIndex = math.floor(tonumber(seasonEpsV.order)) +orderOffsetTmp
+                else
+                    epName = seasonEpsV.name
+                    epIndex = math.floor(tonumber(seasonEpsV.order)) +orderOffsetTmp
+                end
 
                 if anime_data.season_number == 0 then
                     epType = 2
@@ -1291,24 +1294,17 @@ function getep(anime)
                 kiko.log("[ERROR] TMDb.API.reply-getep.json2table: " .. err)
                 error(err)
             end
-
-            local normalEpTitle = false
             if (objS["episodes"] == nil or #(objS["episodes"]) == 0) then
                 return eps
             end
-            local seasonEpsI = objS["episodes"][#(objS.episodes)] or{} -- 以最后一集为例
-            if seasonEpsI ~= nil then
-                -- number:集序数
-                seasonEpsI["episode_number"] = math.floor(tonumber(seasonEpsI["episode_number"]))
+            
+            local normalEplTitle = false -- at least one normal
+            for _, seasonEpsI in ipairs(objS.episodes) do
+                normalEplTitle = normalEplTitle or isNormalTitle(seasonEpsI)
             end
-            -- 对应单纯数字标题，而非有对应剧情名称的集标题
-            if (seasonEpsI["name"] == "第 " .. seasonEpsI["episode_number"] .. " 集" or seasonEpsI["name"] == "第" ..
-                seasonEpsI["episode_number"] .. "話" or seasonEpsI["name"] == "Episode " .. seasonEpsI["episode_number"]) then
-                normalEpTitle = true
-            end
-            if (normalEpTitle and string.sub(query["language"], 1, 2) ~= anime_data["original_language"]) then
+            local objSO = nil
+            if (normalEplTitle and string.sub(query["language"], 1, 2) ~= anime_data["original_language"]) then
                 -- 获取集标题
-                -- and (query["language"] == "zh-CN" or query["language"] == "zh-HK" or query["language"] == "zh-TW" or query["language"] == "zh")
                 query["language"] = anime_data["original_language"]
                 -- 获取 http get 请求 - 查询 特定tmdbid的剧集的 特定季序数的 原语言的 媒体信息
                 local err, replyO = kiko.httpget(string.format( "http://api.themoviedb.org/3/tv/" .. anime_data["media_id"] ..
@@ -1323,32 +1319,35 @@ function getep(anime)
                 end
                 -- json:reply -> Table:obj
                 local contentO = replyO["content"]
-                local err, objSO = kiko.json2table(contentO)
+                err, objSO = kiko.json2table(contentO)
                 if err ~= nil then
                     kiko.log("[ERROR] TMDb.API.reply-getep.tv.id.season.lang.json2table: " .. err)
                     error(err)
                 end
-                local seasonEpsIO = objSO['episodes'][1]
-                normalEpTitle = false
-                seasonEpsIO["episode_number"] = math.floor(tonumber(seasonEpsIO["episode_number"]))
-                if (seasonEpsIO["name"] == "第 " .. seasonEpsIO["episode_number"] .. " 集" or seasonEpsIO["name"] == "第" ..
-                    seasonEpsIO["episode_number"] .. "話" or seasonEpsIO["name"] == "Episode " ..
-                    seasonEpsIO["episode_number"]) then
-                    normalEpTitle = true
+                local normalEpoTitle = true -- each one is normal
+                for _, seasonEpsI in ipairs(objSO.episodes) do
+                    normalEpoTitle = normalEpoTitle and isNormalTitle(seasonEpsI)
                 end
-                if (normalEpTitle ~= true) then
-                    objS = objSO
+                if (normalEpoTitle == true) then
+                    objSO= nil
                 end
             end
-            for _, seasonEpsIx in pairs(objS['episodes'] or {}) do
-
-                epName = seasonEpsIx["name"] -- 集标题
-                epIndex = math.floor(tonumber(seasonEpsIx["episode_number"])) -- 集序数
-                -- seasonEpsIx["air_date"]
-                -- seasonEpsIx["overview"]
-                -- seasonEpsIx["vote_average"]
-                -- seasonEpsIx["crew"] --array
-                -- seasonEpsIx["guest_stars"] --array
+            -- local orderOffsetTmp= 1- objS.episodes[1].order
+            for seasonEpsK, seasonEpsV in pairs(objS.episodes or {}) do
+                if isNormalTitle(seasonEpsV) and not table.isEmpty((objSO or{}).episodes) and
+                        not table.isEmpty(((objSO or{}).episodes or{})[seasonEpsK]) and not isNormalTitle(((objSO or{}).episodes or{})[seasonEpsK]) then
+                    epName = ((objSO or{}).episodes or{})[seasonEpsK].name
+                    epIndex = math.floor(tonumber(seasonEpsV.episode_number)) -- +orderOffsetTmp
+                else
+                    epName = seasonEpsV.name
+                    epIndex = math.floor(tonumber(seasonEpsV.episode_number)) -- +orderOffsetTmp
+                end
+                
+                -- seasonEpsV["air_date"]
+                -- seasonEpsV["overview"]
+                -- seasonEpsV["vote_average"]
+                -- seasonEpsV["crew"] --array
+                -- seasonEpsV["guest_stars"] --array
 
                 -- 集类型
                 if anime_data["season_number"] == 0 then
