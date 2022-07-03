@@ -6,9 +6,9 @@ info = {
     ["name"] = "TMDb",
     ["id"] = "Kikyou.l.TMDb",
     ["desc"] = "The Movie Database (TMDb) 脚本 （测试中，不稳定） Edited by: kafovin \n"..
-                "从 themoviedb.org 刮削影剧元数据，也可设置选择刮削fanart的媒体图片、Emby的本地元数据。",
+                "从 themoviedb.org 刮削影剧元数据，也可设置选择刮削fanart的媒体图片、Emby的本地元数据、TVmaze的剧集演员。",
     --            "▲与前一版本不兼容▲ 建议搜索旧关联用`本地数据库`，仅刮削详旧资料细信息时设置`搜索-关键词作标题`为`1`。",
-    ["version"] = "0.2.2" -- 0.2.2.220521_build
+    ["version"] = "0.2.2" -- 0.2.2.220619_build
 }
 -- 设置项
 -- `key`为设置项的`key`，`value`是一个`table`。设置项值`value`的类型都是字符串。
@@ -27,6 +27,13 @@ settings = {
                     "`Personal API Keys` 填入此项。（一般为一串字母数字）\n"..
                     "注意：若需要跳过刮削fanart.tv的图片，请将设置项 `元数据 - 图片主要来源` 设为 `TMDb_only`。",
     },
+    -- ["api_key_trakt"] = {
+    --     ["title"] = "API - Trakt的API密钥",
+    --     ["default"] = "<<API_Key_Here>>",
+    --     ["desc"] = "[选填项] 在 `trakt.tv` 注册账号，并把页面`https://trakt.tv/oauth/applications`中申请到的\n"..
+    --                 "`Client ID` 填入此项。（一般为一串字母数字）\n"..
+    --                 "注意：目前Trakt用于 用户记录，例如 评分媒体、标记媒体为 稍后看/已看过/已收集。",
+    -- },
     ["search_keyword_process"] = {
         ["title"] = "搜索 - 关键词处理",
         ["default"] = "filename",
@@ -157,6 +164,14 @@ settings = {
                     "0：仅包括出现于或负责本季整季的演职员 (默认)。 1：包含前者，以及出现于或负责各集的演职员(按默认顺序)。",
         ["choices"] = "0,1",
     },
+    ["metadata_castcrew_source_cast"]={
+        ["title"] = "元数据 - 演员来源",
+        ["default"] = "TMDb_season",
+        ["desc"] = "元数据中演员表的数据来源。\n"..
+                    "TMDb_season：本电影或剧集本季的演员表 来自TMDb  (默认)。\n"..
+                    "TVmaze_show：剧集本季的演员表 来自TVmaze 对应的本剧集整剧(不是本季)，本电影 来源取默认，仅英文。",
+        ["choices"] = "TMDb_season,TVmaze_show",
+    },
 }
 
 -- 不会 在运行函数内更新值
@@ -220,10 +235,10 @@ Translation = {
     ["und-XX"] = {
         ["language"]={ [""]= "Others", ["Unknown"]= "Unknown", ["cmn"]="Mandarin", ["mis"]="", ["mul"]="Multi Languages", ["und"]="Undetermined", ["zxx"]="No Language", ["xx"]="No Language", ["00"]="No Language", },
         ["region"]={ [""]= "Others", ["Unknown"]= "Unknown", ["XX"]="Undetermined", ["XZ"]="International Water", ["ZZ"]="未识别", ["International"]="International", },
-        ["media_genre"] = {[""]= "Others", ["Unknown"]= "Unknown", },
+        ["media_genre"] = {[""]= "Others", ["Unknown"]= "Unknown", ["Adult"]= "Adult", },
         ["media_status"] = { [""]= "Others", ["Unknown"]= "Unknown", },
         ["media_type"] = { [""]= "Others", ["Unknown"]= "Unknown", },
-        ["character_gsub"] = {  },
+        ["character_gsub"] = { {"^$","Unknown Character"}, },
         ["department"] = { [""]= "Others", ["Unknown"]= "Unknown", },
         ["credit_job"] = { [""]= "Others", ["Unknown"]= "Unknown", },
         ["media_type_epgroup"] = { [1]= "Original air date", [2]= "Absolute", [3]= "DVD", [4]= "Digital", [5]= "Story arc", [6]= "Production", [7]= "TV", [""]= "Others", ["Unknown"]= "Unknown", },
@@ -274,7 +289,7 @@ Translation["zh-CN"] = {
         [10402] = "音乐", [9648] = "悬疑", [10763] = "新闻", [10764] = "真人", [10749] = "爱情",
         [10765] = "幻想", [878] = "科幻", [10766] = "连续剧", [10770] = "电视电影",
         [10767] = "访谈", [53] = "惊悚", [10752] = "战争", [10768] = "战争政治", [37] = "西部",
-        [""]="其他", ["Unknown"]= "未知",
+        [""]="其他", ["Unknown"]= "未知", ["Adult"]= "成人",
     },
     ["media_status"] = {
         ["Rumored"]= "传闻", ["Planned"]= "筹划",
@@ -290,7 +305,7 @@ Translation["zh-CN"] = {
         [""]= "其他", ["Unknown"]= "未知",
     },
     ["character_gsub"] = {
-        {"^Self$","自己"}, {"^Voice$","配音"}, {"^Cameo$","客串"}, {"^Special Guest$","特邀嘉宾"}, {"^Guest$","嘉宾"}, {"^Host$","主持"}, {"^Contestant$","参赛"}, {"^Performer$","演出"}, {"^Judge$","评委"},
+        {"^$","未知角色"}, {"^Self$","自己"}, {"^Voice$","配音"}, {"^Cameo$","客串"}, {"^Special Guest$","特邀嘉宾"}, {"^Guest$","嘉宾"}, {"^Host$","主持"}, {"^Contestant$","参赛"}, {"^Performer$","演出"}, {"^Judge$","评委"},
         {"Self %- ","自己 - "}, {" %(voice%)"," (配音)"}, {" %(cameo%)"," (客串)"}, {" %(special guest%)"," (特邀嘉宾)"}, {" %(guest%)"," (嘉宾)"}, {" %(host%)"," (主持)"},
         {" %- Self"," - 自己"}, {" %- Voice"," - 配音"}, {" %- Cameo"," - 客串"}, {" %- Special Guest"," - 特邀嘉宾"}, {" %- Guest"," - 嘉宾"}, {" %- Host"," - 主持"},
         {" %- Presenter"," - 主持"}, {" %- Various Characters"," - 各种角色"}, {" %- Participant"," - 参赛"}, {" %- Contestant"," - 参赛"}, {" %- Performer"," - 演出"}, {" %- Judge"," - 评委"},
@@ -854,7 +869,7 @@ function searchMediaInfo(keyword, settings_search_type, old_title)
             -- Table:obj -> Array:mediai
             -- local tvSeasonsIxs = {}
             for _, tvSeasonsIx in pairs(objTv['seasons'] or {}) do
-                data["tv_season_id"] = tonumber(mediai["id"]or"")
+                data["tv_season_id"] = tonumber(tvSeasonsIx.id or"")
                 if tonumber(data.tv_season_id) then
                     data.tv_season_id= math.floor(tonumber(data.tv_season_id))
                 end
@@ -1609,6 +1624,7 @@ function detail(anime)
 
         if anime_data.tv_is_epgroup~="true" and anime_data.tv_is_epgroup ~=true then
             anime_data["release_date"] = objTsll["air_date"] -- 首播日期7
+            anime_data.tv_season_id = ((tonumber(objTsll.id) ==nil)and{nil}or{tostring(math.floor(tonumber(objTsll.id)))})[1]
             if not string.isEmpty(objTsll.overview) and objTsll.overview~=anime_data.overview and
                     objTsll.overview~=anime_data.title and objTsll.overview~=anime_data.original_title then
                 anime_data.overview_season = string.gsub(objTsll.overview, "\r?\n\r?\n", "\n")
@@ -1788,6 +1804,18 @@ function detail(anime)
         end
     end
 
+    local objEi=  table.deepCopy(((anime_data.media_type=="movie")and{ objMoll.external_ids }or{ objTvll.external_ids })[1]) or{}
+    anime_data.imdb_id= ( string.isEmpty(objEi.imdb_id) and{ nil }or{ objEi.imdb_id })[1]
+    anime_data.facebook_id= ( string.isEmpty(objEi.facebook_id) and{ nil }or{ objEi.facebook_id })[1]
+    anime_data.instagram_id= ( string.isEmpty(objEi.instagram_id) and{ nil }or{ objEi.instagram_id })[1]
+    anime_data.twitter_id= ( string.isEmpty(objEi.twitter_id) and{ nil }or{ objEi.twitter_id })[1]
+    if anime_data.media_type=="tv" and anime_data.tv_is_epgroup~="true" and anime_data.tv_is_epgroup ~=true then
+        anime_data.tvdb_id= ((objEi.tvdb_id ==nil)and{nil}or{tostring(math.floor(tonumber(objEi.tvdb_id)))})[1]
+        anime_data.tvdb_id_season= (((objTsll.external_ids or{}).tvdb_id ==nil)and{nil}or{
+                tostring(math.floor(tonumber((objTsll.external_ids or{}).tvdb_id)))})[1]
+    end
+    objEi={}
+
     local objCr= {}
     if anime_data.media_type=="movie" then
         objCr= table.deepCopy(objMoll.credits)
@@ -1810,14 +1838,14 @@ function detail(anime)
         if #(anime_data["person_cast"])>=Metadata_person_max_cast then break end
         local crtText = ((creditTsall)and
                 { Array.extendUnique({},value.roles,"character") or{} } or
-                { {( string.isEmpty(value.character) and{ nil }or{ value.character })[1]} })[1]
+                { string.isEmpty(value.character) and{ "" }or{ value.character } })[1]
         table.insert(anime_data["person_cast"],{
             -- ["gender"]= (( tonumber(value.gender)==1 or tonumber(value.gender)==2 )and{ tonumber(value.gender) }or{ nil })[1],
             ["name"]= (( string.isEmpty(value.name) )and{
                 (( string.isEmpty(value.original_name))and{ nil }or{ value.original_name })[1] }or{ value.name })[1],
             ["original_name"]= (( string.isEmpty(value.original_name))and{ nil }or{ value.original_name })[1],
             ["profile_path"]= (( string.isEmpty(value.profile_path))and{ nil }or{ value.profile_path })[1],
-            ["character"]= table.deepCopy(crtText) or"",
+            ["character"]= table.deepCopy(crtText) or{""},
             ["department"]= "Actors",
             ["job"]={"Actor"},
         
@@ -1845,8 +1873,8 @@ function detail(anime)
                     { nil }or{ value.original_name })[1] }or{ value.name })[1]
         end
         table.insert(tmpAnimeCharacter,{
-            ["name"]= Array.toStringLine(crtText,"|") or"",
-            ["actor"]=tmpAnimeCharacterName or"",
+            ["name"]= ((#crtText)~=0 and{Array.toStringLine(crtText,"|")} or{"-"})[1],
+            ["actor"]=(string.isEmpty(tmpAnimeCharacterName) and{"-"} or{tmpAnimeCharacterName})[1],
             ["link"]="https://www.themoviedb.org/person/"..value.id,
             ["imgurl"]= (( string.isEmpty(value.profile_path))and{ nil }or{
                     Image_tmdb.prefix..Image_tmdb.profile[Image_tmdb.max_ix] .. value.profile_path })[1],
@@ -1899,11 +1927,75 @@ function detail(anime)
                     { nil }or{ value.original_name })[1] }or{ value.name })[1]
         end
         tmpAnimeStaff= tmpAnimeStaff ..(((Translation[settings["metadata_lang"]] or{}).department or{})[value.department or""] or value.department or"").."-"..
-                    (Array.toStringLine(jobText,",") or"") ..":".. (tmpAnimeStaffName or"") ..";"
+                    (Array.toStringLine(jobText,",") or"") ..":".. ((string.isEmpty(tmpAnimeStaffName) and{"-"} or{tmpAnimeStaffName})[1]) ..";"
         ::continue_detail_ccc_crew::
     end
     tmpAnimeStaff= tmpAnimeStaff or "" -- anime_data.person_crew.id = objCr.id
     objCr={}
+    if anime_data["media_type"]=="tv" and settings["metadata_castcrew_source_cast"]== "TVmaze_show" and not string.isEmpty(anime_data.imdb_id) then
+        if tonumber(anime_data.tvmaze_id)==nil then
+            local queryTvmz = {}
+            local header = {["Accept"] = "application/json"}
+            local replyTvmz
+            err, replyTvmz = kiko.httpget(string.format("https://api.tvmaze.com/lookup/shows?imdb=" ..
+                    anime_data.imdb_id), queryTvmz, header)
+            if err ~= nil then
+                kiko.log("[ERROR] TVmaze.API.reply-details."..anime_data["media_type"] .. ".cast.httpget: " .. err)
+                goto continue_detail_id_tvmz
+            end
+            local contentTvmz = replyTvmz["content"]
+            local err, objTvmz = kiko.json2table(contentTvmz)
+            if err ~= nil then
+                kiko.log("[ERROR] TVmaze.API.reply-details."..anime_data["media_type"] .. ".cast.json2table: " .. err)
+                error(err)
+                goto continue_detail_id_tvmz
+            end
+            anime_data.tvmaze_id= ((tonumber(objTvmz.id) ==nil) and{nil} or{tostring(math.floor(tonumber(objTvmz.id)))})[1]
+            ::continue_detail_id_tvmz::
+        end
+        if tonumber(anime_data.tvmaze_id)~=nil then
+            local queryTvmz = {}
+            local header = {["Accept"] = "application/json"}
+            local replyTvmz
+            err, replyTvmz = kiko.httpget(string.format("https://api.tvmaze.com/shows/" ..
+                    anime_data.tvmaze_id .."/cast"), queryTvmz, header)
+            if err ~= nil then
+                kiko.log("[ERROR] TVmaze.API.reply-details."..anime_data["media_type"] .. ".cast.httpget: " .. err)
+                goto continue_detail_ccc_cast_tvmz
+            end
+            local contentTvmz = replyTvmz["content"]
+            local err, objTvmz = kiko.json2table(contentTvmz)
+            if err ~= nil then
+                kiko.log("[ERROR] TVmaze.API.reply-details."..anime_data["media_type"] .. ".cast.json2table: " .. err)
+                error(err)
+                goto continue_detail_ccc_cast_tvmz
+            end
+            local tmpAnimeCharacterTm= {}
+            for _, value in ipairs(objTvmz) do
+                value.person=  (table.isEmpty(value.person) and{{}} or{value.person})[1]
+                value.character= (table.isEmpty(value.character) and{{}} or{value.character})[1]
+                value.person.name=(string.isEmpty(value.person.name) and{"-"} or{value.person.name})[1]
+                value.character.name=(string.isEmpty(value.character.name) and{"-"} or{value.character.name})[1]
+                for _, crtGpair in ipairs((Translation[settings["metadata_lang"]] or{}).character_gsub or{}) do
+                    value.character.name = string.gsub(value.character.name or"",crtGpair[1] or"",crtGpair[2] or crtGpair[1] or"")
+                end
+                table.insert(tmpAnimeCharacterTm,{
+                    ["name"]= (string.isEmpty(value.person.name) and{"-"} or{value.person.name})[1],
+                    ["actor"]= (string.isEmpty(value.character.name) and{"-"} or{value.character.name})[1],
+                    ["link"]= (( string.isEmpty(value.character.url)) and{ ((string.isEmpty(value.person.url))
+                            and{nil} or{value.person.url})[1] } or{value.character.url})[1],
+                    ["imgurl"]= (( string.isEmpty((value.character.image or{}).original)) and{ ((string.isEmpty((value.person.image or{}).original))
+                            and{nil} or{(value.person.image or{}).original})[1] } or{(value.character.image or{}).original})[1],
+                })
+            end
+            if not table.isEmpty(tmpAnimeCharacterTm) then
+                Array.extendUniqueFields(tmpAnimeCharacterTm,anime.crt,{"name","actor"},true,false)
+                tmpAnimeCharacter= tmpAnimeCharacterTm or tmpAnimeCharacter or{} -- anime_data.person_cast.id = objCr.id
+                -- tmpAnimeCharacterTm= {}
+            end
+            ::continue_detail_ccc_cast_tvmz::
+        end
+    end
 
     local objMc={}
     anime_data.content_rating= {}
@@ -1954,18 +2046,6 @@ function detail(anime)
     end
     Array.extendUniqueFields(anime_data.keyword_names,tmp_keyword_names,{"id","name"},true,false)
     objMk, tmp_keyword_names= {},{}
-
-    local objEi=  table.deepCopy(((anime_data.media_type=="movie")and{ objMoll.external_ids }or{ objTvll.external_ids })[1]) or{}
-    anime_data.imdb_id= ( string.isEmpty(objEi.imdb_id) and{ nil }or{ objEi.imdb_id })[1]
-    anime_data.facebook_id= ( string.isEmpty(objEi.facebook_id) and{ nil }or{ objEi.facebook_id })[1]
-    anime_data.instagram_id= ( string.isEmpty(objEi.instagram_id) and{ nil }or{ objEi.instagram_id })[1]
-    anime_data.twitter_id= ( string.isEmpty(objEi.twitter_id) and{ nil }or{ objEi.twitter_id })[1]
-    if anime_data.media_type=="tv" and anime_data.tv_is_epgroup~="true" and anime_data.tv_is_epgroup ~=true then
-        anime_data.tvdb_id= ((objEi.tvdb_id ==nil)and{nil}or{tostring(math.floor(tonumber(objEi.tvdb_id)))})[1]
-        anime_data.tvdb_id_season= (((objTsll.external_ids or{}).tvdb_id ==nil)and{nil}or{
-                tostring(math.floor(tonumber((objTsll.external_ids or{}).tvdb_id)))})[1]
-    end
-    objEi={}
 
     local mImgPTmp = "TMDb_only"
     if settings["metadata_image_priority"]=="fanart_prior"
@@ -2725,6 +2805,7 @@ function match(path)
                  "(" .. (epTypeName[epinfo["type"]] or "") .. ") " .. (epinfo["index"] or "") .. (epinfo["name"] or ""))
         kiko.log("Finished matching online succeeded.")
 
+        mediainfo.scriptId = "Kikyou.l.TMDb"
         return {
             ["success"] = true,
             ["anime"] = mediainfo,
@@ -3495,10 +3576,10 @@ menus = {{
         ["title"] = "打开TMDb/IMDb页面",
         ["id"] = "open_webpage_media_page",
     },{
-        ["title"] = "使用贴吧/豆瓣搜索",
+        ["title"] = "使用豆瓣/贴吧搜索",
         ["id"] = "open_webpage_media_search",
     },{
-        ["title"] = "打开fanart",
+        ["title"] = "打开fanart页面",
         ["id"] = "open_webpage_media_artwork",
     },{
         ["title"] = "使用字幕搜索",
@@ -3506,6 +3587,21 @@ menus = {{
     },{
         ["title"] = "显示媒体元数据",
         ["id"] = "show_media_matadata",
+    -- },{
+    --     ["title"] = "显示媒体元数据表",
+    --     ["id"] = "show_media_matadata_table",
+    -- },{
+    --     ["title"] = "标记为 /已看过",
+    --     ["id"] = "account_sync_history",
+    -- },{
+    --     ["title"] = "标记为 /已收集",
+    --     ["id"] = "account_sync_collection",
+    -- },{
+    --     ["title"] = "标记为 /稍后看",
+    --     ["id"] = "account_sync_watchlist",
+    -- },{
+    --     ["title"] = "标记为 /评分",
+    --     ["id"] = "account_sync_rating",
 }}
 
 -- 用户点击条目的右键菜单中的menus菜单后，会通过menuclick函数通知脚本
@@ -3528,7 +3624,7 @@ function menuclick(menuid, anime)
 
     if menuid == "open_webpage_media_page" then
         kiko.log("Open library page of <"..anime["name"]..">.")
-        kiko.message("打开 <"..anime["name"].."> 的TMDb/IMDb资料页", NM_HIDE)
+        kiko.message("打开 <"..anime["name"].."> 的TMDb/IMDb/Trakt资料页，\n使用TVmaze搜索", NM_HIDE)
         if not string.isEmpty(anime["url"]) then
             kiko.execute(true, "cmd", {"/c", "start", anime["url"]})
         else
@@ -3536,9 +3632,17 @@ function menuclick(menuid, anime)
         end
         if not string.isEmpty(anime_data.imdb_id) then
             kiko.execute(true, "cmd", {"/c", "start", "https://www.imdb.com/title/"..anime_data.imdb_id})
+            kiko.execute(true, "cmd", {"/c", "start", "https://trakt.tv/shows/"..anime_data.imdb_id})
         else
             kiko.message("未找到 <"..anime["name"].."> 的IMDb页面。\n请右键资料夹尝试更新详细信息。", NM_HIDE|NM_ERROR)
         end
+        if not string.isEmpty(anime_data.media_title) then
+            kiko.execute(true, "cmd", {"/c", "start", "https://www.tvmaze.com/search?q=".. string.gsub(anime_data.original_title, "[ %c%p\'\"%^%&%|<>]","+")})
+        else
+            kiko.message("未找到 <"..anime["name"].."> 的相关搜索页面。\n请右键资料夹尝试更新详细信息。", NM_HIDE|NM_ERROR)
+        end
+        Kikoplus.systemAddToPasteboard(anime_data.media_title.." "..anime_data.original_title..
+                    (string.isEmpty(anime_data.season_title) and{ "" }or{ " "..anime_data.season_title })[1],"媒体标题")
     elseif menuid == "open_webpage_media_search" then
         kiko.log("Open searching page of <"..anime["name"]..">.")
         kiko.message("在豆瓣/贴吧/B站搜索 <"..anime["name"]..">", NM_HIDE)
@@ -3598,7 +3702,8 @@ function menuclick(menuid, anime)
                 tmpTitleO= tmpTitleM
             end
             
-            kiko.execute(true, "cmd", {"/c", "start", "https://zmk.pw/search?q="..tmpTitleO})
+            kiko.execute(true, "cmd", {"/c", "start", "https://zmk.pw"})
+            -- kiko.execute(true, "cmd", {"/c", "start", "https://zmk.pw/search?q="..tmpTitleO})
             kiko.execute(true, "cmd", {"/c", "start", "https://subhd.tv/search/"..string.gsub(tmpTitleO,"[ %c%p%^%&%|<>]","%%20")})
             kiko.execute(true, "cmd", {"/c", "start", "https://www.yysub.net/search/index?keyword="..tmpTitleO.."^&search_type="})
             kiko.execute(true, "cmd", {"/c", "start",
@@ -3613,6 +3718,9 @@ function menuclick(menuid, anime)
     
         Kikoplus.systemAddToPasteboard(anime_data.media_title.." "..anime_data.original_title..
                 (string.isEmpty(anime_data.season_title) and{ "" }or{ " "..anime_data.season_title })[1],"媒体标题")
+    elseif menuid == "show_media_matadata_table" then
+        kiko.viewtable(anime_data)
+        kiko.viewtable(anime)
     elseif menuid == "show_media_matadata" then
         -- 显示媒体元数据
         -- kiko.log(os.time)
@@ -3674,7 +3782,7 @@ function menuclick(menuid, anime)
         end
         tipString = tipString .. "\n流派：\t\t" .. (Array.toStringLine(anime_data["genre_names"]) or "")
         if anime_data["mo_is_adult"]==true or anime_data["mo_is_adult"]=="true" then
-            tipString = tipString .. ", 成人"
+            tipString = tipString .. (#(anime_data["genre_names"])==0 and{""}or{", "})[1].. (((Translation[settings["metadata_lang"]] or{}).media_genre or{})["Adult"] or"Adult")
         end
         local mediaLang= {anime_data["original_language"]}
         Array.extendUnique(mediaLang,anime_data["spoken_language"],"iso_639_1")
@@ -3706,16 +3814,16 @@ function menuclick(menuid, anime)
             tipString = tipString .. "\n剧集总季数/集数：\t" .. string.format("%-5s",tmpString or tostring(math.floor(tonumber(anime_data["season_count"]))) or "")
                     .."/    ".. (tmpString or tostring(math.floor(tonumber(anime_data["episode_total"]))) or "")
         end
-        if not string.isEmpty(anime_data["runtime"]) then
+        if not string.isEmpty(anime_data["runtime"]) and anime_data["runtime"]~=0.0 then
             tipString = tipString .. "\n时长：\t\t" .. anime_data["runtime"][1]
         end
-        if not string.isEmpty(anime_data["vote_average"]) then
+        if not string.isEmpty(anime_data["vote_average"]) and anime_data["vote_average"]~=0.0 then
             tipString = tipString .. "\nTMDb评分：\t" .. (anime_data["vote_average"] or "")
         end
-        if not string.isEmpty(anime_data["mo_budget"]) then
+        if not string.isEmpty(anime_data["mo_budget"]) and anime_data["mo_budget"]~=0.0 then
             tipString = tipString .. "\n预算：\t\t" .. anime_data["mo_budget"]
         end
-        if not string.isEmpty(anime_data["mo_revenue"]) then
+        if not string.isEmpty(anime_data["mo_revenue"]) and anime_data["mo_revenue"]~=0.0 then
             tipString = tipString .. "\n收入：\t\t" .. anime_data["mo_revenue"]
         end
         if not string.isEmpty(anime_data["tv_first_air_date"]) then
@@ -4252,7 +4360,7 @@ function Kikoplus.systemAddToPasteboard(str,info)
     end
     kiko.execute(true, "cmd", {"/c", "set/p=", string.gsub(str ,"([\"])", " "),"<nul|clip"})
     kiko.log("[INFO]  Add "..(info or"") .. " to pasteboard.")
-    return (kiko.message("已复制"..(string.isEmpty(info) and{ "" }or{ " "..info.." " })[1] .. "至剪切板", NM_HIDE))[1]
+    return (kiko.message("已复制"..(string.isEmpty(info) and{ "" }or{ " "..info.." " })[1] .. "至剪切板", NM_HIDE))
 end
 
 -- 特殊字符转换 "&amp;" -> "&"  "&quot;" -> "\""

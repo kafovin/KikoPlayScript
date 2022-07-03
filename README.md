@@ -1,7 +1,7 @@
 # KikoPlay 脚本 TMDb & TVmazeList - 使用手册
 
 脚本 TMDb (`/library/tmdb.lua`) 是用于弹幕视频播放软件  [KikoPlay](https://github.com/KikoPlayProject/KikoPlay) 的资料脚本，主要借助你从 [The Movie Database (TMDB)](https://www.themoviedb.org/) 申请的API来搜索和刮削信息。
-也可设置选择刮削 [fanart](https://fanart.tv/) 的媒体图片、[Emby](https://emby.media/) 的本地元数据。
+也可设置选择刮削 [fanart](https://fanart.tv/) 的媒体图片、[Emby](https://emby.media/) 的本地元数据、[TVmaze](https://www.tvmaze.com/)的剧集演员。
 
 脚本 TVmazeList (`/bgm_calendar/tvmazelist.lua`) 是针对剧集的日历时间表脚本（仅英国、美国），主要借助从 [TVmaze](https://www.tvmaze.com/) 的公共API刮削剧集的日历时间表(剧集标题为英文)。*（测试中，不稳定，未来可能会有较大改动）*
 
@@ -41,6 +41,7 @@
   + [TMDb](#tmdb)
   + [TVmaze](#tvmaze)
   + [fanart](#fanart)
+  + [Trakt](#trakt)
   + [Emby](#emby)
   + [KikoPlay](#kikoplay)
     + [KikoPlay脚本仓库](#kikoplay脚本仓库)
@@ -535,6 +536,13 @@ API
     + `0`：仅包括出现于或负责本季整季的演职员 (默认设置)。
     + `1`：包含前者，以及出现于或负责各集的演职员(按默认顺序排列取前几个)。
 
+  + 元数据 - 演员来源",
+
+    元数据中演员表的数据来源。
+
+    + `TMDb_season`：电影或剧集本季的 来自TMDb (默认)。
+    + `TVmaze_show`：剧集本季的 来自TVmaze，不同季共用一套演员表(即剧集的)；电影 来源取默认(即TMDb)；仅英文。
+
   <br/>
 
 + 元数据 - `显示媒体元数据`功能
@@ -625,28 +633,19 @@ API
 
 ## TODO
 
-+ [x]  关联刮削数据（以本地文件路径/文件名、依赖TMDb的API）；
-
-+ [x]  刮削电影/剧集的参演演员信息；
-
-   ~~\* 偶然发现 TMDb里剧集的默认演员表是全季共用的，且更贴合最后一季，而非全剧主要角色；职员表主要为导演/单集导演，少见其他职员。~~
-
-+ [x]  资料库右键菜单添加 显示媒体元数据 的功能；
-
-+ [ ] 添加对 剧集组、列表 的支持；
++ [x] 添加对 剧集组 的支持；
 
 + [ ] 添加 推荐、相似 的功能；
 
 + [ ] 添加 弹出播映视频的网站 的功能；
 
-+ [ ] ~~不记得是什么了，但是感觉好像少了什么；~~
++ [ ] 添加 在TMDb/Trakt/TVmaze 标记为已看过/评分 的功能；
+
++ [ ] 添加脚本 媒体时间表来自 Trakt的API，显示用户关注的或所有的时间表；
+
++ [ ] 调整 日历时间表中 周列表的顺序，以保证关注功能的持续。
 
 + [ ]  ...
-
-<!--### 其他
-电影偷懒就没再加上。
-剧集tmdb默认演员表好像会侧重后播出的剧集，也没用这个。
-本地.nfo的match加了，不过没出现在库里-->
 
 <br/>
 
@@ -670,7 +669,7 @@ Every piece of data has been added by our amazing community dating back to 2008.
 
 ### TVmaze
 
-> 本脚本借助 [TVmaze](https://www.tvmaze.com/) 的 公共API 刮削剧集的日历时间表。
+> 本脚本借助 [TVmaze](https://www.tvmaze.com/) 的 公共API 刮削剧集的日历时间表、演员表。
 >  
 > 本节内容来自 [TVmaze](https://www.tvmaze.com/)
 
@@ -692,6 +691,18 @@ Logos, Backgrounds, Posters and more for your TV, Movie and Music collections.
 <br/>
 
 ![fanart-logo](manual.assets/Fanart-logo-new.png)
+<br/>
+
+### Trakt
+
+> 本脚本借助 [Trakt](https://trakt.tv) 的 API 刮削和记录等。
+>  
+> 本节内容来自 [Trakt](https://trakt.tv)
+
+[Trakt](https://trakt.tv) is a platform that does many things, but primarily keeps track of TV shows and movies you watch. It integrates with your media center or home theater to enable scrobbling, so everything is automatic.
+<br/>
+
+![Trakt-logo](manual.assets/Trakt-header-2x.png)
 <br/>
 
 ### Emby
