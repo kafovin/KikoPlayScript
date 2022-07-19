@@ -7,7 +7,7 @@ info = {
     ["id"] = "Kikyou.b.TVmazeList",
     ["desc"] = "TVmaze 剧集日历脚本（测试中，不稳定） Edited by: kafovin \n"..
                 "从 tvmaze.com 刮削剧集的日历时间表。",
-    ["version"] = "0.1.1", -- 0.1.1.20220522_fix
+    ["version"] = "0.1.20", -- 0.1.20.220719_build
 }
 
 -- 设置项
@@ -29,14 +29,42 @@ settings = {
         ["choices"]="time,timeslot,title",
         -- ["choices"]="default,time",
     },
+    ["schedule_date_release_type"]={
+        ["title"]="时间表 - 放送日期类型",
+        ["default"]="show_x_ep",
+        ["desc"]="时间表中，`放送日期`的一列显示的日期类型。\n"..
+                "episode：均为该集的播映日期。\n"..
+                "show：均为剧集最初的播映日期，通常为S01E01或试播集的播映日期。\n"..
+                "show_x_ep：一般为剧集最初的播映日期，对于`自定义星期`是该集的播映日期 (默认)。",
+        ["choices"]="episode,show,show_x_ep",
+    },
     ["season_deviance_older"]={
         ["title"]="分周列表 - 近几周",
-        ["default"]="10",
+        ["default"]="54",
         ["desc"]="分周的列表中，显示现在及以前几周。列表倒数第2个为 下一周，最后一个为本周。请保存设置后重启，方可查看新的分周列表。\n"..
                 "近1周为 1 (即本周)，近2周为 2 (即本周、上一周)，以此类推。\n"..
-                "0：自1989-12-17所在一周至今。 10：近10周 (默认)。",
+                "0：自1989-12-17所在一周至今。 54：近54周 (默认)。",
         -- 用 1989-12-17 是因为TVmaze网站日历的默认显示，似乎从这一天开始逐渐有内容，即 The Simpsons S01E01 播出时的那一周。
     },
+    ["season_order_nextweek"]={
+        ["title"]="分周列表 - 显示下一周",
+        ["default"]="0",
+        ["desc"]="分周的列表中，下一周的位置。\n"..
+                "0：不显示 (默认)。 1：显示在`本周`的后一个。\n"..
+                "-1：显示在`本周`的前一个 (可能会影响`关注`功能的识别)。",
+        ["choices"]="-1,0,1",
+    },
+    -- ["season_naming_date"]={
+    --     ["title"]="分周列表 - 日期格式",
+    --     ["default"]="Y-m-d",
+    --     ["desc"]="分周的列表中，周名的日期格式。建议与`时间表 - 放送日期类型`的设置搭配以分辨日期。\n"..
+    --             "[注意]  更改此设置后，以前载入的周会无法识别。\n"..
+    --             "[注意]  要使用以前的时间表需要手动重命名此目录下的缓存：`.\\KikoPlay\\data\\calendar\\Kikyou.b.TVmazeList`\n"..
+    --             "Y-m-d：年份-月份-日期，如 `2021-12-31` (默认)。Ymd：年份月份日期，如 `20211231`。\n"..
+    --             "Y-m-u：年份-月份-该月周序号，如 `2021-12-5`。Ymu：年份-月份-该月周序号，如 `2021125`。\n"..
+    --             "Y-U：年份-该年周序号，如 `2021-52`。YU：年份-该年周序号，如 `202152`。\n",
+    --     ["choices"]="Y-m-d,Ymd,Y-m-u,Ymu,Y-U,YU",
+    -- },
     -- ["datetime_zone"]={
     --     ["title"]="时间 - 时区",
     --     ["default"]="system",
@@ -174,8 +202,15 @@ function getseason()
     for i= clgDvO,-1,1 do
         table.insert(clgDvTmp,i)
     end
-    table.insert(clgDvTmp,1)
-    table.insert(clgDvTmp,0)
+    if settings["season_order_nextweek"] == "-1" then
+        table.insert(clgDvTmp,1)
+        table.insert(clgDvTmp,0)
+    elseif settings["season_order_nextweek"] == "1" then
+        table.insert(clgDvTmp,0)
+        table.insert(clgDvTmp,1)
+    elseif true or settings["season_order_nextweek"] == "0" then
+        table.insert(clgDvTmp,0)
+    end
     for _, dev in ipairs(clgDvTmp) do
         table.insert(theSunStamp,Date_time_info.present.sun_stamp + (dev or 0)*604800) -- 7*24*3600=604800
     end
@@ -192,6 +227,13 @@ function getseason()
             pWeekDateInfo,cData.dt_sun=Datetime.theSunStampToDt(tss)
         else
             pWeekDateInfo,cData.dt_sun=Datetime.theSunStampToDt(tss)
+            -- if settings["season_naming_date"] == "Ymu" then
+            -- elseif settings["season_naming_date"] == "Y-m-u" then
+            -- elseif settings["season_naming_date"] == "YU" then
+            -- elseif settings["season_naming_date"] == "Y-U" then
+            -- elseif settings["season_naming_date"] == "Ymd" then
+            -- elseif true or settings["season_naming_date"] == "Y-m-d" then
+            -- end
             cTitle= string.sub(pWeekDateInfo[1],1,10)
         end
 
@@ -285,7 +327,9 @@ function getbgmlist(season)
     err,replyCs= kiko.httpgetbatch(hGetBatchTable.url,hGetBatchTable.query,hGetBatchTable.header)
     if err ~= nil then
         kiko.log("[ERROR] TVmaze.schedule.reply-week.of." ..(season.title or"").. ".httpgetbatch: " .. err)
-        kiko.log("[INFO]  hg: "..table.toStringBlock(hGetBatchTable).."\n\nrc"..table.toStringBlock(replyCs))
+        kiko.messsage("[错误] 对" ..(season.title or"").. "所在周获取时间表失败。\n" .. err,1|8)
+        -- kiko.log("[INFO]  hg: "..table.toStringBlock(hGetBatchTable).."\n\nrc"..table.toStringBlock(replyCs))
+        return weeksInfo
     end
     for replyCsI, replyCsV in ipairs(replyCs) do
         contentCs = replyCsV["content"]
@@ -398,6 +442,18 @@ function getbgmlist(season)
         -- if not string.isEmpty(((ep.show or{}).externals or{}).tvrage) then
         --     table.insert(wSites,{ ["name"]="TVRage", ["url"]="https://www.tvrage.com/"..((ep.show or{}).externals or{}).thetvdb})
         -- end
+        local tmpWeekInfoDate
+        if settings["schedule_date_release_type"] == "episode" then
+            tmpWeekInfoDate= os.date("%Y-%m-%d",dtStamp)
+        elseif settings["schedule_date_release_type"] == "show" then
+            tmpWeekInfoDate= (ep.show or{}).premiered
+        elseif true or settings["schedule_date_release_type"] == "show_x_ep" then
+            if season.title==Date_time_info.custom_week_title then
+                tmpWeekInfoDate= os.date("%Y-%m-%d",dtStamp)
+            else
+                tmpWeekInfoDate= (ep.show or{}).premiered
+            end
+        end
         
         table.insert(weeksInfo,{
             ["title"]=((ep.show or{}).name or""),-- ..
@@ -405,7 +461,7 @@ function getbgmlist(season)
             ["weekday"]= ((tonumber( os.date("%w",dtStamp) )==nil)and{ nil }or{ math.floor(tonumber( os.date("%w",dtStamp) ))})[1], --放送星期，取值0(星期日)~6(星期六)
             -- ["weekday"]=Date_time_info.weekEnNum[(((ep.show or{}).schedule or{}).days or{})[1]],
             ["time"]=os.date("%H:%M",dtStamp), --放送时间
-            ["date"]=(ep.show or{}).premiered, --放送日期
+            ["date"]= tmpWeekInfoDate, --放送日期
             ["isnew"]= ((tonumber(ep.season)==nil) and{ false }or{ math.floor(tonumber(ep.season))==1 })[1], --是否新番
             -- ["bgmid"]=nil, --tvmaze id
             ["bgmid"]=((ep.show or{}).externals or{}).thetvdb, --tvdb id
@@ -429,10 +485,18 @@ function getbgmlist(season)
     -- table.stable_sort(weeksInfo, function(a,b) return (a.season_number or 0)<(b.season_number or 0) end)
     table.stable_sort(weeksInfo, function(a,b) return a.title.." "..a.season_ep_format < b.title.." "..b.season_ep_format end)
     if settings["schedule_sort"]=="time" then
+        -- table.stable_sort(weeksInfo, function(a,b) return a.title.." "..a.season_ep_format < b.title.." "..b.season_ep_format end)
         table.stable_sort(weeksInfo, function(a,b) return a.stamp<b.stamp end)
     elseif settings["schedule_sort"]=="title" then
+        -- table.stable_sort(weeksInfo, function(a,b) return a.stamp<b.stamp end)
+        -- table.stable_sort(weeksInfo, function(a,b) return a.title.." "..a.season_ep_format < b.title.." "..b.season_ep_format end)
         type(0)
     elseif true or settings["schedule_sort"]=="timeslot" then
+        -- table.stable_sort(weeksInfo, function(a,b) return a.title.." "..a.season_ep_format < b.title.." "..b.season_ep_format end)
+        -- if settings["schedule_date_release_type"] == "episode" or (settings["schedule_date_release_type"] == "show_x_ep"
+        --         and season.title==Date_time_info.custom_week_title) then
+        --     table.stable_sort(weeksInfo, function(a,b) return a.date<b.date end)
+        -- end
         table.stable_sort(weeksInfo, function(a,b) return a.time<b.time end)
     end
     return weeksInfo
