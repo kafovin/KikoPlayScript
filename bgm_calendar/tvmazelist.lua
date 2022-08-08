@@ -7,7 +7,7 @@ info = {
     ["id"] = "Kikyou.b.TVmazeList",
     ["desc"] = "TVmaze 剧集日历脚本（测试中，不稳定） Edited by: kafovin \n"..
                 "从 tvmaze.com 刮削剧集的日历时间表。",
-    ["version"] = "0.1.20", -- 0.1.20.220719_build
+    ["version"] = "0.1.21", -- 0.1.21.220727_build
 }
 
 -- 设置项
@@ -39,25 +39,25 @@ settings = {
         ["choices"]="episode,show,show_x_ep",
     },
     ["season_deviance_older"]={
-        ["title"]="分周列表 - 近几周",
+        ["title"]="分组列表 - 近几周",
         ["default"]="54",
-        ["desc"]="分周的列表中，显示现在及以前几周。列表倒数第2个为 下一周，最后一个为本周。请保存设置后重启，方可查看新的分周列表。\n"..
+        ["desc"]="分组的列表中，显示现在及以前几周。列表倒数第2个为 下一周，最后一个为本周。请保存设置后重启，方可查看新的分组列表。\n"..
                 "近1周为 1 (即本周)，近2周为 2 (即本周、上一周)，以此类推。\n"..
                 "0：自1989-12-17所在一周至今。 54：近54周 (默认)。",
         -- 用 1989-12-17 是因为TVmaze网站日历的默认显示，似乎从这一天开始逐渐有内容，即 The Simpsons S01E01 播出时的那一周。
     },
     ["season_order_nextweek"]={
-        ["title"]="分周列表 - 显示下一周",
+        ["title"]="分组列表 - 显示下一周",
         ["default"]="0",
-        ["desc"]="分周的列表中，下一周的位置。\n"..
+        ["desc"]="分组的列表中，下一周的位置。\n"..
                 "0：不显示 (默认)。 1：显示在`本周`的后一个。\n"..
                 "-1：显示在`本周`的前一个 (可能会影响`关注`功能的识别)。",
         ["choices"]="-1,0,1",
     },
     -- ["season_naming_date"]={
-    --     ["title"]="分周列表 - 日期格式",
+    --     ["title"]="分组列表 - 日期格式",
     --     ["default"]="Y-m-d",
-    --     ["desc"]="分周的列表中，周名的日期格式。建议与`时间表 - 放送日期类型`的设置搭配以分辨日期。\n"..
+    --     ["desc"]="分组的列表中，周名的日期格式。建议与`时间表 - 放送日期类型`的设置搭配以分辨日期。\n"..
     --             "[注意]  更改此设置后，以前载入的周会无法识别。\n"..
     --             "[注意]  要使用以前的时间表需要手动重命名此目录下的缓存：`.\\KikoPlay\\data\\calendar\\Kikyou.b.TVmazeList`\n"..
     --             "Y-m-d：年份-月份-日期，如 `2021-12-31` (默认)。Ymd：年份月份日期，如 `20211231`。\n"..
@@ -88,6 +88,13 @@ settings = {
                     "30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59",
     },
 }
+
+scriptmenus = {
+    {["title"]="检测连接", ["id"]="detect_valid_connect"},
+    {["title"]="使用方法", ["id"]="link_repo_usage"},
+    {["title"]="关于", ["id"]="display_dialog_about"},
+}
+
 -- (()and{}or{})[1]
 
 --[[ copy from & thanks to "../bgm_calendar/bgmlist.lua" in "KikoPlay/bgm_calendar"|KikoPlayScript
@@ -259,8 +266,8 @@ function getbgmlist(season)
     local err, objCldg = kiko.json2table(season.data or"{}")
     if err ~= nil then kiko.log(string.format("[ERROR] json2table: %s", err)) end
     if table.isEmpty(objCldg) or table.isEmpty(objCldg.dt_sun) then
-        kiko.log("[WARN]  (BgmSeason)season."..(season.title or "_")..":[\"data\"] not found.")
-        -- error("[WARN]  (BgmSeason)season."..season.title..": "..err)
+        kiko.log("[WARN]  season."..(season.title or "_")..":[\"data\"] not found.")
+        -- error("[WARN]  season."..season.title..": "..err)
         -- Datetime.
         objCldg={}
         if string.isEmpty(season.title) then
@@ -327,12 +334,20 @@ function getbgmlist(season)
     err,replyCs= kiko.httpgetbatch(hGetBatchTable.url,hGetBatchTable.query,hGetBatchTable.header)
     if err ~= nil then
         kiko.log("[ERROR] TVmaze.schedule.reply-week.of." ..(season.title or"").. ".httpgetbatch: " .. err)
-        kiko.messsage("[错误] 对" ..(season.title or"").. "所在周获取时间表失败。\n" .. err,1|8)
+        kiko.message("[错误] 对" ..(season.title or"").. "所在周获取时间表失败。\n" .. err,1|8)
         -- kiko.log("[INFO]  hg: "..table.toStringBlock(hGetBatchTable).."\n\nrc"..table.toStringBlock(replyCs))
         return weeksInfo
     end
     for replyCsI, replyCsV in ipairs(replyCs) do
         contentCs = replyCsV["content"]
+        if (replyCsV or{}).hasError then
+            kiko.log("[ERROR] TVmaze.schedule.reply-week.of." ..(season.title or"").. ".httpgetbatch: " .. err..
+                    (((replyCsV or{}).hasError) and{" <"..math.floor((replyCsV or{}).statusCode).."> "..(replyCsV or{}).errInfo} or{""})[1])
+            kiko.message("[错误] 对" ..(season.title or"").. "所在周获取时间表失败。\n" .. err,1|8)
+            -- kiko.log("[INFO]  hg: "..table.toStringBlock(hGetBatchTable).."\n\nrc"..table.toStringBlock(replyCs))
+            return weeksInfo
+        end
+        
         local objCsi= {}
         err, objCsi = kiko.json2table(contentCs)
         if err ~= nil then
@@ -462,7 +477,8 @@ function getbgmlist(season)
             -- ["weekday"]=Date_time_info.weekEnNum[(((ep.show or{}).schedule or{}).days or{})[1]],
             ["time"]=os.date("%H:%M",dtStamp), --放送时间
             ["date"]= tmpWeekInfoDate, --放送日期
-            ["isnew"]= ((tonumber(ep.season)==nil) and{ false }or{ math.floor(tonumber(ep.season))==1 })[1], --是否新番
+            ["isnew"]= ((tonumber(ep.season)==nil) and{ false }or{ math.floor(tonumber(ep.season))==1 })[1]
+                        or ((tonumber(ep.number)==nil) and{ false }or{ math.floor(tonumber(ep.number))==1 })[1], --是否新番
             -- ["bgmid"]=nil, --tvmaze id
             ["bgmid"]=((ep.show or{}).externals or{}).thetvdb, --tvdb id
             ["sites"]= wSites, --放送站点列表
@@ -483,7 +499,7 @@ function getbgmlist(season)
     kiko.log("[INFO]  Finished getting " .. #weeksInfo .. " info of < " .. season.title .. ">")
     -- table.stable_sort(weeksInfo, function(a,b) return (a.episode_number or 0)<(b.episode_number or 0) end)
     -- table.stable_sort(weeksInfo, function(a,b) return (a.season_number or 0)<(b.season_number or 0) end)
-    table.stable_sort(weeksInfo, function(a,b) return a.title.." "..a.season_ep_format < b.title.." "..b.season_ep_format end)
+    table.stable_sort(weeksInfo, function(a,b) return a.title.."  "..a.season_ep_format < b.title.."  "..b.season_ep_format end)
     if settings["schedule_sort"]=="time" then
         -- table.stable_sort(weeksInfo, function(a,b) return a.title.." "..a.season_ep_format < b.title.." "..b.season_ep_format end)
         table.stable_sort(weeksInfo, function(a,b) return a.stamp<b.stamp end)
@@ -501,6 +517,87 @@ function getbgmlist(season)
     end
     return weeksInfo
 end
+
+-- 对修改设置项`settings`响应。KikoPlay当 设置中修改了脚本设置项 时，会尝试调用`setoption`函数通知脚本。
+-- key为设置项的key，val为修改后的value
+function setoption(key, val)
+    if key=="season_deviance_older" then
+        kiko.dialog({
+            ["title"]="更改了 `分组列表 - 近几周`",
+            ["tip"]="\t请重启 KikoPlay 以应用设置。",
+            ["text"]=nil,
+        })
+    end
+    if key=="season_order_nextweek" then
+        kiko.dialog({
+            ["title"]="更改了 `分组列表 - 显示下一周`",
+            ["tip"]="\t请重启 KikoPlay 以应用设置。",
+            ["text"]=nil,
+        })
+    end
+end
+
+function scriptmenuclick(menuid)
+    if menuid == "detect_valid_connect" then
+        
+        local diaTitle, diaTip, diaText = "检测 - 是否有效连接","",""
+        local query = {}
+        local header = { ["Content-Type"]= "application/json", }
+        local hg_theme= "shows/16149" -- Flebag (2016)
+        local err,reply
+        err, reply = kiko.httpget("https://api.tvmaze.com/".. hg_theme, query, header)
+        if err ~= nil or (reply or{}).hasError==true then
+            kiko.log("[ERROR] TVmaze.connect.reply-test.httpget: ".. (err or "").."<"..
+                    string.format("%03d",(reply or{}).statusCode or 0)..">"..((reply or{}).errInfo or""))
+            diaTip = diaTip.. "[错误]\t"..(err or "").."<"..
+                    string.format("%03d",(reply or{}).statusCode or 0).."> "..((reply or{}).errInfo or"").."！\n"
+            diaText = diaText.. ""
+            -- error((err or "").."<".. string.format("%03d",(reply or{}).statusCode)..">"..(reply or{}).errInfo or"")
+        else
+            diaTip = diaTip.. "\t成功连接 TVmaze ！\n"
+        end
+
+        kiko.dialog({
+            ["title"]= diaTitle,
+            ["tip"]= diaTip,
+            ["text"]=  (string.isEmpty(diaText) and{nil} or{diaText})[1],
+        })
+    elseif menuid == "link_repo_usage" then
+        kiko.execute(true, "cmd", {"/c", "start", "https://github.com/kafovin/KikoPlayScript#%E8%84%9A%E6%9C%AC-tvmaze-%E7%9A%84%E7%94%A8%E6%"})
+    elseif menuid == "display_dialog_about" then
+        local img_back_data= nil
+        -- local header = {["Accept"] = "image/jpeg" }
+        -- local err, reply = kiko.httpget("https://github.com/kafovin/KikoPlayScript/blob/library-tmdb-beta/manual.assets/image-TVmazeList-1.1.1.png", {} , header)
+        -- if err ~= nil or (reply or{}).hasError then
+        --     img_back_data=nil
+        -- else
+        --     img_back_data=reply["content"]
+        -- end
+        kiko.dialog({
+            ["title"]= "关于",
+            ["tip"]= "\t\t\t\tEdited by: kafovin\n\n"..
+                    "脚本 TVmazeList (/bgm_calendar/tvmazelist.lua) 是针对剧集的日历时间表脚本（仅英国、美国等），\n"..
+                    "主要借助从 TVmaze 的公共API刮削剧集的日历时间表(剧集标题为英文)。\n"..
+                    "* 测试中，不稳定，未来可能会有较大改动。\n"..
+                    "\n欢迎到 此脚本的GitHub页面 或 KikoPlay的QQ群 反馈！\n",
+            ["text"]= "+ 此脚本的GitHub页面 - https://github.com/kafovin/KikoPlayScript\n"..
+                    "\t 用法、常见问题…\n"..
+                    "\n本脚本基于：\n"..
+                    "+ TVmaze 首页 - https://www.tvmaze.com/\n"..
+                    "+ 其他另见脚本内注释\n"..
+                    "\nKikoPlay：\n"..
+                    "+ KikoPlay 首页 - https://kikoplay.fun/\n"..
+                    "+ KikoPlay的GitHub页面 - https://github.com/KikoPlayProject/KikoPlayScript\n"..
+                    "+ KikoPlay 脚本仓库 - https://github.com/KikoPlayProject/KikoPlayScript",
+            ["image"]= img_back_data,
+        })
+    end
+end
+
+
+---------------------
+-- 功能函数
+--
 
 --* string.split("abc","b")
 -- return: (table){} - 无匹配，返回 (table){input}
@@ -539,7 +636,6 @@ function string.isEmpty(input)
     else return false
     end
 end
-
 
 --* table 转 多行的string - 把表转为多行（含\n）的字符串  （单向的转换，用于打印输出）
 -- <table>table0 -> <string>:"[k]\t v,\n [ (k)v,\t (k)v ], \n"
