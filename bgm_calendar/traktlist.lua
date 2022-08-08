@@ -7,13 +7,13 @@ info = {
     ["id"] = "Kikyou.b.TraktList",
     ["desc"] = "Trakt 媒体日历脚本（测试中，不稳定） Edited by: kafovin \n"..
                 "从 trakt.tv 刮削媒体的日历时间表，可在日历中自动标记Trakt账户里已关注的媒体。",
-    ["version"] = "0.0.03", -- 0.0.03.220731_build
+    ["version"] = "0.1.04", -- 0.1.04.220801_fix
 }
 
 -- 设置项
 settings = {
     ["api_key_trakt"] = {
-        ["title"] = "API - Trakt的API密钥",
+        ["title"] = "API - Trakt的Client ID",
         ["default"] = "<<Client_ID_Here>>",
         ["desc"] = "[必填项] 在`trakt.tv`注册账号，并把个人设置`Settings`中的`Your API Apps`申请到的\n"..
                     "`Client ID` 填入此项。 ( `https://trakt.tv/oauth/applications`，一般为一串字母数字)"
@@ -35,10 +35,10 @@ settings = {
     -- },
     ["schedule_info_range"]={
         ["title"]="时间表 - 媒体范围",
-        ["default"]="show_all",
+        ["default"]="show_movie_all",
         ["desc"]="时间表中所出现媒体的范围，例如：剧集/电影、仅关注/所有。\n"..
                 "show：剧集。 movie：电影。 dvd：光盘。  all：所有。 my：Trakt账户里已关注的媒体。\n"..
-                "show_all：所有剧集 (默认)。 `my`相关功能还需要`账户授权`(在脚本设置右键菜单)。",
+                "show_movie_all：所有剧集、电影 (默认)。 `my`相关功能还需要`账户授权`(在脚本设置右键菜单)。",
         -- ["choices"]="show_all,show_movie_all",
         ["choices"]="show_all,show_movie_all,show_all_my,show_movie_all_my,show_my,show_movie_my",
     },
@@ -46,7 +46,7 @@ settings = {
         ["title"]="时间表 - 合并剧集",
         ["default"]="1",
         ["desc"]="时间表中的剧集某季 是否将同一星期的不同集数合并为一行。\n"..
-                "0：按各自集数显示为多行显示 (默认)。 1：按所属星期将不同集数合并为一行显示。\n"..
+                "0：按各自集数显示为多行显示。 1：按所属星期将不同集数合并为一行显示 (默认)。\n"..
                 "2：按所属星期将不同集数合并为一行，不注明集数。",
         ["choices"]="0,1,2",
         -- ["choices"]="show_all,show_my,show_movie_all,show_movie_my",
@@ -55,9 +55,9 @@ settings = {
         ["title"]="时间表 - 排序",
         ["default"]="timeslot",
         ["desc"]="将每日时间表按此顺序排列，顺序相同的以`标题 季序号 集序号`为序。\n"..
-                "time：按时间升序。timeslot：按时间档升序 (默认)。title：按名称升序。",
+                "time：按时间升序。timeslot：按时间档升序 (默认)。title：按名称升序。 mf：将电影排在最前。",
                 -- "default：默认。time：按时间升序。",
-        ["choices"]="time,timeslot,title",
+        ["choices"]="time,timeslot,title,time_mf,timeslot_mf",
         -- ["choices"]="default,time",
     },
     -- ["schedule_date_release_type"]={
@@ -72,7 +72,7 @@ settings = {
     ["season_deviance_older"]={
         ["title"]="分组列表 - 近几组",
         ["default"]="56",
-        ["desc"]="分组的列表中，显示现在及以前几组。列表倒数第2个为 下一组，最后一个为本组。请保存设置后重启，方可查看新的分组列表。\n"..
+        ["desc"]="分组的列表中，显示现在及以前几组，最后一个为本组。请保存设置后重启，方可查看新的分组列表。\n"..
                 "近1组为 1 (即本组)，近2组为 2 (即本组、上一组)，以此类推。\n"..
                 "0：自1909-02-01所在一组至今。 56：近56组 (默认)。",
         -- 用 1909-02-01 是因为Trakt网站日历的默认显示，似乎从这一天开始逐渐有内容，即 The Mack Sennett Collection S01E01 播出时的那一组。
@@ -201,25 +201,34 @@ function string.isEmpty(input)
     end
 end
 --* any timestamp , (string)typeStart::year/month/week/[day] -> (table)date
-function Datetime.stampToDate(stamp,typeStart)
+function Datetime.stampToDate(stamp,typeStart,isKeephm)
     if stamp<0 then
         stamp=Date_time_info.present.p_stamp
     end
     -- 24*3600=86400
     local sundTmp
     if typeStart==nil then
+        if type(isKeephm)~="boolean" then isKeephm=true end
         sundTmp=os.date("*t",stamp)
     elseif (typeStart or Calendar_group.peroid_settings.start) =="week" then
-        sundTmp=os.date("*t",stamp -Date_time_info.timezone+Date_time_info.timezone_cus -86400*tonumber(os.date("%w",stamp -Date_time_info.timezone+Date_time_info.timezone_cus)))
+        if type(isKeephm)~="boolean" then isKeephm=false end
+        sundTmp=os.date("*t",stamp -Date_time_info.timezone+Date_time_info.timezone_cus
+                -86400*tonumber(os.date("%w",stamp -Date_time_info.timezone+Date_time_info.timezone_cus)))
     elseif true or (typeStart or Calendar_group.peroid_settings.start) =="day" then
+        if type(isKeephm)~="boolean" then isKeephm=false end
         sundTmp=os.date("*t",stamp -Date_time_info.timezone+Date_time_info.timezone_cus)
     end
     local sund={}
     sund.year=sundTmp.year
     sund.month=sundTmp.month
     sund.day=sundTmp.day
+    if isKeephm then
     sund.hour=sundTmp.hour
     sund.minute=sundTmp.minute
+    else
+        sund.hour=nil
+        sund.minute=nil
+    end
     if typeStart==nil then
         return sund
     end
@@ -236,7 +245,7 @@ function Datetime.getPresent()
     local pStamp,pDate,pSunDate,pSunStamp,pZone
     pStamp= os.time()
     pDate= Datetime.stampToDate(pStamp,"day")
-    pSunDate= Datetime.stampToDate(pStamp, Calendar_group.peroid_settings.start)
+    pSunDate= Datetime.stampToDate(pStamp, Calendar_group.peroid_settings.start,false)
     pSunStamp=(os.time(pSunDate)) -43200 +Date_time_info.timezone-Date_time_info.timezone_cus -- 12*3600
     -- pZone= os.date("%z",pStamp) -- +0800
     return {
@@ -333,6 +342,7 @@ function getseason()
             .."."..settings["season_deviance_period"].. ">")
     Calendar_group.peroid_settings= Datetime.getPeroidFromSettings(settings["season_deviance_period"])
     Date_time_info.present= Datetime.getPresent()
+
     -- kiko.log("[TEST]  " .. os.date(Date_time_info.str_format,Date_time_info.present.sun_stamp) .. ">")
     -- kiko.log("[TEST]  ! "..os.date("!%Y-%m-%dT%H:%M:%S+%z",Date_time_info.present.p_stamp))
 
@@ -395,7 +405,7 @@ function getseason()
             cData.period_start_dt= {}
             cData.period_end_dt= {}
             local tss= Date_time_info.present.sun_stamp + (dev or 0) *devpSec
-            pWeekDateInfo = Datetime.stampToDate(tss,"day")
+            pWeekDateInfo = Datetime.stampToDate(tss,"day",false)
             cData.period_start_dt.stamp = tss
             cData.period_end_dt.stamp = Datetime.stampAddPeriod(cData.period_start_dt.stamp, Calendar_group.peroid_settings.unit, Calendar_group.peroid_settings.count, Calendar_group.peroid_settings.start)
             -- if settings["season_naming_date"] == "Ymu" then
@@ -406,7 +416,7 @@ function getseason()
             -- elseif true or settings["season_naming_date"] == "Y-m-d" then
             -- end
             cTitle= string.format("%04d-%02d-%02d",pWeekDateInfo.year,pWeekDateInfo.month,pWeekDateInfo.day)
-            
+
             err, cDataJson = kiko.table2json(cData)
             if err ~= nil then
                 kiko.log(string.format("[ERROR] table2json: %s", err))
@@ -505,7 +515,7 @@ function getbgmlist(season)
     local apiAccesst= ApiTrakt.getAccessToken() or {}
     isSitMy= apiAccesst.success and isSitMy
     -- start_date days in httpget url
-    local qDateStart= Datetime.stampToDate(sunday0100_s-86400,"day")
+    local qDateStart= Datetime.stampToDate(sunday0100_s-86400,"day",false)
     local qDdStr= string.format("%04d-%02d-%02d", qDateStart.year, qDateStart.month, qDateStart.day)
     local qDayCount= math.ceil((sunday0100_e - sunday0100_s)/86400) +2 -- 24*3600
     qDayCount= ((qDayCount>33) and{33} or{qDayCount})[1]
@@ -624,7 +634,7 @@ function getbgmlist(season)
                             -Date_time_info.timezone+Date_time_info.timezone_cus )) or 0)
             elseif true or isMgShow then
                 wStamp= Datetime.strToStamp(string.sub(mi[fRelease], 1,19) .."+00:00Z") -- 2022-07-24T00:00:00.000Z
-                local wDatetime= Datetime.stampToDate(wStamp,"day")
+                local wDatetime= Datetime.stampToDate(wStamp,"day",true)
                 wDate= string.format("%04d-%02d-%02d", wDatetime.year, wDatetime.month or 1, wDatetime.day or 1)
                 wTime= string.format("%02d:%02d", wDatetime.hour or 0, wDatetime.minute or 0)
                 wWeekday= math.floor(tonumber( os.date("%w", wStamp
@@ -692,7 +702,7 @@ function getbgmlist(season)
                 -- if not string.isEmpty((ep.show or{}).officialSite) then
                 --     table.insert(wSites,{ ["name"]="主页", ["url"]=(ep.show or{}).officialSite})
                 -- end
-                if not string.isEmpty(mediaV.info.ids.slug) then
+                if mType~="movie" and not string.isEmpty(mediaV.info.ids.slug) then
                     table.insert(wSites,{ ["name"]="Trakt", ["url"]="https://trakt.tv/"..mType.."s/".. (mediaV.info.ids.slug or""),})
                 end
                 if not string.isEmpty(mediaV.info.ids.imdb) then
@@ -766,23 +776,22 @@ function getbgmlist(season)
                 elseif true or settings["schedule_info_zmerged"] =="0" then
                     if mType=="movie" then
                         local tmpSnameSEx=""
-                        if mediaV.eps.movie~=nil then
-                            tmpSnameSEx= Translation[Metadata_lang].media_type.movie
-                            table.insert(wEpisodeSite,{
-                                ["name"]= (string.isEmpty(tmpSnameSEx) and{"-"}or{tmpSnameSEx})[1],
-                                ["url"]= "https://trakt.tv/"..mType.."s/".. (mediaV.info.ids.slug or""),
-                            })
-                            table.insert(wEpisodeName,"0m3movie")
-                            table.insert(wEpisodeList, mediaV.eps.movie)
-                        end
                         if mediaV.eps.dvd~=nil then
                             tmpSnameSEx= Translation[Metadata_lang].media_type.movie..Translation[Metadata_lang].media_type.dvd
                             table.insert(wEpisodeSite,{
-                                ["name"]= (string.isEmpty(tmpSnameSEx) and{"-"}or{tmpSnameSEx})[1],
+                                ["name"]= (string.isEmpty(tmpSnameSEx) and{"Trakt"}or{tmpSnameSEx.."Trakt"})[1],
                                 ["url"]= "https://trakt.tv/"..mType.."s/".. (mediaV.info.ids.slug or""),
                             })
                             table.insert(wEpisodeName,"0m7dvd")
                             table.insert(wEpisodeList, mediaV.eps.dvd)
+                        elseif mediaV.eps.movie~=nil then
+                            tmpSnameSEx= Translation[Metadata_lang].media_type.movie
+                            table.insert(wEpisodeSite,{
+                                ["name"]= (string.isEmpty(tmpSnameSEx) and{"Trakt"}or{tmpSnameSEx.."Trakt"})[1],
+                                ["url"]= "https://trakt.tv/"..mType.."s/".. (mediaV.info.ids.slug or""),
+                            })
+                            table.insert(wEpisodeName,"0m3movie")
+                            table.insert(wEpisodeList, mediaV.eps.movie)
                         end
                     elseif mType=="show" then
                         for _,epv in pairs(mediaV.eps) do
@@ -832,23 +841,38 @@ function getbgmlist(season)
     weeksInfoUnique= nil
 
     kiko.log("[INFO]  Finished getting " .. #weeksInfo .. " info of < " .. season.title .. ">")
+    local sSortBy= string.split(settings["schedule_sort"], "_")
+    sSortBy[2]= (string.isEmpty(sSortBy[2]) and{"ml"} or{sSortBy[2]})[1]
     -- table.stable_sort(weeksInfo, function(a,b) return (a.episode_number or 0)<(b.episode_number or 0) end)
     -- table.stable_sort(weeksInfo, function(a,b) return (a.season_number or 0)<(b.season_number or 0) end)
     table.stable_sort(weeksInfo, function(a,b) return a.title.."  "..a.season_ep_format < b.title.."  "..b.season_ep_format end)
-    if settings["schedule_sort"]=="time" then
+    if sSortBy[1] =="time" then
         -- table.stable_sort(weeksInfo, function(a,b) return a.title.." "..a.season_ep_format < b.title.." "..b.season_ep_format end)
-        table.stable_sort(weeksInfo, function(a,b) return a.stamp<b.stamp end)
-    elseif settings["schedule_sort"]=="title" then
+        -- table.stable_sort(weeksInfo, function(a,b) return a.stamp<b.stamp end)
+        if sSortBy[2] =="mf" then
+            table.stable_sort(weeksInfo, function(a,b) return ( (a.date or "").. (string.isEmpty(a.time) and{"00 00"} or{a.time})[1])
+                < (b.date or"").. ((string.isEmpty(b.time) and{"00 00"} or{b.time})[1]) end)
+        elseif true or sSortBy[2] == "ml" then
+            table.stable_sort(weeksInfo, function(a,b) return ( (a.date or "").. (string.isEmpty(a.time) and{"24:00"} or{a.time})[1])
+                    < (b.date or"").. ((string.isEmpty(b.time) and{"24:00"} or{b.time})[1]) end)
+        end
+    elseif sSortBy[1] =="title" then
         -- table.stable_sort(weeksInfo, function(a,b) return a.stamp<b.stamp end)
         -- table.stable_sort(weeksInfo, function(a,b) return a.title.." "..a.season_ep_format < b.title.." "..b.season_ep_format end)
         type(0)
-    elseif true or settings["schedule_sort"]=="timeslot" then
+    elseif true or sSortBy[1] =="timeslot" then
         -- table.stable_sort(weeksInfo, function(a,b) return a.title.." "..a.season_ep_format < b.title.." "..b.season_ep_format end)
         -- if settings["schedule_date_release_type"] == "episode" or (settings["schedule_date_release_type"] == "show_x_ep"
         --         and season.title==Date_time_info.custom_week_title) then
         --     table.stable_sort(weeksInfo, function(a,b) return a.date<b.date end)
         -- end
-        table.stable_sort(weeksInfo, function(a,b) return a.time<b.time end)
+        if sSortBy[2] =="mf" then
+            table.stable_sort(weeksInfo, function(a,b) return ( (string.isEmpty(a.time) and{"00 00"} or{a.time})[1]) ..(a.date or "")
+                    < ((string.isEmpty(b.time) and{"00 00"} or{b.time})[1]) ..(b.date or"") end)
+        elseif true or sSortBy[2] == "ml" then
+            table.stable_sort(weeksInfo, function(a,b) return ( (string.isEmpty(a.time) and{"24:00"} or{a.time})[1]) ..(a.date or "")
+                    < ((string.isEmpty(b.time) and{"24:00"} or{b.time})[1]) ..(b.date or"") end)
+        end
     end
     return weeksInfo
 end
@@ -1012,6 +1036,7 @@ function scriptmenuclick(menuid)
                     "\t 用法、常见问题…\n"..
                     "\n本脚本基于：\n"..
                     "+ Trakt 首页 - https://trakt.tv/\n"..
+                    "+ Trakt 的API页面 - https://trakt.tv/oauth/applications\n"..
                     "+ 其他另见脚本内注释\n"..
                     "\nKikoPlay：\n"..
                     "+ KikoPlay 首页 - https://kikoplay.fun/\n"..
@@ -1375,7 +1400,7 @@ function Datetime.stampAddPeriod(stamp,pUnit,pCount,pStart)
     end
     if pUnit =="year" or pUnit =="month" then
         local pStart_d,pEnd_d
-        pStart_d = Datetime.stampToDate(stamp,"day")
+        pStart_d = Datetime.stampToDate(stamp,"day",false)
         if Calendar_group.peroid_settings.start =="year" then
             pEnd_d.year= pStart_d.year + pCount
             pEnd_d.month= pStart_d.month

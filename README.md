@@ -1,15 +1,17 @@
 # KikoPlay 脚本 TMDb & TVmazeList - 使用手册
 
-脚本 TMDb (`/library/tmdb.lua`) 是用于弹幕视频播放软件  [KikoPlay](https://github.com/KikoPlayProject/KikoPlay) 的资料脚本，主要借助你从 [The Movie Database (TMDB)](https://www.themoviedb.org/) 申请的API来搜索和刮削信息。
-也可设置选择刮削 [fanart](https://fanart.tv/) 的媒体图片、[Emby](https://emby.media/) 的本地元数据、[TVmaze](https://www.tvmaze.com/)的剧集演员。
+脚本 TMDb+Lib ([`/library/tmdb.lua`](library/tmdb.lua)) 是用于弹幕视频播放软件  [KikoPlay](https://github.com/KikoPlayProject/KikoPlay) 的资料脚本，主要借助你从 [The Movie Database (TMDB)](https://www.themoviedb.org/) 申请的API来搜索和刮削信息。
+也可设置选择刮削 [fanart](https://fanart.tv/) 的媒体图片、[Jellyfin](https://jellyfin.org/)/[Emby](https://emby.media/) 的本地元数据、[TVmaze](https://www.tvmaze.com/)的剧集演员。
 
-脚本 TVmazeList (`/bgm_calendar/tvmazelist.lua`) 是针对剧集的日历时间表脚本（仅英国、美国），主要借助从 [TVmaze](https://www.tvmaze.com/) 的公共API刮削剧集的日历时间表(剧集标题为英文)。*（测试中，不稳定，未来可能会有较大改动）*
+脚本 TVmazeList ([`/bgm_calendar/tvmazelist.lua`](/bgm_calendar/tvmazelist.lua)) 是针对剧集的日历时间表脚本（仅英国、美国等），主要借助从 [TVmaze](https://www.tvmaze.com/) 的公共API刮削剧集的日历时间表(剧集标题为英文)。*（测试中，不稳定，未来可能会有较大改动）*
+
+脚本 TraktList ([`/bgm_calendar/traktlist.lua`](/bgm_calendar/traktlist.lua)) 是针对媒体的日历时间表脚本，主要借助从 [TVmaze](https://trakt.tv/) 的API刮削剧集/电影的日历时间表(标题为英文)。*（测试中，不稳定，未来可能会有较大改动）*
 
 脚本~~仍在惰性地几乎~~没有编写中，希望大家多多发现Bug帮助完善脚本 : )
 
 <br/>
 
-使用 脚本`TMDb`，你可以得到：
+使用 脚本`TMDb+Lib`，你可以得到：
 
   ![image-Scraping.by.TMDb-2.1](manual.assets/image-Scraping.by.TMDb-2.1.1.png)
 
@@ -21,20 +23,30 @@
 
 <br/>
 
+使用 脚本`TraktList`，你可以得到：
+
+  ![image-TraktList-1.1](manual.assets/image-TraktList-1.1.1.png)
+
+<br/>
+
 > 目录
 
 + [安装](#安装)
 + [使用](#使用)
+  + [脚本 TMDb+Lib 的用法](#脚本-tmdblib-的用法)
+  + [脚本 TVmazeList 的用法](#脚本-tvmazelist-的用法)
+  + [脚本 TraktList 的用法](#脚本-traktlist-的用法)
 + [Q & A](#q--a)
-  + [如何申请TMDb的API密钥?](#如何申请tmdb的api密钥)
+  + [如何申请TMDb+Lib的API密钥?](#如何申请tmdblib的api密钥)
   + [如何设置脚本?](#如何设置脚本)
   + [如何搜索媒体数据?](#如何搜索媒体数据)
   + [如何匹配媒体文件?](#如何匹配媒体文件)
   + [如何获取资料夹详细信息?](#如何获取资料夹详细信息)
   + [如何查看某一周的节目单?](#如何查看某一周的节目单)
   + [更多设置项](#更多设置项)
-    + [脚本 TMDb 的设置](#脚本-tmdb-的设置)
-    + [脚本 TVmaze 的设置](#脚本-tvmaze-的设置)
+    + [脚本 TMDb+Lib 的设置](#脚本-tmdblib-的设置)
+    + [脚本 TVmazeList 的设置](#脚本-tvmazelist-的设置)
+    + [脚本 TraktList 的设置](#脚本-traktlist-的设置)
   + [其他](#其他)
 + [TODO](#todo)
 + [本脚本基于…](#本脚本基于)
@@ -42,6 +54,7 @@
   + [TVmaze](#tvmaze)
   + [fanart](#fanart)
   + [Trakt](#trakt)
+  + [Jellyfin](#jellyfin)
   + [Emby](#emby)
   + [KikoPlay](#kikoplay)
     + [KikoPlay脚本仓库](#kikoplay脚本仓库)
@@ -51,11 +64,11 @@
 
 ## 安装
 
-刮削来自TMDb的数据，你需要：
+刮削来自TMDb+Lib的数据，你需要：
 
 1. 下载脚本文件。
 
-   + 下载`library`文件夹中的 `tmdb.lua`文件
+   + 下载`library`文件夹中的 [`tmdb.lua`](library/tmdb.lua)文件
    + 复制到 KikoPlay 的 资料脚本目录下即可
    + 结果形如 `.\KikoPlay\script\library\tmdb.lua`。
 
@@ -64,13 +77,13 @@
 2. 从你的TMDb账户获取API密钥。
 
    + 注册或登录你的 TMDb 账户后，
-   + 点击页面顶端右上方的头像弹出菜单里的 `账户设置`，点击设置中的`API`页面，申请和获取API密钥。
+   + 点击页面顶端右上方的头像弹出菜单里的 `账户设置`，点击设置中的[`API`页面](https://www.themoviedb.org/settings/api)，申请和获取API密钥。
 
    （具体方法见下：[如何申请TMDb的API密钥？](#如何申请tmdb的api密钥) ）
 
 3. 把你的API密钥填入脚本设置。
 
-   + 进入KikoPlay，点击左上图标 -> 点击设置脚本设置 -> 在TMDb一行右键 -> 点击设置，
+   + 进入KikoPlay，点击左上图标 -> 点击设置脚本设置 -> 在TMDb+Lib一行右键 -> 点击设置，
    + 填入你的API密钥。
 
    （具体方法见下：[如何设置脚本？](#如何设置脚本)）
@@ -79,13 +92,13 @@
 
 <br/>
 
-查看来自TVmaze的剧集节目单，你需要：
+查看来自TVmazeList的剧集节目单，你需要：
 
   <!-- *注*：目前(20220305) 番组日历脚本支持且仅支持一个脚本执行，使用 TVmazeList 脚本便不能再使用原本的 bangumi 脚本。-->
 
 1. 下载脚本文件。
 
-   + 下载`bgm_calendar`文件夹中的 `tvmazelist.lua`文件
+   + 下载`bgm_calendar`文件夹中的 [`tvmazelist.lua`](/bgm_calendar/tvmazelist.lua)文件
    + 复制到 KikoPlay 的 番组日历脚本目录下即可
    + 结果形如 `.\KikoPlay\script\bgm_calendar\tvmazelist.lua`。
 
@@ -96,16 +109,46 @@
 
 2. 你可以开始使用啦。
 
+查看来自TraktList的媒体节目单，你需要：
+
+1. 下载脚本文件。
+
+   + 下载`bgm_calendar`文件夹中的 [`traktlist.lua`](/bgm_calendar/traktlist.lua)文件
+   + 复制到 KikoPlay 的 番组日历脚本目录下即可
+   + 结果形如 `.\KikoPlay\script\bgm_calendar\traktlist.lua`。
+
+   （假设目录 `.\KikoPlay`为KikoPlay.exe 所在的文件夹）
+
+2. 从你的Trakt账户获取Client ID。
+
+   + 注册或登录你的 Trakt 账户后，
+   + 点击页面顶端右上方的头像弹出菜单里的 把个人设置`Settings`中的 [`Your API Apps`](https://trakt.tv/oauth/applications) 申请到的`Client ID` 填入此项。
+
+   <!-- （具体方法见下：[如何申请Trakt的Client ID？](#如何申请trakt的client-id) ） -->
+
+3. 把你的Client ID密钥填入脚本设置。
+
+   + 进入KikoPlay，点击左上图标 -> 点击设置脚本设置 -> 在TraktList一行右键 -> 点击设置，
+   + 填入你的Client ID。
+
+   （具体方法见下：[如何设置脚本？](#如何设置脚本)）
+
+4. \* 如果你设置 `时间表 - 媒体范围` 涵盖 `my` (Trakt账户里已关注的媒体)，而之前未设置账户授权，就会弹出账户授权向导。
+
+5. 你可以开始使用啦。
+
 ## 使用
 
-> 适用版本：TMDb >= 0.2.2.220428_alpha  |  TVmazeList >= 0.1.20.220719_build
+### 脚本 TMDb+Lib 的用法
 
-刮削来自TMDb的数据，你可以：
+> 适用版本： TMDb+Lib >= 0.2.2.220428_alpha
 
-+ 把播放列表中的媒体文件关联到弹幕池时，使用 TMDb 搜索媒体的标题，选择你想要的并确认。
+刮削来自TMDb+Lib的数据，你可以：
+
++ 把播放列表中的媒体文件关联到弹幕池时，使用 TMDb+Lib 搜索媒体的标题，选择你想要的并确认。
 
   1. 打开播放标签页（首页），你在播放列表找到你要搜索的媒体文件，右键->关联->关联弹幕池。
-  2. 在弹出窗口的“搜索”下方的选项卡选择 TMDb，输入电影/剧集名称，就能看到搜索到的结果了。
+  2. 在弹出窗口的“搜索”下方的选项卡选择 TMDb+Lib，输入电影/剧集名称，就能看到搜索到的结果了。
   3. 选中你需要的条目，会进入集数选择的页面，把你的媒体文件与集数信息对应，
   4. 确认无误后点击右上的 √ 。
 
@@ -116,14 +159,14 @@
 + 依据媒体文件名，匹配刮削数据，以自动关联。
   把播放列表中 未关联的媒体文件，自动关联到弹幕池。
 
-  + 选中播放列表的需要关联的 文件名 任一项或多项 -> 右键 -> 选中 `TMDb`。
+  + 选中播放列表的需要关联的 文件名 任一项或多项 -> 右键 -> 选中 `TMDb+Lib`。
 
   （具体方法见下：[如何匹配媒体文件？](#如何匹配媒体文件)）
 
 + 在资料库刮削媒体的详细信息、标签。
 
   + 打开资料标签页，在资料库找到在你要刮削的媒体资料夹，右键 -> 更新，即可更新资料的详细信息。
-    <!-- 2. 在弹出窗口的“番剧搜索”下方的选项卡选择 TMDb，输入电影/剧集名称，就能看到搜索到的结果了。
+    <!-- 2. 在弹出窗口的“番剧搜索”下方的选项卡选择 TMDb+Lib，输入电影/剧集名称，就能看到搜索到的结果了。
     （与前一条类似，只输入标题就好。）-->
     <!-- 3. 确认无误后点击右上的 √ 。-->
 
@@ -136,9 +179,15 @@
 
   如果你使用Emby、并按照Emby组织媒体文件夹，那你可以发现Emby在本地媒体文件同文件夹保存的`.nfo`媒体元数据文件（内含.xml格式文本），获取的详细信息就是来自这个文件。
   + 需要更改脚本设置的`匹配 - 数据来源`为`local_Emby_nfo`。
-  + 从播放列表选中你的媒体文件（此时显示为文件名），右键 -> 选择`关联` -> 选中最后一行的`TMDb`。
+  + 从播放列表选中你的媒体文件（此时显示为文件名），右键 -> 选择`关联` -> 选中最后一行的`TMDb+Lib`。
+
+其他更多设置项见下：[脚本 TMDb+Lib 的设置](#脚本-tmdblib-的设置)。
 
 <br/>
+
+### 脚本 TVmazeList 的用法
+
+> 适用版本： TVmazeList >= 0.1.20.220719_build
 
 查看来自TVmaze的剧集节目单，你可以：
 
@@ -148,7 +197,7 @@
 
 + 在右上方可以选择并查看某一周的节目单。
 
-  最后一行为本周；往过去出现几周、下一周是否显示及其位置 都可以在脚本设置中设定。
+  最后一行 为本周；往过去出现几周、下一周是否显示及其位置 都可以在脚本设置中设定。
 
   （具体方法见下：[如何查看某一周的节目单？](#如何查看某一周的节目单)）
 
@@ -158,15 +207,41 @@
 
 <br/>
 
-其他更多设置项见下：[脚本 TMDb 的设置](#脚本-tmdb-的设置)、[脚本 TVmaze 的设置](#脚本-tvmaze-的设置)
+其他更多设置项见下：[脚本 TraktList 的设置](#脚本-traktlist-的设置)。
+
+<br/>
+
+### 脚本 TraktList 的用法
+
+> 适用版本： TraktList >= 0.1.04.220801_fix
+
+查看来自Trakt的剧集节目单，你可以：
+
++ 打开下载标签页，点击左侧侧边栏中番组日历的一项(日历形状的图标)，即可查看按设置对应的分组时间段的节目单。软件打开时日历时间表为当前时间所在组。
+
+  未加载成功时，请约10~30秒后再刷新。
+
++ 在右上方可以选择并查看某一组的节目单。
+
+  最后一行 为当前时间所在组；往过去出现几组、下一组是否显示及其位置 都可以在脚本设置中设定。
+
+  （具体方法与 脚本TVmazeList 类似，见下：[如何查看某一周的节目单？](#如何查看某一周的节目单)）
+
++ `放送站点`一列，标记了该周播出的某季某集、字幕站。显示的节目类型可以在脚本设置中设定。
+
+  右键某行的弹出菜单中，点击季序号集序号，弹出节目或某集的Trakt页面；点击Trakt，弹出媒体主页；点击字幕网站名，弹出搜索节目名称的页面。
+
+<br/>
+
+其他更多设置项见下：[脚本 TraktList 的设置](#脚本-tvmazelist-的设置)。
 
 <br/>
 
 ## Q & A
 
-> 适用版本：TMDb >= 0.2.2.220508_build  |  TVmazeList >= 0.1.20.220719_build
+> 适用版本：TMDb+Lib >= 0.2.2.220508_build  |  TVmazeList >= 0.1.20.220719_build  |  TraktList >= 0.1.04.220801_fix
 
-### 如何申请TMDb的API密钥?
+### 如何申请TMDb+Lib的API密钥?
 
 1. 打开 [The Movie Database (TMDB) 首页](https://www.themoviedb.org/)，这是一个类似IMDb、豆瓣的媒体数据信息网站，涵盖电影、剧集、演员等。
 
@@ -227,15 +302,16 @@
 
      ```bat
      
-     # tmdb.org themoviedb Start
+     # TMDb - themoviedb Start
      13.249.87.43 www.themoviedb.org
      99.84.173.16 api.themoviedb.org
      99.84.160.76 image.tmdb.org
-     51.89.197.177 fanart.tv
+     104.26.13.126 fanart.tv
      91.134.1.171 webservice.fanart.tv
-     163.172.219.181 assets.fanart.tv
-     # 172.67.3.215 trakt.tv
-     # tmdb.org End
+     51.89.210.78 assets.fanart.tv
+     172.67.3.215 trakt.tv
+     172.67.3.215 api.trakt.tv
+     # TMDb End
      
      ```
 
@@ -253,19 +329,28 @@
    ![image-Configuring.Script.TMDb-1.1](manual.assets/image-Configuring.Script.TMDb-1.1.1.png)
 <br/>
 
-2. 点击脚本设置 -> 在 TMDb或TVmazeList 一行右键 -> 点击设置；
+2. 点击脚本设置 -> 在 TMDb+Lib或TVmazeList等脚本 一行右键 -> 点击设置；
 
    ![image-Configuring.Script.TMDb-2.1](manual.assets/image-Configuring.Script.TMDb-2.1.1.png)
 <br/>
 
-如何设置脚本 TMDb
+3. \* 脚本设置界面，在脚本一行右键。
 
-+ 上一步操作TMDb后，在弹出窗口`TMDb API 密钥`那一行的`<<API_Key_Here>>` 处双击 -> 粘贴 上面第7步得到的密钥。其他设置 请根据你的需要选择。
+   + 可以通过`检测连接`来检测网站及API(如果可能需要)是否能有效连接。
+   + 可以通过`使用方法`弹出当前网页；
+   + 可以通过`关于`查看脚本相关信息；
+
+   ![image-Configuring.Script.TMDb-4.1](manual.assets/image-Configuring.Script.TMDb-4.1.1.png)
+<br/>
+
+如何设置脚本 TMDb+Lib
+
++ 上一步操作TMDb+Lib后，在弹出窗口`TMDb API 密钥`那一行的`<<API_Key_Here>>` 处双击 -> 粘贴 上面第7步得到的密钥。其他设置 请根据你的需要选择。
 
    ![image-Configuring.Script.TMDb-3.1](manual.assets/image-Configuring.Script.TMDb-3.1.1.png)
 <br/>
 
-其他更多设置项见下：[脚本 TMDb 的设置](#脚本-tmdb-的设置)、[脚本 TVmaze 的设置](#脚本-tvmaze-的设置)
+其他更多设置项见下：[脚本 TMDb+Lib 的设置](#脚本-tmdblib-的设置)、[脚本 TVmaze 的设置](#脚本-tvmazelist-的设置)
 
 ### 如何搜索媒体数据?
 
@@ -276,7 +361,7 @@
    ![image-Scraping.by.TMDb-1.1](manual.assets/image-Scraping.by.TMDb-1.1.1.png)
 <br/>
 
-2. 在弹出窗口的“搜索”下方的选项卡 选 TMDb，输入电影/剧集名称，就能看到搜索到的结果了。
+2. 在弹出窗口的“搜索”下方的选项卡 选 TMDb+Lib，输入电影/剧集名称，就能看到搜索到的结果了。
 
    （输入标题就好，默认设置部分支持形如"S01"、"第1季"等以空格与标题隔开的剧集季序号（，年份等搜索限制条件 这里还不支持）。\(￣▽￣\)  
 
@@ -296,13 +381,13 @@
 
 对于播放列表中 未关联的媒体文件 时：
 
-   1. 选中播放列表的需要关联的 文件名任一项或多项 -> 右键 -> 选中 TMDb。
+   1. 选中播放列表的需要关联的 文件名任一项或多项 -> 右键 -> 选中 TMDb+Lib。
 
 对于 拖拽媒体文件 到播放列表时：
 
    1. 右键播放列表任一项 -> 开启`自动关联模式` ，使其保持显示 √ 的状态。
 
-   2. 右键播放列表任一项 -> 默认关联脚本 -> 选择 TMDb ，使其保持显示 √ 的状态。
+   2. 右键播放列表任一项 -> 默认关联脚本 -> 选择 TMDb+Lib ，使其保持显示 √ 的状态。
 
    3. 现在拖拽媒体文件到播放列表中时会自动关联了。
 
@@ -321,7 +406,7 @@
    ![image-Scraping.by.TMDb-4.1](manual.assets/image-Scraping.by.TMDb-4.1.1.png)
 
    <!-- <br/>-->
-   <!-- 2. 在弹出窗口的“番剧搜索”下方的选项卡选择 TMDb，输入电影/剧集名称，就能看到搜索到的结果了。确认无误后点击右上的 √ 。（输入关键词的方式前者相同）-->
+   <!-- 2. 在弹出窗口的“番剧搜索”下方的选项卡选择 TMDb+Lib，输入电影/剧集名称，就能看到搜索到的结果了。确认无误后点击右上的 √ 。（输入关键词的方式前者相同）-->
    <!--- ![image-Scraping.by.TMDb-5.1](manual.assets/image-Scraping.by.TMDb-5.1.1.png) -->
 
    <br/>
@@ -333,9 +418,9 @@
 
    如果标签等有格式不同，原因可能是此资料是在旧版本搜索、刮削的 与当前不兼容，导致当前更新详细信息时 有部分元数据无法识别。请
    1. 在 步骤1 中选择`搜索详细信息`重新搜索。
-   2. 如果 当前资料夹的标题 与 当前TMDb搜索该媒体对应的标题 不符时，退出搜索对话框。在设置 -> 脚本设置 -> TMDb -> 设置 `搜索 - 关键词作标题`为`1`(即使用)，并确认`√`。
+   2. 如果 当前资料夹的标题 与 当前TMDb+Lib搜索该媒体对应的标题 不符时，退出搜索对话框。在设置 -> 脚本设置 -> TMDb+Lib -> 设置 `搜索 - 关键词作标题`为`1`(即使用)，并确认`√`。
    3. 在`搜索详细信息`弹出的对话框中，使用 当前标题 作关键词，选择对应的媒体，并确认`√`。
-   4. 如果在刚才的 步骤2.2 更改了设置，请恢复设置；即 把TMDb脚本设置的 `搜索 - 关键词作标题` 改为默认的`0`(即不使用)，并确认`√`。
+   4. 如果在刚才的 步骤2.2 更改了设置，请恢复设置；即 把TMDb+Lib脚本设置的 `搜索 - 关键词作标题` 改为默认的`0`(即不使用)，并确认`√`。
 <br/>
 
 3. 另外，在资料标签页，从资料库找到你要打开链接的媒体资料夹并 右键，你可以看到有多种功能。
@@ -386,7 +471,7 @@
 
 ### 更多设置项
 
-#### 脚本 TMDb 的设置
+#### 脚本 TMDb+Lib 的设置
 
 > 适用版本： >= 0.2.2.220703_fix
 
@@ -400,7 +485,7 @@ API
 
 + API - fanart的API密钥
 
-   \[选填项] 在 `fanart.tv` 注册账号，并把页面`https://fanart.tv/get-an-api-key/`中申请到的`Personal API Keys` 填入此项。（一般为一串字母数字）
+   \[选填项] 在 `fanart.tv` 注册账号，并把[获取`API`](https://fanart.tv/get-an-api-key/)页面中申请到的`Personal API Keys` 填入此项。（一般为一串字母数字）
 
   + *注意*：若需要跳过刮削fanart.tv的图片，请将设置项 `元数据 - 图片主要来源` 设为 `TMDb_only`。
 
@@ -455,7 +540,7 @@ API
 
    自动匹配本地媒体文件的数据来源。值为<local_Emby_nfo>时需要用软件Emby提前刮削过。
 
-  + `local_Emby_nfo`：来自Emby在刮削TMDb媒体后 在本地媒体文件同目录存储元数据的 .nfo格式文件(内含.xml格式文本)；
+  + `local_Emby_nfo`：来自Jellyfin/Emby在刮削TMDb媒体后 在本地媒体文件同目录存储元数据的 .nfo格式文件(内含.xml格式文本)；
   + `online_TMDb_filename`：从文件名模糊识别关键词，再用TMDb的API刮削元数据 (不够精确)。（默认设置）
 
 + 匹配 - 备用媒体类型
@@ -571,7 +656,7 @@ API
 
 <br/>
 
-#### 脚本 TVmaze 的设置
+#### 脚本 TVmazeList 的设置
 
 > 适用版本： >= 0.1.20.220719_build
 
@@ -627,24 +712,94 @@ API
 
 + 时间 - 时区小时 / 时区分钟
 
-   使用时区的小时数、分钟数。目前建议使用程序在当前系统的默认时区。
-   Asia/Shanghai(亚洲/上海)的时区为`+08:00`，即此处小时数为`+08`、分钟数为`0`。
+  使用时区的小时数、分钟数。目前建议使用程序在当前系统的默认时区。
+  Asia/Shanghai(亚洲/上海)的时区为`+08:00`，即此处小时数为`+08`、分钟数为`0`。
 
   + `system`: 系统默认时区的小时数、分钟数。（默认设置）
   + 其他可选小时数: -12 ~ -01， +00， +01 ~ +12
   + 其他可选分钟数: 0 ~ 59
+
+#### 脚本 TraktList 的设置
+
+> 适用版本： >= 0.1.04.220801_fix
+
+API
+
++ API - Trakt的Client ID
+  **\[必填项\]** 在`trakt.tv`注册账号，并把个人设置`Settings`中的[`Your API Apps`](https://trakt.tv/oauth/applications) 申请到的`Client ID` 填入此项。一般为一串字母数字)
+
+时间表
+
++ 时间表 - 媒体范围
+
+  时间表中所出现媒体的范围，例如：剧集/电影、仅关注/所有。
+  `my`相关功能还需要`账户授权`(在脚本设置右键菜单)。
+
+  + 关键字 `show`：剧集。`movie`：电影。 `dvd`：光盘。
+  + 关键字 `all`：所有。
+  + 关键字 `my`：Trakt账户里已关注的媒体。
+  + `show_movie_all`：所有剧集、电影 (默认)。
+
++ 时间表 - 合并剧集
+
+  时间表中的剧集某季 是否将同一星期的不同集数合并为一行。
+
+  + `0`：按各自集数显示为多行显示。
+  + `1`：按所属星期将不同集数合并为一行显示 (默认)。
+  + `2`：按所属星期将不同集数合并为一行，不注明集数。
+
++ 时间表 - 排序
+
+  将每日时间表按此顺序排列，顺序相同的以`标题 季序号 集序号`为序。
+
+  + `time`：按时间升序。
+  + `timeslot`：按时间档升序 (默认)。
+  + `title`：按名称升序。
+  + 关键字 `mf`：将电影排在最前。(不带此关键字即为 将电影排在最后)
+
+分组列表
+
++ 分组列表 - 近几组
+
+  分组的列表中，显示现在及以前几组，最后一个为本组。请保存设置后重启，方可查看新的分组列表。
+  近1组为 1 (即本组)，近2组为 2 (即本组、上一组)，以此类推。
+
+  + `0`：自1909-02-01所在一组至今 (用 1909-02-01 是因为Trakt网站日历的默认显示，似乎从这一天开始逐渐有内容，即 The Mack Sennett Collection S01E01 播出时的那一组。)。
+  + `56`：近56组 (默认)。
+
++ 分组列表 - 组周期",
+
+  分组的列表中 每组显示的时间范围，包括 起始日期、天数，即每个 从某日起几天 的范围。Trakt支持最多**33天**。
+
+  + 关键字 `m`：每月01日。
+  + 关键字 `w`：每周的周日。
+  + `w14` (每周从周日起的14天) (默认)。
+
++ 分组列表 - 显示下一组",
+
+  分组的列表中，下一组的位置。
+
+  + `0`：不显示 (默认)。
+  + `1`：显示在`本组`的后一个。
+  + `-1`：显示在`本组`的前一个 (可能会影响`关注`功能的识别)。
+
++ 时间 - 时区小时、时区分钟
+
+  使用时区的小时数、分钟数。目前仅限使用程序在当前系统的默认时区。Asia/Shanghai(亚洲/上海)的时区为`+08:00`，即此处小时数为`+08`、分钟数为`00`。
+
+  + system:系统默认时区 (默认)。
 
 ### 其他
 
 两个分支 \(branches\)
 
 + 分支 `library-tmdb-pr`： *fork 自* [KikoPlay脚本仓库](https://github.com/KikoPlayProject/KikoPlayScript) ，并用于 pull request。
-+ 分支 `library-tmdb-beta`： 用于展示 KikoPlay脚本TMDb 的最新进展、使用方法等。
++ 分支 `library-tmdb-beta`： 用于展示 `TMDb+Lib`、`TVmazeList` 这几个KikoPlay脚本 的最新进展、使用方法等。
 
-> 脚本 TMDb 及 TVmazeList 均包含在内，（请忽略开发前期时缺乏前瞻性的命名 QAQ）
+> 脚本 TMDb+Lib 及 TVmazeList 均包含在内，（请忽略开发前期时缺乏前瞻性的命名 QAQ）
 
 <br/>
-查看 脚本TMDb 的 [更新日志](CHANGELOG.md)
+查看 脚本TMDb+Lib 的 [更新日志](CHANGELOG.md)
 
 <br/>
 
@@ -696,6 +851,8 @@ Find episode information for any show on any device. anytime, anywhere!
 <br/>
 
 ![TVmaze-logo](manual.assets/tvm-header-logo.png)
+
++ TVmaze 首页 - [https://www.tvmaze.com/](https://www.tvmaze.com/)
 <br/>
 
 ### fanart
@@ -708,6 +865,9 @@ Logos, Backgrounds, Posters and more for your TV, Movie and Music collections.
 <br/>
 
 ![fanart-logo](manual.assets/Fanart-logo-new.png)
+
++ fanart 首页  -   [https://fanart.tv/](https://fanart.tv/)
++ fanart 获取 API  -   [https://fanart.tv/get-an-api-key/](https://fanart.tv/get-an-api-key/)
 <br/>
 
 ### Trakt
@@ -720,6 +880,25 @@ Logos, Backgrounds, Posters and more for your TV, Movie and Music collections.
 <br/>
 
 ![Trakt-logo](manual.assets/Trakt-header-2x.png)
+
++ Trakt 首页  -  [https://trakt.tv](https://trakt.tv)
++ Trakt 的API页面  -  [https://trakt.tv/oauth/applications](https://trakt.tv/oauth/applications)
+<br/>
+
+### Jellyfin
+
+> 基于Jellyfin/Emby的本地匹配功能，是通过 Jellyfin/Emby 对本地媒体资料库的本地元数据缓存 .nfo文件内的 .xml 格式文本 来匹配关联本地媒体文件的。
+>  
+> 本节内容来自 [Jellyfin](https://jellyfin.org/)
+
+[Jellyfin](https://jellyfin.org/) - The Free Software Media System
+
+Jellyfin is the volunteer-built media solution that puts you in control of your media. Stream to any device from your own server, with no strings attached. Your media, your server, your way.
+<br/>
+
+![Jellyfin-logo](manual.assets/Jellyfin-banner-dark.svg)
+
++ Jellyfin 首页  -  [https://jellyfin.org/](https://jellyfin.org/)
 <br/>
 
 ### Emby
@@ -734,6 +913,8 @@ Bringing all of your home videos, music, and photos together into one place has 
 <br/>
 
 ![Emby-logo](manual.assets/Emby-logo-white_1881.png)
+
++ Emby 首页  -  [https://emby.media/](https://emby.media/)
 <br/>
 
 ### KikoPlay
@@ -744,6 +925,9 @@ Bringing all of your home videos, music, and photos together into one place has 
 <br/>
 
 ![KikoPlay-logo](manual.assets/kikoplay.png)
+
++ KikoPlay 首页 - [https://kikoplay.fun](https://kikoplay.fun)
++ KikoPlay 的GitHub页面  -  [https://github.com/KikoPlayProject/KikoPlay](https://github.com/KikoPlayProject/KikoPlay)
 <br/>
 
 #### KikoPlay脚本仓库
