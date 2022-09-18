@@ -793,13 +793,13 @@ API
 
 两个分支 \(branches\)
 
-+ 分支 `library-tmdb-pr`： *fork 自* [KikoPlay脚本仓库](https://github.com/KikoPlayProject/KikoPlayScript) ，并用于 pull request。
-+ 分支 `library-tmdb-beta`： 用于展示 `TMDb+Lib`、`TVmazeList` 这几个KikoPlay脚本 的最新进展、使用方法等。
++ 分支 `KPS-k-pr`： *fork 自* [KikoPlay脚本仓库](https://github.com/KikoPlayProject/KikoPlayScript) ，并用于 pull request。
++ 分支 `KPS-k-beta`： 用于展示 `TMDb+Lib`、`TVmazeList` 这几个KikoPlay脚本 的最新进展、使用方法等。
 
-> 脚本 TMDb+Lib 及 TVmazeList 均包含在内，（请忽略开发前期时缺乏前瞻性的命名 QAQ）
+  几个脚本均包含在内。
 
 <br/>
-查看 脚本TMDb+Lib 的 [更新日志](CHANGELOG.md)
+查看几个脚本的 [更新日志](CHANGELOG.md)
 
 <br/>
 
