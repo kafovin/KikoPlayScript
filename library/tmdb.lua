@@ -8,7 +8,7 @@ info = {
     ["desc"] = "TMDb+ 资料刮削脚本  -  Edited by: kafovin \n"..
                 "从 The Movie Database (TMDb) 刮削影剧元数据，也可设置选择刮削fanart的媒体图片、Jellyfin/Emby的本地元数据、TVmaze的剧集演员。",
     --            "▲与前一版本不兼容▲ 建议搜索旧关联用`本地数据库`，仅刮削详旧资料细信息时设置`搜索-关键词作标题`为`1`。",
-    ["version"] = "0.2.27" -- 0.2.2.220727_build
+    ["version"] = "0.2.28" -- 0.2.220918_fix
 }
 
 -- 设置项
@@ -202,7 +202,7 @@ Array={}
 Kikoplus={}
 Path={}
 -- 说明: 三目运算符 ((condition) and {trueCDo} or {falseCDo})[1] === (condition)?(trueCDo):(falseCDo)
--- (()and{}or{})[1]
+-- (() and{} or{})[1]
 
 -- TMDb图片配置
 Image_tmdb = {
@@ -3717,7 +3717,8 @@ function menuclick(menuid, anime)
         kiko.message("在豆瓣/贴吧/B站搜索 <"..anime["name"]..">", NM_HIDE)
         if not string.isEmpty(anime_data.media_title) then
             kiko.execute(true, "cmd", {"/c", "start", "https://tieba.baidu.com/f/search/fm?ie=UTF-8^&qw=".. string.gsub(anime_data.media_title, "[ %c%p%^%&%|<>]", "%%20")})
-            kiko.execute(true, "cmd", {"/c", "start", "https://www.douban.com/search?cat=1002^&q=".. string.gsub(anime_data.media_title.." ".. (anime_data.season_title or""),
+            kiko.execute(true, "cmd", {"/c", "start", "https://www.douban.com/search?cat=1002^&q=".. string.gsub(anime_data.media_title.." "..
+                    (((anime_data.media_type=="movie" or (anime_data.season_count or anime_data.season_number)==1) and{""} or{anime_data.season_title or""})[1]),
                     "[ %c%p\'\"%^%&%|<>]","%%20")})
             kiko.execute(true, "cmd", {"/c", "start", "https://search.bilibili.com/all?keyword=".. string.gsub(anime_data.media_title.." ".. (anime_data.season_title or""),
                     "[ %c%p\'\"%^%&%|<>]","+")})
