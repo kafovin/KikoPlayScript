@@ -1,4 +1,4 @@
--- TMDb+Lib Scraper
+-- TMDb+ Lib Scraper
 ----------------
 -- 公共部分
 -- 脚本信息
@@ -73,7 +73,7 @@ settings = {
         ["default"] = "online_TMDb_filename",
         ["desc"] = "自动匹配本地媒体文件的数据来源。值为<local_Emby_nfo>时需要用软件Emby提前刮削过。\n" ..
                     "local_Emby_nfo：来自Jellyfin/Emby在刮削TMDb媒体后 在本地媒体文件同目录存储元数据的 .nfo格式文件(内含.xml格式文本) (不稳定/可能不兼容)；\n" ..
-                    "online_TMDb_filename：(不稳定) 从文件名模糊识别关键词，再用TMDb的API刮削元数据 (默认)。 (*￣▽￣）", -- 丢弃`person`的演员搜索结果
+                    "online_TMDb_filename：从文件名模糊识别关键词，再用TMDb的API刮削元数据 (不稳定) (默认)。 (*￣▽￣）", -- 丢弃`person`的演员搜索结果
         ["choices"] = "local_Emby_nfo,online_TMDb_filename",
     },
     ["match_priority"] = {
