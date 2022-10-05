@@ -98,7 +98,7 @@ settings = {
         ["group"]="匹配",
     },
     ["metadata_lang"] = {
-        ["title"] = "元数据 - 语言",
+        ["title"] = "元数据 - 语言地区",
         ["default"] = "zh-CN",
         ["desc"] = "按此`语言编码-地区编码`搜索元数据资料，主要指简介、海报、搜索的标题等。看着有很多语言，其实大部分都缺乏资料。\n" ..
                     "注意：再次关联导致标题改变时，弹幕仍然按照旧标题识别，请使用`搜索 - 关键词作标题`的功能重新搜索详细信息。\n" ..
@@ -112,7 +112,7 @@ settings = {
                     ",ta-IN,te-IN,th-TH,tl-PH,tr-TR,uk-UA,vi-VN,zh-CN,zh-HK,zh-SG,zh-TW,zu-ZA",
         -- ["choices"] = "ar-SA,de-DE,en-US,es-ES,fr-FR,it-IT,ja-JP,ko-KR,pt-PT,ru-RU,zh-CN,zh-HK,zh-TW",
         -- ["choices"] = "en-US,fr-FR,ja-JP,ru-RU,zh-CN,zh-HK,zh-TW",
-        ["group"]="元数据 - 其他",
+        ["group"]="元数据 - 语言",
     },
     ["metadata_info_update_keep"] = {
         ["title"] = "元数据 - 更新时维持更改",
@@ -129,7 +129,7 @@ settings = {
                     "注意：再次关联导致标题改变时，弹幕仍然按照旧标题识别，请使用`搜索 - 关键词作标题`的功能重新搜索详细信息。\n"..
                     "0：优先使用刮削时`元数据 - 语言`所设定的语言 (默认)。 1：优先使用原语言。",
         ["choices"] = "0,1",
-        ["group"]="元数据 - 其他",
+        ["group"]="元数据 - 语言",
     },
     ["metadata_info_origin_image"] = {
         ["title"] = "元数据 - 图片优先原语言",
@@ -137,7 +137,7 @@ settings = {
         ["desc"] = "媒体的图片 是否优先使用媒体原语言。\n"..
                     "0：优先使用刮削时`元数据 - 语言`所设定的语言 (默认)。 1：优先使用原语言。 2：优先使用无语言。",
         ["choices"] = "0,1,2",
-        ["group"]="元数据 - 图片",
+        ["group"]="元数据 - 语言",
     },
     ["metadata_image_priority"]={
         ["title"] = "元数据 - 图片主要来源",
@@ -213,7 +213,7 @@ searchsettings = {
     },
     ["search_keyword_process"] = {
         ["title"] = "关键词作文件名识别  | ",
-        ["default"] = "0",
+        ["default"] = "1",
         -- ["default"] = "filename",
         ["desc"] = "输入的字符经过何种处理作为关键词，来搜索媒体（不含集序号）。\n"..
                 "不选(0)：不处理，作为单纯的标题关键词（搜索请不要输入季序号等）。 选中(1)：作为除去拓展名的文件名 (默认)。", -- 丢弃`person`的演员搜索结果
