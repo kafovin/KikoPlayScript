@@ -7,7 +7,7 @@ info = {
     ["id"] = "Kikyou.b.TraktList",
     ["desc"] = "Trakt 媒体日历脚本（测试中，不稳定） Edited by: kafovin \n"..
                 "从 trakt.tv 刮削媒体的日历时间表，可在日历中自动标记Trakt账户里已关注的媒体。",
-    ["version"] = "0.1.05", -- 0.1.05.221004_fix
+    ["version"] = "0.1.06", -- 0.1.06.221031_fix
     ["min_kiko"] = "0.9.1",
 }
 
@@ -1443,25 +1443,26 @@ function ApiTrakt.testAccessToken(accessToken,tokenType)
     if not string.isEmpty(accessToken) and not string.isEmpty(tokenType)
             and (tokenType=="bearer" or tokenType=="Bearer") then
         local query = {
-            ["ignore_collected"]= true,
-            ["limit"]= 1,
-        }
+            ["hidden"]=false,
+            ["specials"]=false,
+            ["count_specials"]=false,
+         } -- { ["ignore_collected"]= true, ["limit"]= 1, }
         local header = {
             ["Content-Type"]= "application/json",
             ["trakt-api-version"]= "2",
             ["trakt-api-key"]= settings["api_key_trakt"],
             ["Authorization"]= "Bearer "..accessToken
         }
-        local hg_theme= "recommendations/shows" --shows/109975 Flebag (2016)
+        local hg_theme= "shows/109975/progress/watched" --"recommendations/shows" --shows/109975 Flebag (2016)
         local err,reply
         err, reply = kiko.httpget("https://api.trakt.tv/".. hg_theme, query, header)
         if err ~= nil or (reply or{}).hasError==true then
             kiko.log("[ERROR] Trakt.API.reply-test.access_token.httpget: ".. (err or "").."<"..
                     string.format("%03d",(reply or{}).statusCode or 0)..">"..((reply or{}).errInfo or""))
             -- error((err or "").."<".. string.format("%03d",(reply or{}).statusCode)..">"..(reply or{}).errInfo or"")
-            return {["success"]=false, ["statusCode"]= math.floor((reply or{}).statusCode or 0)}
+            return {["success"]=false, ["statusCode"]= math.floor((reply or{}).statusCode or 0), ["statusDesc"]=err, }
         else
-            return {["success"]=true, ["statusCode"]= math.floor((reply or{}).statusCode or 0)}
+            return {["success"]=true, ["statusCode"]= math.floor((reply or{}).statusCode or 0), ["statusDesc"]=err, }
         end
     end
     return {["success"]=false}
@@ -1493,7 +1494,7 @@ function ApiTrakt.getAccessToken(isGuide)
                 tauthAccesstValid = (tauthAccesstTest or {}).success or false
                 if tauthAccesstValid then
                     type(0)
-                elseif tauthAccesstTest.statusCode==401 or tauthAccesstTest.statusCode==403 then
+                elseif tauthAccesstTest.statusCode==401 or tauthAccesstTest.statusCode==403 or tauthAccesstTest.statusDesc=="Host requires authentication" then
                     local _,data = kiko.table2json({
                         ["refresh_token"]= tauthTable.refresh_token,
                         ["grant_type"]= "refresh_token",
@@ -1535,6 +1536,7 @@ function ApiTrakt.getAccessToken(isGuide)
                             end
                             tauthTable= tauthInfoT
                             tauthAccesstValid= true
+                            kiko.log("[INFO]  Trakt.oauth.ot: Access_token is outdated. Exchange refresh_token for new access_token.")
                         end
                     end
                     

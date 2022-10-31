@@ -55,16 +55,11 @@ tvmazelist.lua - 0.1.22.221004_fix
   + KikoPlay 于2022-10-01 更新了预发布版(0.9.1 -)。
     "KikoPlay 脚本系统：设置项支持分组。" *——来自KikoPlay*
 
-traktlist.lua - 0.1.05.221004_fix
+traktlist.lua - 0.1.05.221031_fix
 
-+ minor feature：微调
++ fix：修复bug
 
-  + 对设置项属性，增加所属分组名称。
-
-+ build：依赖更新
-
-  + KikoPlay 于2022-10-01 更新了预发布版(0.9.1 -)。
-    "KikoPlay 脚本系统：设置项支持分组。" *——来自KikoPlay*
+  + 修复了 账户授权每当到期后，自动继续授权失败 的bug。
 
 ## TMDb+Lib v 0
 
@@ -590,6 +585,17 @@ traktlist.lua - 0.1.05.221004_fix
 ## TraktList v 0
 
 ### TraktList 0.1
+
+0.1.05.221004_fix
+
++ minor feature：微调
+
+  + 对设置项属性，增加所属分组名称。
+
++ build：依赖更新
+
+  + KikoPlay 于2022-10-01 更新了预发布版(0.9.1 -)。
+    "KikoPlay 脚本系统：设置项支持分组。" *——来自KikoPlay*
 
 0.1.04.220801_fix
 
