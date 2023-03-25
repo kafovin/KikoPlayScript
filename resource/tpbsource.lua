@@ -7,7 +7,7 @@ info = {
     ["id"] = "Kikyou.r.TPBsource",
     ["desc"] = "TPBsource 资源信息脚本（测试中，不稳定）  Edited by: anonymous\n"..-- Edited by: anonymous
                 "从 thePirateBay 刮削媒体资源信息。",
-    ["version"] = "0.0.04", -- 0.0.04.221004_build
+    ["version"] = "0.0.05", -- 0.0.05.230325_build
     ["min_kiko"] = "0.9.1",
 }
 
@@ -130,6 +130,7 @@ Filter_info ={
                 ["标题升序"]="2", ["时间升序"]="4", ["大小升序"]="6", ["做种数升序"]="8", ["吸血数升序"]="10", ["上传者升序"]="12", ["类别升序"]="14",
     },
 }
+Datetime={}
 
 -- (() and{} or{})[1]
 
@@ -159,7 +160,7 @@ function search(keyword,page,scene,options)
         slf_orderby = settings["list_filter_orderby"]
         slf_qtext =settings["list_filter_qtext"]
     elseif true or scene == "search" then
-        slf_category = ((string.isEmpty(options["list_filter_i33_category"]) or options["list_filter_category"]=="默认")
+        slf_category = ((string.isEmpty(options["list_filter_i33_category"]) or options["list_filter_i33_category"]=="默认")
                 and{settings["list_filter_category"]} or{Filter_info.category[options["list_filter_i33_category"]] or options["list_filter_i33_category"]})[1]
         slf_orderby = ((string.isEmpty(options["list_filter_i23_orderby"]) or options["list_filter_i23_orderby"]=="默认")
                 and{settings["list_filter_orderby"]} or{Filter_info.orderby[options["list_filter_i23_orderby"]] or options["list_filter_i23_orderby"]})[1]
@@ -290,6 +291,7 @@ function search(keyword,page,scene,options)
     end
     local content = reply["content"]
 
+    local os_time = os.time()
     local _,_,pageLx,pageRx,totalCount=string.find(content,"<span>Search results:%s*[^<]*</span>&nbsp;Displaying hits from (%d+) to (%d+) %(approx (%d+) found%)")
     if pageLx==nil or pageRx==nil or totalCount==nil then
         error("[ERROR] TPB.webPage.decode: None of page index / total count is found.")
@@ -304,7 +306,7 @@ function search(keyword,page,scene,options)
     kiko.log("[INFO]  ".. (totalCount or "0") .." items on <".. keyword .."> are found, showing index ".. pageLx .."~".. pageRx ..".")
 
     local patternF,kregexF = nil,nil
-    patternF=[[(?<=</thead>)\s*(<tr>[\s\S]+</tr>)\s*(?=<tr><td colspan="9" style="text-align:center;">)]]
+    patternF=[[(?<=</thead>)\s*(<tr>[\s\S]+</tr>)\s*(?=</table>)]]
     kregexF = kiko.regex(patternF,"i")
     local spos,epos,_= kregexF:find(content)
     if spos==nil then
@@ -318,6 +320,7 @@ function search(keyword,page,scene,options)
         patternF= [[<div class="[^"]*">\s*<a href="([^"]*)" class="[^"]*" title="[^"]*">([^"]*)</a>]]
         kregexF = kiko.regex(patternF,"i")
         _,lnpos,url,title= kregexF:find(content,lnpos)
+        if lnpos==nil then break end
         patternF= [[<a href="(magnet:?[^"]*)" title=]]
         kregexF = kiko.regex(patternF,"i")
         _,lnpos,magnet= kregexF:find(content,lnpos)
@@ -325,8 +328,44 @@ function search(keyword,page,scene,options)
         kregexF = kiko.regex(patternF,"i")
         _,lnpos,time,size,uploader= kregexF:find(content,lnpos)
         title= string.unescape(title)
-        time= string.gsub(time or "", "(%d*)%-(%d*)&nbsp;(%d*)", "%3-%1-%2") -- 01-06&nbsp;2020
         size= string.gsub(size or "", "(%d*%.?%d*)&nbsp;([IiBbKkMmGgTtPp]*)", "%1 %2") -- 667.49&nbsp;MiB
+        time= string.gsub(time or "", "&nbsp;", " ")
+        time= string.gsub(time or "", "<b>", "")
+        time= string.gsub(time or "", "</b>", "")
+        time= string.gsub(time or "", "(%d*)%-(%d*) (%d*)$", "%3-%1-%2") -- 01-06&nbsp;2020
+        local thour,tmin = nil,nil
+        thour,tmin = string.match(time or ""," (%d*):(%d*)$")
+        if (tonumber(thour) ~= nil and tonumber(thour) ~= nil) then
+            local tdays,tmins,tz_total_min,sdday = nil,nil,nil,nil,nil
+            tz_total_min = math.floor(tonumber(string.sub(os.date("%z",os_time) or"",1,3)) or 0) *60 +
+                math.floor(tonumber(string.sub(os.date("%z",os_time) or"",4,5)) or 0)
+                - 1 * 60 -- TODO: TPB并非世界时的时刻，相差1h，原因未知
+            
+            local t_ymd= string.gsub(time or "", "^(%d*)%-(%d*) ", os.date("%Y",os_time - tz_total_min *60).."-%1-%2 ") -- 01-06&nbsp;20:20
+            if(t_ymd~=nil) then
+                local t_stamp = Datetime.strToStamp(string.format("%sT%s:00Z%s",t_ymd, string.match(time, "%d*:%d*"),
+                                    string.format("%+03d:%02d",math.floor(tz_total_min/60),math.floor(tz_total_min%60))))
+                time= string.gsub(time or "", "^%d*%-%d* %d*:%d*", os.date("%Y-%m-%d %H:%M",t_stamp)) -- Today&nbsp;02:59
+            
+            end
+            tmins = math.floor(tonumber(thour)) *60 + math.floor(tonumber(tmin)) + tz_total_min
+            thour = math.floor(tmins/60%24)
+            tmin = math.floor(tmins%60)
+            -- tday = math.floor(tmins/60/24)
+            tdays = nil
+            tdays = ((string.match(time or "","Y%-day")) and{-1} or{tdays})[1]
+            tdays = ((string.match(time or "","Today")) and{0} or{tdays})[1]
+            if(tdays ~= nil) then
+                sdday = os.date("%Y-%m-%d",os_time - tz_total_min *60 + tdays *3600*24)
+                time= string.gsub(time or "", "Y%-day %d*:%d*", string.format("%s %02d:%02d", sdday, thour, tmin)) -- Y-day&nbsp;02:59
+                time= string.gsub(time or "", "Today %d*:%d*", string.format("%s %02d:%02d", sdday, thour, tmin)) -- Today&nbsp;02:59
+            end
+        end
+        local n_minsago,sdt_minsago = tonumber(string.match(time or "", "(%d*) mins* ago")), ""
+        if n_minsago ~= nil then
+            sdt_minsago = os.date("%Y-%m-%d %H:%M",os_time - n_minsago *60)
+        end
+        time= string.gsub(time or "", "(%d*) mins* ago", sdt_minsago) -- 20&nbsp;mins&nbsp;ago
 
         table.insert(itemsList,{
             ["title"]=title,
@@ -516,4 +555,33 @@ function table.deepCopy(tb)
     -- 设置元表。
     setmetatable(copy, table.deepCopy(getmetatable(tb)) or{})
     return copy
+end
+
+--* (string)str :: "2022-03-01T07:00:00-05:00" -> timestamp
+function Datetime.strToStamp(input)
+    local dateTa={}
+    local secZdt=0
+    -- if isFromLocal==nil then isFromLocal=false end
+
+    local p_stamp = os.time()
+    local timezone = (math.floor(tonumber(string.sub(os.date("%z",os.time()) or"",1,3)) or 0)) *3600 +
+                    (math.floor(tonumber(string.sub(os.date("%z",os.time()) or"",4,5)) or 0)) *60
+    if string.isEmpty(input) then
+        return p_stamp
+    else
+        local dataTap= os.date("*t",p_stamp)
+        dateTa={
+            ["year"]= math.floor(tonumber(string.sub(input,1,4) or"") or tonumber(dataTap.year) or 2022),
+            ["month"]= math.floor(tonumber(string.sub(input,6,7) or"") or 1),
+            ["day"]= math.floor(tonumber(string.sub(input,9,10) or"") or 1),
+            ["hour"]= math.floor(tonumber(string.sub(input,12,13) or"") or 0),
+            ["min"]= math.floor(tonumber(string.sub(input,15,16) or"") or 0),
+            ["sec"]= math.floor(tonumber(string.sub(input,18,19) or"") or 0),
+        }
+        secZdt= ((tonumber(string.sub(input,20,22) or"") or tonumber(string.sub(input,24,25) or""))
+                and{    math.floor(tonumber(string.sub(input,20,22) or"") or 0)*3600 +
+                        math.floor(tonumber(string.sub(input,24,25) or"") or 0)*60 }
+                or{timezone})[1]
+    end
+    return os.time(dateTa) -secZdt +timezone
 end
